@@ -77,7 +77,7 @@ The display rules follow from this coverage:
 - Countries without data for the selected year are shown in a neutral grey, with a "no data"
   label.
 - A coverage indicator next to the year slider shows how many countries have data
-  ("Data available: 81 / 211 countries"). This keeps users from reading the jump in 2000 as a
+  ("Data available: 81 / 214 countries"). This keeps users from reading the jump in 2000 as a
   real-world change.
 - Emissions-based views show a notice for years before 2000.
 - The application opens on **2024**, the most recent year with near-complete coverage.
