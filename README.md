@@ -15,9 +15,8 @@ Dataset: [Our World in Data — Energy](https://github.com/owid/energy-data) (`d
 
 ## Group
 
-- Class: TPnn
-- Student 1: name (nmec)
-- Student 2: name (nmec)
+- Student 1: Paulo Cunha (118741)
+- Student 2: Tomás Gameiro (119586)
 
 ## Repository structure
 
