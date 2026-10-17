@@ -12,29 +12,42 @@ demand*.
 | Mantra step | Where it happens |
 |---|---|
 | Overview | View 1 (globe), opened on 2024 with the renewable share of electricity |
-| Zoom / filter | Year slider and play button, metric selector, brushing in View 2, legend filtering in View 3 |
+| Zoom / filter | Year slider and play button, metric selector (levels or change between two years), brushing in View 2, legend filtering in View 3 |
 | Details on demand | Tooltips, and Views 3 and 4 for the selected country |
 | Relate | View 4 compares a country's path with the World's; brushing in View 2 highlights on the globe |
 | History | Play button replays the years; View 4 shows a country's whole path over time |
 
 ## View 1 - Rotating globe
 
-- **Question(s) answered:** Where and when has electricity become greener?
+- **Question(s) answered:** Where and when has electricity become greener? Which countries go
+  against the trend?
 - **Representation:** orthographic globe coloured as a choropleth by the selected metric:
-  renewable share (default), fossil share or carbon intensity. Countries without data are grey.
+  renewable share (default), fossil share or carbon intensity. A **change** mode colours each
+  country by the difference in that metric between two years (e.g. renewable share in
+  percentage points, 2000 → 2024), on a diverging scale centred on zero. Countries without data
+  are grey; in change mode a country needs data in both years.
 - **Presentation:** largest view on the screen, with a colour legend, a year slider with a play
   button, and a coverage indicator ("Data available: 196 / 214 countries"). Colour scales are
-  fixed across years, so a colour change always means a change in the data.
+  fixed across years, so a colour change always means a change in the data. In change mode the
+  slider gets a second handle for the start year (default 2000), and the diverging scale uses
+  the same direction for every metric: green means greener or cleaner, red means the
+  opposite.
 - **Interaction:** drag to rotate; slider and play to change the year; hover for a tooltip;
   click to select a country (the globe rotates to it); search box for small countries; a
   **Globe / Flat map** toggle switches to a world map (Equal Earth projection) with an animated
-  transition. The selected year, metric and country are kept when switching.
+  transition. The selected year, metric and country are kept when switching. A
+  **Levels / Change** toggle switches between the value in one year and the change between two
+  years.
 - **Why this technique:** a map is the natural overview of per-country data, and a globe is
   more engaging than the flat map OWID already provides. Only half the world is visible at
   once, which rotation and the search box compensate for. Users who find the globe hard to use,
   or who want to see every country at once, can switch to the flat map. Equal Earth keeps
   country areas proportional, so large high-latitude countries (Russia, Canada) are not
-  exaggerated as they would be with Mercator.
+  exaggerated as they would be with Mercator. The change mode is needed to *find* the
+  countries that go against the trend: the other views show one year, or one country at a
+  time, so without it a user would have to inspect each country in View 4. In change mode
+  these countries stand out as red areas on an otherwise green map, and a click opens View 4
+  to confirm the country's path.
 
 ## View 2 - Emissions bubble scatter
 
@@ -64,8 +77,8 @@ demand*.
 
 ## View 4 - Greener vs. cleaner (connected scatterplot)
 
-- **Question(s) answered:** Is green growth keeping up with demand? Which countries go against
-  the trend?
+- **Question(s) answered:** Is green growth keeping up with demand? Does a country found in the
+  globe's change mode really go against the trend?
 - **Representation:** one point per year, connected in time order. x = renewable share,
   y = emissions from electricity. The selected country is in colour, the World in grey.
 - **Presentation:** first and last years labelled, arrows showing the direction of time, the

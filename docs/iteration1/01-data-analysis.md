@@ -9,6 +9,11 @@
 ## 1. The data
 
 - **Source:** Our World in Data, Energy dataset — https://github.com/owid/energy-data
+- **Licence:** Creative Commons BY 4.0. The data can be reused freely as long as the source is
+  credited. OWID compiles it mainly from Ember and the Energy Institute *Statistical Review of
+  World Energy*, and the application credits all three.
+- **Citation:** Hannah Ritchie, Pablo Rosado and Max Roser (2023), "Energy". Published online
+  at OurWorldinData.org.
 - **File:** `data/owid-energy-data.csv`
 - **Size:** 23,377 rows (country/region × year, 1900–2025) × 130 columns
 - **Granularity:** one row per (country or region, year) — annual values, no monthly data
@@ -60,7 +65,7 @@ everywhere):
   `World`, which is kept as a reference line.
 - Years are limited to **1985–2025**.
 - In a row where `electricity_generation` exists but a source is empty, that source is treated
-  as **0**. This was checked on all 351 such rows between 2000 and 2024: the remaining sources
+  as **0**. This was checked on all 808 such rows between 2000 and 2024: the remaining sources
   always add up to the total generation.
 - The result is ~6,600 rows for 214 countries.
 
@@ -143,3 +148,5 @@ growth is keeping up with demand.
    *(connected scatterplot of the selected country vs. World)*
 5. **Which countries go against the trend?** Which countries have a falling renewable share,
    rising carbon intensity, or high emissions despite a high renewable share?
+   *(globe in change mode to find them; emissions bubble scatter coloured by renewable share;
+   connected scatterplot to confirm a country's path)*
