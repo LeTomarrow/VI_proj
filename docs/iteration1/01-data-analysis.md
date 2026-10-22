@@ -53,11 +53,14 @@ bioenergy twice.
 
 **Derived in the application** (not read from the file, so they are computed the same way
 everywhere):
-- each source's share of generation (%);
-- the fossil share (coal + oil + gas) and the renewable share (hydro + solar + wind + bioenergy
-  + other);
+- each source's share of generation (%), and three groups: fossil (coal + oil + gas),
+  renewable (hydro + solar + wind + bioenergy + other) and low-carbon (renewable + nuclear);
 - per-capita values (÷ `population`);
-- changes between any two years selected by the user.
+- averages over a range of years and changes between two years, both selected by the user.
+
+Calculations that belong to a single view (the emissions decomposition in View 4, the scaling
+of the radar axes in View 5) are described with that view in
+[02-visualization-choices.md](02-visualization-choices.md).
 
 ### 1.3 Preprocessing
 
@@ -137,16 +140,18 @@ growth is keeping up with demand.
 ## 5. Key questions the application should help answer
 
 1. **Where and when has electricity become greener?** How has the renewable share of each
-   country's electricity changed between 1985 and 2025? *(globe with year slider)*
+   country's electricity changed between 1985 and 2025? *(globe with year slider, and range-average and change modes over a range of years)*
 2. **Who pollutes the most, and by which measure?** Which countries lead in total emissions,
    emissions per capita and carbon intensity per kWh, and do these rankings agree?
-   *(emissions bubble scatter)*
+   *(emissions bubble scatter; country profiles to compare chosen countries)*
 3. **What is a country's electricity made of, and how has it changed?** Which sources dominate,
-   and which ones grew or declined? *(stacked area chart of the selected country's mix)*
-4. **Is green growth keeping up with demand?** As a country's renewable share rises, do its
-   emissions actually fall, and how does its path compare with the world's?
-   *(connected scatterplot of the selected country vs. World)*
+   and which ones grew or declined? *(temporal Marimekko of the selected country's mix)*
+4. **Is green growth keeping up with demand?** Does new low-carbon generation cover the growth
+   in demand, and do emissions actually fall? Is the change in emissions driven by demand or by
+   a cleaner mix, and how does the country compare with the world?
+   *(difference chart of new demand vs. new low-carbon generation, with the emissions
+   decomposition)*
 5. **Which countries go against the trend?** Which countries have a falling renewable share,
    rising carbon intensity, or high emissions despite a high renewable share?
-   *(globe in change mode to find them; emissions bubble scatter coloured by renewable share;
-   connected scatterplot to confirm a country's path)*
+   *(globe in change mode to find them; emissions bubble scatter
+   coloured by renewable share; View 4 to confirm a country's path)*
