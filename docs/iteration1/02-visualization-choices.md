@@ -4,7 +4,7 @@
 > presentation, and interaction)."
 
 The application has five linked views. They share the selected **year**, **year range**,
-**metric** and **country**. When no country is selected, Views 3 and 4 show the World.
+**metric** and **country**. When no country is selected, Views 2 and 4 show the World.
 
 The design follows Shneiderman's mantra: *overview first, zoom and filter, then details on
 demand*.
@@ -12,10 +12,10 @@ demand*.
 | Mantra step | Where it happens |
 |---|---|
 | Overview | View 1 (globe), opened on 2024 with the renewable share of electricity |
-| Zoom / filter | Year slider and play button, year range, metric selector (one year, range average or change between two years), brushing in View 2, legend filtering in View 3 |
-| Details on demand | Tooltips, and Views 3 and 4 for the selected country |
-| Relate | View 5 compares country profiles side by side; brushing in View 2 highlights on the globe |
-| History | Play button replays the years; the Range average and Change modes summarise a period on the map; Views 3 and 4 show a country's whole path |
+| Zoom / filter | Year slider and play button, year range, metric selector (one year, range average or change between two years), brushing in View 3, legend filtering in View 2 |
+| Details on demand | Tooltips, and Views 2 and 4 for the selected country |
+| Relate | View 5 compares country profiles side by side; brushing in View 3 highlights on the globe |
+| History | Play button replays the years; the Range average and Change modes summarise a period on the map; Views 2 and 4 show a country's whole path |
 
 Each view shows a different slice of the same data (country × year × variable), so the views
 do not repeat each other even when they reuse a variable:
@@ -23,8 +23,8 @@ do not repeat each other even when they reuse a variable:
 | View | Countries | Years | Variables | Question |
 |---|---|---|---|---|
 | 1 Map | all, in geographic space | 1, or a range summarised as an average or a change | 1 metric | *Where, and since when?* |
-| 2 Bubble scatter | all | 1 | 3 emissions measures | *Who pollutes the most, by which measure?* |
-| 3 Marimekko | 1 | all | 9 sources + total | *What is the electricity made of?* |
+| 2 Marimekko | 1 | all | 9 sources + total | *What is the electricity made of?* |
+| 3 Bubble scatter | all | 1 | 3 emissions measures | *Who pollutes the most, by which measure?* |
 | 4 Race + decomposition | 1 (or World) | selected range | generation, low-carbon generation, emissions | *Is green growth keeping up with demand, and why?* |
 | 5 Country profiles | a few, chosen by the user | 1 | 6 indicators | *How do these countries compare?* |
 
@@ -74,26 +74,7 @@ do not repeat each other even when they reuse a variable:
   View 4. In Change mode these countries stand out as red areas on an otherwise green map,
   and a click opens View 4 to confirm the country's path.
 
-## View 2 - Emissions bubble scatter
-
-| Bubble scatter (log x, area, animated by year) | Brushing |
-|---|---|
-| ![The Wealth & Health of Nations](img/examples/wealth-health-of-nations.jpg) | ![Brushable scatterplot](img/examples/brushable-scatterplot.jpg) |
-| [*The Wealth & Health of Nations*](https://observablehq.com/@mbostock/the-wealth-health-of-nations) | [*Brushable scatterplot*](https://observablehq.com/@d3/brushable-scatterplot) |
-
-- **Question(s) answered:** Who pollutes the most, and by which measure?
-- **Representation:** one bubble per country for the selected year. x = emissions per capita
-  (log scale), y = carbon intensity, area = total emissions, colour = same metric as the globe.
-- **Presentation:** axes with units, labels only for the largest emitters and the selected
-  country, dashed lines at the World's values. A notice is shown for years before 2000, when
-  there is no emissions data.
-- **Interaction:** hover for a tooltip; click to select a country; brush to select a group,
-  which is highlighted on the globe; bubbles move smoothly when the year changes.
-- **Why this technique:** a bar chart ranks countries by one measure only. The scatter shows
-  three measures at once, so it reveals that the rankings disagree (e.g. China emits the most
-  in total, but not per person).
-
-## View 3 - Electricity mix over time (temporal Marimekko)
+## View 2 - Electricity mix over time (temporal Marimekko)
 
 ![Marimekko chart](img/examples/marimekko-chart.jpg)
 
@@ -120,6 +101,25 @@ over time instead of for a single moment.*
   but not cleaner" pattern that View 4 then explains. Widths are read less precisely than
   heights, so the usability tests will check whether users notice that wider columns mean
   more electricity. If they do not, the stacked area chart is the fallback.
+
+## View 3 - Emissions bubble scatter
+
+| Bubble scatter (log x, area, animated by year) | Brushing |
+|---|---|
+| ![The Wealth & Health of Nations](img/examples/wealth-health-of-nations.jpg) | ![Brushable scatterplot](img/examples/brushable-scatterplot.jpg) |
+| [*The Wealth & Health of Nations*](https://observablehq.com/@mbostock/the-wealth-health-of-nations) | [*Brushable scatterplot*](https://observablehq.com/@d3/brushable-scatterplot) |
+
+- **Question(s) answered:** Who pollutes the most, and by which measure?
+- **Representation:** one bubble per country for the selected year. x = emissions per capita
+  (log scale), y = carbon intensity, area = total emissions, colour = same metric as the globe.
+- **Presentation:** axes with units, labels only for the largest emitters and the selected
+  country, dashed lines at the World's values. A notice is shown for years before 2000, when
+  there is no emissions data.
+- **Interaction:** hover for a tooltip; click to select a country; brush to select a group,
+  which is highlighted on the globe; bubbles move smoothly when the year changes.
+- **Why this technique:** a bar chart ranks countries by one measure only. The scatter shows
+  three measures at once, so it reveals that the rankings disagree (e.g. China emits the most
+  in total, but not per person).
 
 ## View 4 - Is green growth keeping up? (difference chart + decomposition)
 
@@ -181,7 +181,7 @@ decomposition panel below it is our own design.*
   country, then up to five more countries chosen by the user. The World's shape is drawn in grey
   behind every country's shape. Axis labels on the first radar only; light fill.
 - **Interaction:** hover a vertex for the exact value and unit; click a radar to select that
-  country; add a country with "+ Compare" (in the tooltip of Views 1 and 2) and remove it with
+  country; add a country with "+ Compare" (in the tooltip of Views 1 and 3) and remove it with
   ×; the radars change with the year.
 - **Why this technique:** a radar is a glyph that shows many variables of one country as one
   shape, and small multiples make shapes easy to compare. It answers a question no other
@@ -196,13 +196,13 @@ decomposition panel below it is our own design.*
 
 ## Cross-view interaction
 
-- **Year** (slider, play, or click in Views 3/4) updates every view.
+- **Year** (slider, play, or click in Views 2/4) updates every view.
 - **Year range** (second slider handle) sets the Range average and Change modes of the map
   and the start year of View 4.
 - **Country** (click on the map, a bubble or a radar, or search) is highlighted
-  in Views 1, 2 and 5 and shown in Views 3 and 4.
-- **Brushing** in View 2 highlights the selected countries on the globe.
-- **Hovering** a country in View 1 or 2 highlights it in the other.
+  in Views 1, 3 and 5 and shown in Views 2 and 4.
+- **Brushing** in View 3 highlights the selected countries on the globe.
+- **Hovering** a country in View 1 or 3 highlights it in the other.
 
 This linking between views was inspired by InsightChaser (Liu et al., 2026); see
 *Related work and inspiration*.
@@ -211,7 +211,7 @@ This linking between views was inspired by InsightChaser (Liu et al., 2026); see
 
 | Technique | Was used for | Why it was replaced |
 |---|---|---|
-| ![Stacked area chart](img/examples/stacked-area-chart.jpg) Stacked area chart | View 3 | Needs a TWh / % toggle to show totals and shares; the middle layers (nuclear, hydro) have no flat baseline and are hard to read. Kept as the fallback if the Marimekko fails in the tests. |
+| ![Stacked area chart](img/examples/stacked-area-chart.jpg) Stacked area chart | View 2 | Needs a TWh / % toggle to show totals and shares; the middle layers (nuclear, hydro) have no flat baseline and are hard to read. Kept as the fallback if the Marimekko fails in the tests. |
 | ![Connected scatterplot](img/examples/connected-scatterplot.jpg) Connected scatterplot (renewable share × emissions) | View 4 | Harder to read (Haroz et al., 2016), and shows that emissions and renewables move together but not why. Replaced by the race + decomposition. |
 
 ## Related work and inspiration
@@ -227,7 +227,7 @@ The source of our dataset. Its charts and explorers gave us:
 - **The metrics:** share of generation by source, per-capita values and carbon intensity,
   rather than absolute totals only.
 - **The electricity mix by source over time** (*Share of electricity production by source*,
-  a stacked area chart). It was our first choice for View 3, which now uses a temporal
+  a stacked area chart). It was our first choice for View 2, which now uses a temporal
   Marimekko to show totals and shares at once.
 - **The map + time slider pattern** and the **multi-country selection** of its explorers.
 
@@ -276,9 +276,9 @@ illustrate the technique; they are not our data.
 
 - *World choropleth*, *Versor dragging*, *Orthographic to equirectangular* → View 1 (globe
   rotation and the globe / flat map transition)
-- *The Wealth & Health of Nations* (Bostock), *Brushable scatterplot* → View 2
-- *Marimekko chart* → View 3
+- *Marimekko chart* → View 2
+- *The Wealth & Health of Nations* (Bostock), *Brushable scatterplot* → View 3
 - *Difference chart* → View 4
 - *Plot: Radar chart, small multiples* (Observable Plot) → View 5
-- *Stacked area chart*, *Connected scatterplot* → first choices for Views 3 and 4 (see
+- *Stacked area chart*, *Connected scatterplot* → first choices for Views 2 and 4 (see
   *Alternatives considered*)
