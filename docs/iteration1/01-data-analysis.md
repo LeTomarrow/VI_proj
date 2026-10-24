@@ -141,11 +141,11 @@ growth is keeping up with demand.
 
 1. **Where and when has electricity become greener?** How has the renewable share of each
    country's electricity changed between 1985 and 2025? *(globe with year slider, and range-average and change modes over a range of years)*
-2. **Who pollutes the most, and by which measure?** Which countries lead in total emissions,
+2. **What is a country's electricity made of, and how has it changed?** Which sources dominate,
+   and which ones grew or declined? *(temporal Marimekko of the selected country's mix)*
+3. **Who pollutes the most, and by which measure?** Which countries lead in total emissions,
    emissions per capita and carbon intensity per kWh, and do these rankings agree?
    *(emissions bubble scatter; country profiles to compare chosen countries)*
-3. **What is a country's electricity made of, and how has it changed?** Which sources dominate,
-   and which ones grew or declined? *(temporal Marimekko of the selected country's mix)*
 4. **Is green growth keeping up with demand?** Does new low-carbon generation cover the growth
    in demand, and do emissions actually fall? Is the change in emissions driven by demand or by
    a cleaner mix, and how does the country compare with the world?
