@@ -13,13 +13,16 @@ Link/reference to the low-fidelity prototype assets in
 
 > 1. Pick Selection Mode
 > 2. Select Portugal in the global Map
-> 3. Identify the main source of energy for Portugal
-> 4. Related to demand determine if Portugal's energy production is green
-> 5. Pick Comparison Mode
-> 6. Pick Portugal and Spain for comparison
-> 7. Determine between Portugal and Spain which is more pollutant
-> 8. Add Denmark to the comparison
-> 9. Determine which of the three countries is the greener
+> 3. Identify the main source of energy for Portugal in 2020 and in 2024
+> 4. In what year does Solar become noticeable in the chart
+> 5. Did production in Portugal rise or stagnate between 2000 and 2024
+> 6. Related to demand determine if Portugal's energy production is green
+> 7. Pick Comparison Mode
+> 8. Pick Portugal, Denmark and Spain for comparison
+> 9. Determine between the three which is more pollutant
+> 10. Is the biggest total emitter also the biggest emitter per capita
+> 11. Determine which of the three countries has the most green energy in it's production
+> 12. Who has the most "balanced" profile
 
 ## Participants
 
