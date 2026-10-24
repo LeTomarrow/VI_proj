@@ -91,7 +91,9 @@ over time instead of for a single moment.*
 - **Presentation:** the selected year's column is outlined. Year labels sit under the columns
   (only every 5 years if the columns are narrow), because the x axis is not linear in time:
   wider columns mean more generation, not more years. A dashed line at 50% marks where the
-  low-carbon share passes half of generation.
+  low-carbon share passes half of generation. When a year range is set on the map, a band
+  above the columns marks it and the columns outside it are faded, so the chart still shows
+  the whole history but makes clear which period the map and View 4 are analysing.
 - **Interaction:** hover a segment for its source, TWh and %; click a column to set the year;
   click a legend item to highlight that source (the other segments fade).
 - **Why this technique:** the stacked area chart we first chose (see *Alternatives
@@ -198,7 +200,7 @@ decomposition panel below it is our own design.*
 
 - **Year** (slider, play, or click in Views 2/4) updates every view.
 - **Year range** (second slider handle) sets the Range average and Change modes of the map
-  and the start year of View 4.
+  and the start year of View 4, and is marked by a band in View 2.
 - **Country** (click on the map, a bubble or a radar, or search) is highlighted
   in Views 1, 3 and 5 and shown in Views 2 and 4.
 - **Brushing** in View 3 highlights the selected countries on the globe.
