@@ -11,10 +11,15 @@ Link/reference to the low-fidelity prototype assets in
 
 ## Tasks tested
 
-> TODO: list the key tasks given to test participants, e.g.
-> 1. Find which country had the highest share of renewable energy in 2020.
-> 2. Compare the energy mix of two countries of your choice.
-> 3. Identify the trend in global fossil fuel consumption over the last 20 years.
+> 1. Pick Selection Mode
+> 2. Select Portugal in the global Map
+> 3. Identify the main source of energy for Portugal
+> 4. Related to demand determine if Portugal's energy production is green
+> 5. Pick Comparison Mode
+> 6. Pick Portugal and Spain for comparison
+> 7. Determine between Portugal and Spain which is more pollutant
+> 8. Add Denmark to the comparison
+> 9. Determine which of the three countries is the greener
 
 ## Participants
 
