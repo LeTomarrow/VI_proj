@@ -6,8 +6,8 @@
 
 ## Prototype
 
-Link/reference to the low-fidelity prototype assets in
-[`low-fi-prototype/`](low-fi-prototype) or [`../../../prototype`](../../../prototype).
+Paper prototype, one sheet per view, with interactions simulated by hand. The sketches are in
+[`../../prototype/paper-sketches/`](../../prototype/paper-sketches).
 
 ## Tasks tested
 
@@ -59,74 +59,40 @@ Expected time: 3 to 5 minutes. If time is short, steps 3 and 5 are the first to 
 
 ## Participants
 
-> TODO: number of participants, how recruited (classmates), relevant background.
-
-### Class Testing:
-
-#### Participant 01:
-
-**Notes**:
-```
-```
-**Feedback**:
-```
-- Add units to the country profile view
-- Add label for the overall line in the emission green growth panel
-```
----
-#### Participant 02:
-
-**Notes**:
-```
-```
-**Feedback**:
-```
-- Add label for the areas in the demand/low carbon green growth panel
-- Maybe make the units at the bottom of the Energy view more noticeable
-```
----
-#### Participant 03:
-
-**Notes**:
-```
-```
-**Feedback**:
-```
-- Menus confusing (partly due to paper)
-- 
-```
-#### Participant 04:
-
-**Notes**:
-```
-```
-**Feedback**:
-```
-- Add mode for the energy view for it to be in TWh instead of percentage to make it easier to notice growth
-```
----
-#### Participant 04:
-
-**Notes**:
-```
-```
-**Feedback**:
-```
-- units on the radar chart
-- Scrap comparison and selection and make it a "pop-up" to determine if you want to compare or not
-```
+Five classmates from the Information Visualisation course, tested in class on 26/10.
 
 ## Method
 
-> TODO: think-aloud / task-based observation, metrics collected (completion, time, errors,
-> comments).
+**Think-aloud**, in two phases:
+
+1. **Free exploration.** Participants explored the prototype on their own, without help, and
+   said aloud what they saw, what they expected each control to do and what confused them.
+2. **Tasks.** We then asked them to do the simple tasks listed in *Tasks tested*, still
+   thinking aloud.
+
+At the end each participant gave free feedback.
 
 ## Results & findings
 
-> TODO: summarise what worked, what confused users, misinterpreted encodings, requested
-> features.
+Feedback per participant:
+
+| Participant | Feedback |
+|---|---|
+| P1 | Add units to the country profile view. Add a label for the overall (net change) line in the emissions panel of Green Growth. |
+| P2 | Add labels for the areas in the demand / low-carbon panel of Green Growth. Make the units at the bottom of the Energy view more noticeable. |
+| P3 | The menus were confusing (partly because of the paper format). |
+| P4 | Add a TWh mode to the Energy view, instead of percentages only, to make growth easier to notice. |
+| P5 | Add units to the radar chart. Drop the separate Selection and Comparison modes and use a pop-up to decide whether to compare a country. |
+
+Main findings:
+
+- **Missing units and labels** were the most frequent problem (P1, P2, P5): radar axes, the
+  areas of the difference chart, the net-change line of the decomposition, and the units of
+  the Energy view.
+- **Navigation:** the split into a Selection mode and a Comparison mode was confusing (P3, P5).
+- **Energy view:** growth in generation was hard to notice with shares in % only (P4).
 
 ## Changes planned for iteration 2
 
-> TODO: concrete design changes resulting from this round, to be carried into
-> `../iteration2/01-integration-plan.md`.
+See [`../iteration2/01-integration-plan.md`](../iteration2/01-integration-plan.md) (table
+*Feedback from the iteration-1 usability tests*).
