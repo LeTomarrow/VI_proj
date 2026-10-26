@@ -58,8 +58,10 @@ everywhere):
 - per-capita values (÷ `population`);
 - averages over a range of years and changes between two years, both selected by the user.
 
-Calculations that belong to a single view (the emissions decomposition in View 4, the scaling
-of the radar axes in View 5) are described with that view in
+- continent totals, computed from the countries of each continent (see 1.3).
+
+Calculations that belong to a single view (the emissions decomposition, the scaling of the
+radar axes) are described with that view in
 [02-visualization-choices.md](02-visualization-choices.md).
 
 ### 1.3 Preprocessing
@@ -71,6 +73,19 @@ of the radar axes in View 5) are described with that view in
   as **0**. This was checked on all 808 such rows between 2000 and 2024: the remaining sources
   always add up to the total generation.
 - The result is ~6,600 rows for 214 countries.
+- Each country is assigned to a continent with OWID's own mapping,
+  `data/owid-continents.csv` (Africa 51, Asia 50, Europe 40, North America 29, Oceania 14,
+  South America 12). All 214 countries are mapped. Continent totals are the sum of their
+  countries' TWh and MtCO₂e, and shares and carbon intensity are recomputed from those sums,
+  never averaged. The sums match OWID's own continent rows (Europe 2024: 4,644 vs. 4,651 TWh;
+  the difference is Kosovo, which has no ISO code).
+- **Joining the data to the map.** The map (`world-atlas`) identifies countries by numeric ISO
+  code (`716`) and OWID by three-letter code (`ZWE`). A one-off script converts them with
+  `i18n-iso-countries` into `data/iso-numeric.json`, which the app loads. All 236 map
+  polygons with an id are converted. Caveats: Kosovo has no ISO code in either source and is
+  keyed by name as `OWID_KOS`; French Guiana, Guadeloupe, Martinique and Réunion are drawn as
+  part of France's polygon (and take its colour), and Gibraltar has no polygon. All of them
+  still count in their continent's totals.
 
 ### 1.4 Coverage and how gaps are handled
 
@@ -88,6 +103,21 @@ The display rules follow from this coverage:
   ("Data available: 81 / 214 countries"). This keeps users from reading the jump in 2000 as a
   real-world change.
 - Emissions-based views show a notice for years before 2000.
+- **2000–2024 is the complete period.** The year slider covers 1985–2025, but 1985–1999 and
+  2025 are drawn in grey on the slider track with the label *"Electricity only / partial
+  coverage"*: in those years there are no emissions, bioenergy and other renewables are
+  reported by only 33 of 81 countries, and 2025 covers only the major producers.
+- A continent-year whose countries cover less than 80% of OWID's own continent generation
+  (for 2025, of the continent's 2024 total) is hatched on the map and in the Marimekko, and its
+  tooltip says how many countries it sums (e.g. "Sum of 4/51 countries with data"). Only
+  Africa falls below it: 73–75% in 1985–1999 and 67% in 2025. All other continents stay
+  at 90% or more. 90% was rejected because South America sits right at it, and 75% because
+  Africa's pre-2000 years fall on both sides of it.
+- Time-series charts (difference chart and decomposition) use a fixed 2000–2024 axis. Before
+  2000, continent sums jump when countries enter the data (Africa: 306 → 441 TWh from 1999 to
+  2000), and a time series would show that jump as real growth.
+- OWID's mapping puts Russia in Europe, and Turkey, Kazakhstan and Georgia in Asia. The
+  application states this next to the continent selector.
 - The application opens on **2024**, the most recent year with near-complete coverage.
 
 ## 2. The phenomenon
@@ -110,48 +140,76 @@ primary energy, so oil used in transport falls outside the scope. The applicatio
 see where electricity is getting greener, who still relies on fossil fuels, and whether green
 growth is keeping up with demand.
 
-## 3. Target users
+## 3. Target user
 
-- **Students and educators** (secondary school or university, in environment, engineering or
-  geography courses) who want to understand the energy transition with real data rather than
-  headlines.
-- **Journalists and science communicators** looking for evidence and comparisons between
-  countries to support a story.
+> Revised after the iteration-1 presentation (26/10/2026). The first version had two generic
+> personas (a student and a journalist) without clear tasks. The feedback asked for one well
+> defined persona whose tasks and needs drive the interface. See
+> [../iteration2/01-integration-plan.md](../iteration2/01-integration-plan.md).
 
-**Personas**
+**Persona: Carla, 34, energy and environment analyst.**
 
-- **Inês, 21, environmental engineering student.** She is preparing a presentation on Europe's
-  energy transition and wants to compare Portugal with other countries. She is comfortable with
-  charts but not with raw data or spreadsheets.
-- **Rui, 38, environment journalist.** He is writing a piece on whether renewables are actually
-  reducing emissions. He needs to find the biggest emitters quickly, check a few specific
-  countries and spot counter-examples worth reporting.
+- **Who she is.** Environmental engineer at a public energy agency. She writes the agency's
+  briefings on the electricity transition. She reads charts and uses spreadsheets every day and
+  knows the units (TWh, gCO₂/kWh). She does not program.
+- **Current assignment.** A briefing for the agency board comparing Europe and Asia: *"Has the
+  growth of renewables actually reduced emissions from electricity? Where has it, where has it
+  not, and why?"*
+- **Pain today.** OWID shows one chart at a time. To answer, she opens dozens of country charts,
+  exports CSV files and computes continent totals and the demand/mix split herself in a
+  spreadsheet. She cannot see the continent and its countries together, or put countries from
+  different continents side by side.
+- **Needs.**
+  - **N1.** See the continents first, with aggregated values, before looking at 200 countries.
+  - **N2.** Inside one continent, find the countries whose renewable share rose and check
+    whether their emissions fell.
+  - **N3.** Keep a short list of chosen countries, from any continent, and compare them.
+  - **N4.** Know whether a change in emissions came from more demand or from a cleaner mix,
+    with exact values she can quote.
 
-## 4. Context of use
+**Tasks** (these are also the usability-test tasks):
 
-- Self-directed exploration in a desktop web browser, in sessions of about 5 to 20 minutes.
-- Usually driven by a specific question ("how does my country compare?") followed by open
-  exploration.
-- It may also be shown in a classroom or presentation, so the main message (the overview globe
-  and the World trend) must be readable without interaction.
-- No installation or prior knowledge of the dataset is assumed. Units (TWh, gCO₂/kWh) are
-  explained in tooltips.
+| # | Task | Need | Where in the UI |
+|---|---|---|---|
+| T1 | Which continent's electricity became greener the most between 2000 and 2024, and which continent emits the most? | N1 | World screen |
+| T2 | In Europe, which countries had the largest rise in renewable share between 2014 and 2024, and did their emissions also fall? | N2 | Continent screen |
+| T3 | Add two of those countries and one Asian country to the comparison list. | N3 | Comparison list (any screen) |
+| T4 | For each compared country, did new low-carbon generation cover the growth in demand, and was the change in emissions driven by demand or by the mix? | N4 | Compare screen |
 
-## 5. Key questions the application should help answer
+## 4. Objective
 
-1. **Where and when has electricity become greener?** How has the renewable share of each
-   country's electricity changed between 1985 and 2025? *(globe with year slider, and range-average and change modes over a range of years)*
-2. **What is a country's electricity made of, and how has it changed?** Which sources dominate,
-   and which ones grew or declined? *(temporal Marimekko of the selected country's mix)*
-3. **Who pollutes the most, and by which measure?** Which countries lead in total emissions,
-   emissions per capita and carbon intensity per kWh, and do these rankings agree?
-   *(emissions bubble scatter; country profiles to compare chosen countries)*
-4. **Is green growth keeping up with demand?** Does new low-carbon generation cover the growth
-   in demand, and do emissions actually fall? Is the change in emissions driven by demand or by
-   a cleaner mix, and how does the country compare with the world?
-   *(difference chart of new demand vs. new low-carbon generation, with the emissions
-   decomposition)*
-5. **Which countries go against the trend?** Which countries have a falling renewable share,
-   rising carbon intensity, or high emissions despite a high renewable share?
-   *(globe in change mode to find them; emissions bubble scatter
-   coloured by renewable share; View 4 to confirm a country's path)*
+Help an energy and environment analyst answer, in one breef session and without exporting data, **whether the growth of low-carbon electricity has reduced emissions from
+electricity generation, first by continent and then by country, and whether each change was driven by demand or by the electricity mix.**
+
+The objective is met when participants in the usability tests complete T1–T4.
+
+**Scope.** The World screen shows all six continents. The Continent screen is built first
+for **Europe** and **Asia**: Europe is where the transition is most advanced, and Asia produces
+58% of the world's electricity, including China and India. Country-level screens for the other
+continents are future work if time runs out.
+
+## 5. Context of use
+
+- A desktop browser at work, in sessions of about 10 to 15 minutes, while preparing a briefing.
+- The session starts from a concrete question (T1–T4), followed by some open exploration.
+- Values must be exact and quotable: tooltips give the value with its unit and year.
+- No prior knowledge of the dataset is assumed. Units are explained in tooltips.
+
+## 6. Key questions the application should help answer
+
+Each question is answered by one group of linked charts. The design is detailed in
+[../iteration2/01-integration-plan.md](../iteration2/01-integration-plan.md#final-design-three-coordinated-views).
+
+1. **Which continents have made their electricity greener, and which emit the most?**
+   *(View A: map by continent + Marimekko by continent + stacked area of emissions by
+   continent)* (T1)
+2. **What is a continent's or country's electricity made of?** *(Marimekko in Views A and B;
+   mix over time, in kWh per person, in View C)*
+3. **Which countries in a continent go against the trend?** Which had the largest rise in
+   renewable share, and did their emissions fall? *(View B: sorted bars of the change in
+   renewable share + bubble scatter + map)* (T2)
+4. **Is clean generation keeping up with total generation, and why did emissions change?**
+   *(View C: difference chart + demand/mix decomposition)* (T4)
+5. **How do the chosen countries compare, even across continents?** *(Country search +
+   comparison list + View C, in per-person values so that large and small countries are
+   comparable)* (T3, T4)
