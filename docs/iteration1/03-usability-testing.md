@@ -61,6 +61,61 @@ Expected time: 3 to 5 minutes. If time is short, steps 3 and 5 are the first to 
 
 > TODO: number of participants, how recruited (classmates), relevant background.
 
+### Class Testing:
+
+#### Participant 01:
+
+**Notes**:
+```
+```
+**Feedback**:
+```
+- Add units to the country profile view
+- Add label for the overall line in the emission green growth panel
+```
+---
+#### Participant 02:
+
+**Notes**:
+```
+```
+**Feedback**:
+```
+- Add label for the areas in the demand/low carbon green growth panel
+- Maybe make the units at the bottom of the Energy view more noticeable
+```
+---
+#### Participant 03:
+
+**Notes**:
+```
+```
+**Feedback**:
+```
+- Menus confusing (partly due to paper)
+- 
+```
+#### Participant 04:
+
+**Notes**:
+```
+```
+**Feedback**:
+```
+- Add mode for the energy view for it to be in TWh instead of percentage to make it easier to notice growth
+```
+---
+#### Participant 04:
+
+**Notes**:
+```
+```
+**Feedback**:
+```
+- units on the radar chart
+- Scrap comparison and selection and make it a "pop-up" to determine if you want to compare or not
+```
+
 ## Method
 
 > TODO: think-aloud / task-based observation, metrics collected (completion, time, errors,
