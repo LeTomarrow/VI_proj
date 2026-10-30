@@ -49,6 +49,7 @@ prototype/
   paper-sketches/         Scans/photos of paper prototypes (if not using Balsamiq)
 scripts/                  Dev-only data preparation (Node), not needed to run the app
   build-iso-map.mjs             Builds data/iso-numeric.json (map ids → OWID codes)
+compose.yaml, nginx.conf   Docker Compose setup to serve the app locally
 src/                      The d3.js application (2nd iteration)
   index.html
   css/style.css
@@ -60,8 +61,15 @@ src/                      The d3.js application (2nd iteration)
 ## Running the application
 
 The app is plain HTML/CSS/JS with D3 loaded from a CDN — no build step or install required.
-Serve the **repository root** with any static file server (the app loads the CSV from
-`../data/...` relative to `src/index.html`), e.g.:
+The simplest way is Docker Compose (nginx serving `src/` and `data/` read-only):
+
+```bash
+docker compose up -d      # then open http://localhost:8000
+docker compose down       # stop
+```
+
+Without Docker, serve the **repository root** with any static file server (the app loads the
+data from `../data/...` relative to `src/index.html`), e.g.:
 
 ```bash
 python3 -m http.server 8000

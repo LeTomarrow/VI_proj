@@ -18,3 +18,4 @@ npm-debug.log*
 
 ## Large exported media (video demo should go in docs/presentation/video, but don't commit huge binaries by accident)
 *.mp4.orig
+CLAUDE.md
