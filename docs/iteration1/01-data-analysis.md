@@ -72,13 +72,14 @@ radar axes) are described with that view in
 - In a row where `electricity_generation` exists but a source is empty, that source is treated
   as **0**. This was checked on all 808 such rows between 2000 and 2024: the remaining sources
   always add up to the total generation.
-- The result is ~6,600 rows for 214 countries.
+- The result is 6,603 rows for 215 countries (214 with an ISO code, plus Kosovo).
 - Each country is assigned to a continent with OWID's own mapping,
-  `data/owid-continents.csv` (Africa 51, Asia 50, Europe 40, North America 29, Oceania 14,
-  South America 12). All 214 countries are mapped. Continent totals are the sum of their
-  countries' TWh and MtCO₂e, and shares and carbon intensity are recomputed from those sums,
-  never averaged. The sums match OWID's own continent rows (Europe 2024: 4,644 vs. 4,651 TWh;
-  the difference is Kosovo, which has no ISO code).
+  `data/owid-continents.csv` (countries with data in 2024: Africa 51, Asia 50, Europe 41
+  with Kosovo, North America 29, Oceania 14, South America 12). All 215 countries are mapped.
+  Continent totals are the sum of their countries' TWh and MtCO₂e, and shares and carbon
+  intensity are recomputed from those sums, never averaged. For 2000–2024 the sums match
+  OWID's own continent rows within 1% for generation and emissions; the app checks this when
+  it loads the data.
 - **Joining the data to the map.** The map (`world-atlas`) identifies countries by numeric ISO
   code (`716`) and OWID by three-letter code (`ZWE`). A one-off script converts them with
   `i18n-iso-countries` into `data/iso-numeric.json`, which the app loads. All 236 map
@@ -109,7 +110,8 @@ The display rules follow from this coverage:
   reported by only 33 of 81 countries, and 2025 covers only the major producers.
 - A continent-year whose countries cover less than 80% of OWID's own continent generation
   (for 2025, of the continent's 2024 total) is hatched on the map and in the Marimekko, and its
-  tooltip says how many countries it sums (e.g. "Sum of 4/51 countries with data"). Only
+  tooltip says how many countries it sums (e.g. "Sum of 4/57 countries with data", out of the continent's countries that
+  have data in any year). Only
   Africa falls below it: 73–75% in 1985–1999 and 67% in 2025. All other continents stay
   at 90% or more. 90% was rejected because South America sits right at it, and 75% because
   Africa's pre-2000 years fall on both sides of it.

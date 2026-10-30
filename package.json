@@ -1,6 +1,7 @@
 {
   "name": "vi-proj",
   "private": true,
+  "type": "module",
   "description": "Dev-only tooling. The app itself has no build step (see README).",
   "scripts": {
     "build:iso": "node scripts/build-iso-map.mjs"

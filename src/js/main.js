@@ -10,9 +10,9 @@ async function init() {
   // passed down to / updates each view, so interactions in one view can affect the others
   // (linked/coordinated views).
 
-  renderOverview(data, "#chart-overview");
-  renderCompare(data, "#chart-compare");
-  renderDetail(data, "#chart-detail");
+  renderOverview(data.countries, "#chart-overview");
+  renderCompare(data.countries, "#chart-compare");
+  renderDetail(data.countries, "#chart-detail");
 }
 
 init();

@@ -89,7 +89,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 
 | Milestone | Status |
 |---|---|
-| M1 Data: load, preprocess, continent mapping and aggregation, ISO join | In progress (ISO script done) |
+| M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
 | M2 Shared state + View A (static) | Planned |
 | M3 View B for Europe (static) | Planned |
 | M4 Comparison list, search + View C | Planned |
