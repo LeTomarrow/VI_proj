@@ -77,7 +77,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 
 | Removed | Why | Replacement |
 |---|---|---|
-| Orthographic globe | Shows half the world; drill-down is simpler on a flat map | Equal Earth map with zoom |
+| Orthographic globe | Shows half the world; drill-down is simpler on a flat map | Equal Earth map with zoom (a Map / Globe switch is being tried, see the decision log) |
 | Five independent views | F3: weak linking, mantra not followed | Three coordinated views |
 | Temporal Marimekko | F3 asks for a Marimekko by continent | Marimekko by entity + mix over time in View C |
 | Personas Inês and Rui | F1 | Persona Carla |
@@ -124,3 +124,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   over the years instead of always filling the chart (U5). The continent order is fixed.
 - **Page**: the template's Overview / Zoom / Details stubs were removed; the title is the theme
   until the app has a name. The play button is not built (not needed for T1–T4).
+- **Map / Globe switch (experiment)**: the World map has a switch to an orthographic globe that
+  rotates by dragging, to see whether users like it. The flat map stays the default because the
+  globe shows half the world at once, so it cannot show all six continents for T1. Keep or remove
+  it after the tests.

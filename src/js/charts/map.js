@@ -1,4 +1,5 @@
-// Equal Earth map, one shape per continent, coloured by the shared metric.
+// Equal Earth map, one shape per continent, coloured by the shared metric. A switch redraws the
+// same shapes on an orthographic globe that rotates by dragging (experiment, see the decision log).
 // Base examples: d3 World choropleth (https://observablehq.com/@d3/world-choropleth).
 
 import { CONTINENTS } from "../data/constants.js";
@@ -9,6 +10,9 @@ import { coverageLine, hideTooltip, showTooltip } from "../tooltip.js";
 const WIDTH = 760;
 const HEIGHT = 420;
 const LEGEND_WIDTH = 220;
+const VIEWS = { map: "Map", globe: "Globe" };
+const GLOBE_START = [-40, -20]; // rotation that opens on Europe, Africa and western Asia
+const DRAG_SPEED = 0.35; // degrees per pixel
 
 // Where each continent's name goes (lon, lat). Centroids do not work: Russia pulls Europe's
 // into Siberia.
@@ -38,15 +42,27 @@ function tooltipHtml(key, stat, s) {
 }
 
 export function createMap(selector, { atlas, mapKey, continentOf }) {
-  const projection = d3.geoEqualEarth().fitExtent([[4, 4], [WIDTH - 4, HEIGHT - 44]], { type: "Sphere" });
-  const path = d3.geoPath(projection);
+  const extent = [[4, 4], [WIDTH - 4, HEIGHT - 44]];
+  const projections = {
+    map: d3.geoEqualEarth().fitExtent(extent, { type: "Sphere" }),
+    globe: d3.geoOrthographic().rotate(GLOBE_START).fitExtent(extent, { type: "Sphere" }),
+  };
+  let view = "map";
 
   // Polygons outside the six continents (Antarctica, small territories) stay neutral.
   const groups = d3.group(atlas.objects.countries.geometries, (g) => continentOf.get(mapKey(g)) ?? null);
   const shapes = CONTINENTS.map((key) => ({ key, shape: topojson.merge(atlas, groups.get(key)) }));
   const other = topojson.merge(atlas, groups.get(null) ?? []);
 
-  const svg = d3.select(selector).append("svg")
+  const root = d3.select(selector);
+  const viewButtons = root.append("div").attr("class", "segmented map-views").attr("role", "group")
+    .attr("aria-label", "Map projection")
+    .selectAll("button").data(Object.entries(VIEWS)).join("button")
+    .attr("type", "button")
+    .text(([, label]) => label)
+    .on("click", (_, [key]) => { view = key; draw(); });
+
+  const svg = root.append("svg")
     .attr("viewBox", `0 0 ${WIDTH} ${HEIGHT}`)
     .attr("role", "img")
     .attr("aria-label", "World map with one colour per continent");
@@ -59,20 +75,18 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
     .attr("stroke", "#0b0b0b").attr("stroke-opacity", 0.45).attr("stroke-width", 1.5);
   const gradient = defs.append("linearGradient").attr("id", "map-legend-gradient");
 
-  svg.append("path").datum({ type: "Sphere" }).attr("class", "map-sphere").attr("d", path);
-  svg.append("path").datum(other).attr("class", "map-other").attr("d", path);
+  const sphere = svg.append("path").datum({ type: "Sphere" }).attr("class", "map-sphere");
+  const others = svg.append("path").datum(other).attr("class", "map-other");
 
   const continents = svg.selectAll("g.map-continent").data(shapes, (d) => d.key).join("g")
     .attr("class", "map-continent")
     .on("mouseenter", (_, d) => setState({ hovered: d.key }))
     .on("mouseleave", () => { setState({ hovered: null }); hideTooltip(); });
-  const fills = continents.append("path").attr("class", "map-fill").attr("d", (d) => path(d.shape));
-  const hatches = continents.append("path").attr("class", "map-hatch").attr("fill", "url(#map-hatch)")
-    .attr("d", (d) => path(d.shape));
+  const fills = continents.append("path").attr("class", "map-fill");
+  const hatches = continents.append("path").attr("class", "map-hatch").attr("fill", "url(#map-hatch)");
 
   const labels = svg.selectAll("text.map-label").data(shapes, (d) => d.key).join("text")
-    .attr("class", "map-label")
-    .attr("transform", (d) => `translate(${projection(LABEL_AT[d.key])})`);
+    .attr("class", "map-label");
   labels.append("tspan").attr("class", "map-label-name").attr("x", 0).text((d) => d.key);
   const labelValues = labels.append("tspan").attr("class", "map-label-value").attr("x", 0).attr("dy", "1.15em");
 
@@ -82,6 +96,39 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
   const legendTitle = legend.append("text").attr("class", "axis-title").attr("x", LEGEND_WIDTH + 12).attr("y", 9);
   legend.append("rect").attr("x", -74).attr("width", 14).attr("height", 10).attr("fill", NO_DATA);
   legend.append("text").attr("class", "axis-title").attr("x", -56).attr("y", 9).text("no data");
+  const hint = svg.append("text").attr("class", "axis-title").attr("x", 4).attr("y", 14).text("Drag to rotate");
+
+  function draw() {
+    const projection = projections[view];
+    const path = d3.geoPath(projection);
+    const [lambda, phi] = projection.rotate();
+
+    sphere.attr("d", path);
+    others.attr("d", path);
+    fills.attr("d", (d) => path(d.shape));
+    hatches.attr("d", (d) => path(d.shape));
+    // On the globe, a label on the far side is hidden with its continent.
+    labels
+      .attr("display", (d) => (view === "globe" && d3.geoDistance(LABEL_AT[d.key], [-lambda, -phi]) > Math.PI / 2 ? "none" : null))
+      .attr("transform", (d) => `translate(${projection(LABEL_AT[d.key])})`);
+
+    svg.classed("is-globe", view === "globe");
+    hint.attr("display", view === "globe" ? null : "none");
+    viewButtons.attr("aria-pressed", ([key]) => key === view);
+  }
+
+  svg.call(d3.drag()
+    .filter(() => view === "globe")
+    .on("drag", (event) => {
+      const [lambda, phi] = projections.globe.rotate();
+      projections.globe.rotate([
+        lambda + event.dx * DRAG_SPEED,
+        Math.max(-90, Math.min(90, phi - event.dy * DRAG_SPEED)),
+      ]);
+      draw();
+    }));
+
+  draw();
 
   return {
     update(stats, s) {
