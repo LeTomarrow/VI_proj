@@ -90,7 +90,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 | Milestone | Status |
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
-| M2 Shared state + View A (static) | In progress: state and controls done (`src/js/state.js`, `controls.js`); the charts are still to add |
+| M2 Shared state + View A (static) | In progress: state, controls and map done (`src/js/state.js`, `controls.js`, `charts/`); the Marimekko and the emissions area are still to add. Clicking a continent is added with View B |
 | M3 View B for Europe (static) | Planned |
 | M4 Comparison list, search + View C | Planned |
 | M5 View B for Asia; labels and units | Planned |

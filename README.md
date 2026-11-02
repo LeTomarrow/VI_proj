@@ -95,3 +95,6 @@ npm install && npm run build:iso
 
 - Data: Our World in Data, *Energy* and *Continents according to Our World in Data*
   (CC BY 4.0).
+- Base map: [world-atlas](https://github.com/topojson/world-atlas) 2.0.2 (`countries-50m.json`,
+  derived from Natural Earth), read with [topojson-client](https://github.com/topojson/topojson-client).
+- Chart base: D3 example [World choropleth](https://observablehq.com/@d3/world-choropleth).

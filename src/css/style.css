@@ -244,6 +244,89 @@ main {
   color: var(--color-text-secondary);
 }
 
+.chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Chart marks */
+
+.axis text {
+  font-size: 11px;
+  fill: var(--color-muted);
+}
+
+.axis line,
+.axis path {
+  stroke: var(--color-axis);
+}
+
+.axis-title {
+  font-size: 11px;
+  fill: var(--color-text-secondary);
+}
+
+.map-sphere {
+  fill: #f2f1ec;
+}
+
+.map-other {
+  fill: var(--color-axis);
+  fill-opacity: 0.45;
+}
+
+.map-fill {
+  stroke: #8a8880;
+  stroke-width: 0.4;
+}
+
+.map-hatch {
+  pointer-events: none;
+}
+
+.map-continent.is-hovered .map-fill {
+  stroke: #0b0b0b;
+  stroke-width: 1.25;
+}
+
+.map-label {
+  pointer-events: none;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: var(--color-bg);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.map-label-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.map-label-value {
+  font-size: 12px;
+}
+
+/* Tooltip */
+
+.tooltip {
+  position: fixed;
+  z-index: 10;
+  max-width: 280px;
+  padding: 0.4rem 0.6rem;
+  pointer-events: none;
+  font-size: 0.8rem;
+  background: #fff;
+  border: 1px solid var(--color-axis);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(11, 11, 11, 0.12);
+}
+
+.tooltip-note {
+  color: var(--color-text-secondary);
+}
+
 footer {
   padding: 0.5rem calc(var(--spacing) * 2);
   font-size: 0.8rem;
