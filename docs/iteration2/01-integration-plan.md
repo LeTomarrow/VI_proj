@@ -90,7 +90,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 | Milestone | Status |
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
-| M2 Shared state + View A (static) | In progress: state, controls and map done (`src/js/state.js`, `controls.js`, `charts/`); the Marimekko and the emissions area are still to add. Clicking a continent is added with View B |
+| M2 Shared state + View A (static) | In progress: state, controls, map and Marimekko done (`src/js/state.js`, `controls.js`, `charts/`); the emissions area is still to add, so T1's "who emits most" is not answered yet. Clicking a continent is added with View B |
 | M3 View B for Europe (static) | Planned |
 | M4 Comparison list, search + View C | Planned |
 | M5 View B for Asia; labels and units | Planned |
@@ -119,5 +119,8 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   replacing iteration 1's green/red, so it does not rely on red/green. Sequential scales use one
   hue on fixed domains (0–100%, 0–800 gCO₂/kWh; Change ±30 pp, ±250 gCO₂/kWh), the same for
   every year. Source and continent palettes were checked with a colour-blindness validator.
+- **Marimekko (View A)**: bioenergy and other renewables share one colour (8 series at most) and
+  the tooltip gives both parts. The x axis is fixed to the largest yearly total, so columns grow
+  over the years instead of always filling the chart (U5). The continent order is fixed.
 - **Page**: the template's Overview / Zoom / Details stubs were removed; the title is the theme
   until the app has a name. The play button is not built (not needed for T1–T4).

@@ -250,6 +250,29 @@ main {
   height: auto;
 }
 
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1rem 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.swatch {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 2px;
+}
+
 /* Chart marks */
 
 .axis text {
@@ -265,6 +288,13 @@ main {
 .axis-title {
   font-size: 11px;
   fill: var(--color-text-secondary);
+}
+
+.reference-line {
+  pointer-events: none;
+  stroke: #0b0b0b;
+  stroke-dasharray: 4 4;
+  stroke-opacity: 0.6;
 }
 
 .map-sphere {
@@ -306,6 +336,28 @@ main {
 
 .map-label-value {
   font-size: 12px;
+}
+
+.column {
+  transition: opacity 120ms;
+}
+
+.column.is-faded {
+  opacity: 0.3;
+}
+
+.column-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.column-hatch,
+.segment-label {
+  pointer-events: none;
+}
+
+.segment-label {
+  font-size: 11px;
 }
 
 /* Tooltip */

@@ -42,3 +42,19 @@ export function formatMetric(metric, mode, value) {
   if (mode === "change") return `${d3.format(`+.${digits}f`)(value)}${changeUnit}`;
   return `${d3.format(`.${digits}f`)(value)}${unit}`;
 }
+
+// Bottom to top in the Marimekko, fossil first. Bioenergy and other renewables are one colour
+// (the chart has 8 series at most); the tooltip gives both parts. Validated as a stack with the
+// dataviz palette script.
+export const SOURCE_GROUPS = [
+  { key: "coal", label: "Coal", color: "#845008", parts: ["coal"] },
+  { key: "oil", label: "Oil", color: "#e8504f", parts: ["oil"] },
+  { key: "gas", label: "Gas", color: "#f0932b", parts: ["gas"] },
+  { key: "nuclear", label: "Nuclear", color: "#c9a0e8", parts: ["nuclear"] },
+  { key: "hydro", label: "Hydro", color: "#1c5cab", parts: ["hydro"] },
+  { key: "wind", label: "Wind", color: "#2bb3d9", parts: ["wind"] },
+  { key: "solar", label: "Solar", color: "#d9a900", parts: ["solar"] },
+  { key: "bioOther", label: "Bioenergy & other", color: "#3f9142", parts: ["bioenergy", "otherRenewable"] },
+];
+
+export const SOURCE_LABELS = { bioenergy: "Bioenergy", otherRenewable: "Other renewables" };
