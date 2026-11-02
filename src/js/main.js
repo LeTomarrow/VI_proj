@@ -1,18 +1,22 @@
 import { loadEnergyData } from "./data/loadData.js";
-import { renderOverview } from "./charts/overview.js";
-import { renderCompare } from "./charts/compare.js";
-import { renderDetail } from "./charts/detail.js";
+import { onStateChange, state } from "./state.js";
+import { createControls } from "./controls.js";
 
 async function init() {
   const data = await loadEnergyData();
 
-  // TODO: shared filter state (year range, region/country, metric) lives here and gets
-  // passed down to / updates each view, so interactions in one view can affect the others
-  // (linked/coordinated views).
+  const countriesByYear = d3.group(data.countries, (r) => r.year);
+  const totalCountries = new Set(data.countries.map((r) => r.key)).size;
 
-  renderOverview(data.countries, "#chart-overview");
-  renderCompare(data.countries, "#chart-compare");
-  renderDetail(data.countries, "#chart-detail");
+  const coverage = ({ year, metric }) => ({
+    available: (countriesByYear.get(year) ?? []).filter((r) => r[metric] !== null).length,
+    total: totalCountries,
+  });
+
+  const controls = createControls("#global-filters", { coverage });
+
+  onStateChange(controls.update);
+  controls.update(state);
 }
 
 init();

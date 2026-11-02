@@ -90,7 +90,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 | Milestone | Status |
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
-| M2 Shared state + View A (static) | Planned |
+| M2 Shared state + View A (static) | In progress: state and controls done (`src/js/state.js`, `controls.js`); the charts are still to add |
 | M3 View B for Europe (static) | Planned |
 | M4 Comparison list, search + View C | Planned |
 | M5 View B for Asia; labels and units | Planned |
@@ -115,3 +115,9 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 - **Final design review**: absolute emissions area in A, sorted bars for T2,
   kWh per person in C, radar last, outline marking for compared countries, global search,
   no 1D brush.
+- **Colours (View A)**: the Change scale is blue (cleaner) ↔ red (dirtier) with a pale midpoint,
+  replacing iteration 1's green/red, so it does not rely on red/green. Sequential scales use one
+  hue on fixed domains (0–100%, 0–800 gCO₂/kWh; Change ±30 pp, ±250 gCO₂/kWh), the same for
+  every year. Source and continent palettes were checked with a colour-blindness validator.
+- **Page**: the template's Overview / Zoom / Details stubs were removed; the title is the theme
+  until the app has a name. The play button is not built (not needed for T1–T4).

@@ -54,7 +54,9 @@ src/                      The d3.js application (2nd iteration)
   index.html
   css/style.css
   js/main.js
-  js/charts/              One module per view/visualisation
+  js/state.js, controls.js   Shared state of the views and the filters that change it
+  js/scales.js, tooltip.js   Metrics, colours and the shared tooltip
+  js/charts/              One module per chart
   js/data/                 Data-loading/preprocessing helpers
 ```
 
@@ -93,5 +95,3 @@ npm install && npm run build:iso
 
 - Data: Our World in Data, *Energy* and *Continents according to Our World in Data*
   (CC BY 4.0).
-- Base map: [world-atlas](https://github.com/topojson/world-atlas) 2.0.2 (`countries-50m.json`,
-  derived from Natural Earth), read with [topojson-client](https://github.com/topojson/topojson-client).

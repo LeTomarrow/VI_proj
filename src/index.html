@@ -3,44 +3,28 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>[App name] — Global Energy Explorer</title>
+  <title>Greener, but not cleaner? The global electricity transition</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="css/style.css" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 </head>
 <body>
   <header>
-    <h1>[App name]</h1>
-    <p class="subtitle">TODO: one-line description of the phenomenon being explored.</p>
+    <h1>Greener, but not cleaner?</h1>
+    <p class="subtitle">The global electricity transition, 1985–2025</p>
   </header>
 
-  <nav id="global-filters">
-    <!-- TODO: shared controls (year range, region/country selector, metric picker) that
-         drive all views, per the iteration-1 interaction design. -->
-  </nav>
+  <nav id="global-filters" aria-label="Filters"></nav>
 
   <main>
-    <section id="view-overview" class="view">
-      <h2>Overview</h2>
-      <p class="view-question">TODO: which key question this view answers.</p>
-      <div class="chart" id="chart-overview"></div>
-    </section>
+    <nav class="breadcrumb" aria-label="Level"><span aria-current="page">World</span></nav>
 
-    <section id="view-compare" class="view">
-      <h2>Zoom &amp; Filter</h2>
-      <p class="view-question">TODO: which key question this view answers.</p>
-      <div class="chart" id="chart-compare"></div>
-    </section>
-
-    <section id="view-detail" class="view">
-      <h2>Details on Demand</h2>
-      <p class="view-question">TODO: which key question this view answers.</p>
-      <div class="chart" id="chart-detail"></div>
-    </section>
+    <section id="view-world" class="view-world"></section>
   </main>
 
   <footer>
-    <p>Data: <a href="https://github.com/owid/energy-data" target="_blank" rel="noopener">Our World in Data — Energy</a>.
+    <p>Data: <a href="https://github.com/owid/energy-data" target="_blank" rel="noopener">Our World in Data — Energy</a>,
+      compiled from Ember and the Energy Institute (CC BY 4.0).
       Built with <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js</a>.</p>
   </footer>
 
