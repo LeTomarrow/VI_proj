@@ -84,7 +84,10 @@ radar axes) are described with that view in
   code (`716`) and OWID by three-letter code (`ZWE`). A one-off script converts them with
   `i18n-iso-countries` into `data/iso-numeric.json`, which the app loads. All 236 map
   polygons with an id are converted. Caveats: Kosovo has no ISO code in either source and is
-  keyed by name as `OWID_KOS`; French Guiana, Guadeloupe, Martinique and Réunion are drawn as
+  keyed by name as `OWID_KOS`; Somaliland and N. Cyprus have no id and are drawn as part of
+  Somalia and Cyprus, which is how OWID counts them; Antarctica, the French Southern Lands,
+  Heard Island, Siachen and the Indian Ocean Territories belong to no continent and stay
+  neutral on the map; French Guiana, Guadeloupe, Martinique and Réunion are drawn as
   part of France's polygon (and take its colour), and Gibraltar has no polygon. All of them
   still count in their continent's totals.
 

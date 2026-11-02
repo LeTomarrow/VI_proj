@@ -13,8 +13,9 @@ const ATLAS_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.
 const ENERGY_CSV = "data/owid-energy-data.csv";
 const OUTPUT = "data/iso-numeric.json";
 
-// Polygons without a numeric id that do have OWID data, keyed by the atlas name.
-const BY_NAME = { Kosovo: "OWID_KOS" };
+// Polygons without a numeric id, keyed by the atlas name. Kosovo has its own OWID data;
+// Somaliland and N. Cyprus are drawn apart but counted inside Somalia and Cyprus by OWID.
+const BY_NAME = { Kosovo: "OWID_KOS", Somaliland: "SOM", "N. Cyprus": "CYP" };
 
 const atlas = await (await fetch(ATLAS_URL)).json();
 const geometries = atlas.objects.countries.geometries;

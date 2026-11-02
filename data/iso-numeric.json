@@ -237,6 +237,8 @@
   "010": "ATA"
  },
  "byName": {
-  "Kosovo": "OWID_KOS"
+  "Kosovo": "OWID_KOS",
+  "Somaliland": "SOM",
+  "N. Cyprus": "CYP"
  }
 }
