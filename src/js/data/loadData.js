@@ -7,15 +7,17 @@ import { aggregateContinents, checkAgainstOwid } from "./aggregate.js";
 const ENERGY_URL = "../data/owid-energy-data.csv";
 const CONTINENTS_URL = "../data/owid-continents.csv";
 const ISO_URL = "../data/iso-numeric.json";
+const ATLAS_URL = "https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json";
 
 export async function loadEnergyData() {
-  const [energyText, continentRows, iso] = await Promise.all([
+  const [energyText, continentRows, iso, atlas] = await Promise.all([
     d3.text(ENERGY_URL),
     d3.csv(CONTINENTS_URL),
     d3.json(ISO_URL),
+    d3.json(ATLAS_URL),
   ]);
 
-  const { countries, world, owidContinents } = preprocess(parseEnergyCsv(energyText), continentRows);
+  const { countries, world, owidContinents, continentOf } = preprocess(parseEnergyCsv(energyText), continentRows);
   const continents = aggregateContinents(countries, owidContinents);
 
   const mismatches = checkAgainstOwid(continents, owidContinents);
@@ -25,6 +27,8 @@ export async function loadEnergyData() {
     countries,
     continents,
     world,
+    atlas,
+    continentOf,
     // Map polygon id → country key; polygons without an id are matched by name.
     mapKey: (feature) => iso.byId[feature.id] ?? iso.byName[feature.properties.name] ?? null,
   };

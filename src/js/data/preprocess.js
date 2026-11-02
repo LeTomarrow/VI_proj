@@ -58,8 +58,8 @@ function toRecord(row, key, continent) {
 }
 
 // energyRows: output of parseEnergyCsv; continentRows: owid-continents.csv (entity, code, owid_region).
-// Returns country records, the World (reference line) and OWID's own continent rows (used only
-// to check our aggregation, see aggregate.js).
+// Returns country records, the World (reference line), OWID's own continent rows (used only
+// to check our aggregation, see aggregate.js) and the code → continent mapping.
 export function preprocess(energyRows, continentRows) {
   const continentOf = new Map(continentRows.filter((r) => r.code).map((r) => [r.code, r.owid_region]));
   const countries = [];
@@ -83,5 +83,5 @@ export function preprocess(energyRows, continentRows) {
       countries.push(toRecord(row, key, continent));
     }
   }
-  return { countries, world, owidContinents };
+  return { countries, world, owidContinents, continentOf };
 }
