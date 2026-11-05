@@ -90,7 +90,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 | Milestone | Status |
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
-| M2 Shared state + View A (static) | In progress: state, controls, map and Marimekko done (`src/js/state.js`, `controls.js`, `charts/`); the emissions area is still to add, so T1's "who emits most" is not answered yet. Clicking a continent is added with View B |
+| M2 Shared state + View A (static) | In progress: state, controls, map, Marimekko and emissions area done (`src/js/state.js`, `controls.js`, `charts/`); under review with the user. Clicking a continent is added with View B |
 | M3 View B for Europe (static) | Planned |
 | M4 Comparison list, search + View C | Planned |
 | M5 View B for Asia; labels and units | Planned |
@@ -123,8 +123,20 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   the tooltip gives both parts. The x axis is fixed to the largest yearly total, so columns grow
   over the years instead of always filling the chart (U5). The continent order is fixed.
 - **Page**: the template's Overview / Zoom / Details stubs were removed; the title is the theme
-  until the app has a name. The play button is not built (not needed for T1–T4).
+  until the app has a name.
 - **Map / Globe switch (experiment)**: the World map has a switch to an orthographic globe that
   rotates by dragging, to see whether users like it. The flat map stays the default because the
   globe shows half the world at once, so it cannot show all six continents for T1. Keep or remove
   it after the tests.
+- **View A layout and hover (review)**: the page fills the window so the three charts are seen
+  together (map and Marimekko on top, emissions area below). Charts are drawn at the panel's real
+  size, so text stays readable; on short windows the rows keep a minimum height and the page
+  scrolls. Hovering a continent outlines it in
+  every chart instead of fading the others, so less changes at once. Thin columns and bands get a
+  hover zone of at least 12–16 px; the Marimekko and area tooltips list the whole column or year,
+  largest emitter first in the area. Chart texts were shortened to the value and what is needed to
+  read it; the map's reading line says what the colour means for the chosen metric.
+- **Play and sticky filters (review)**: the filter bar stays at the top while scrolling, so the
+  year range is always at hand. In Year mode, a play button moves the year forward to 2024 (from 2000
+  when already at the end), to follow progressions. The range modes have no play. Touching the slider or the mode stops it. This replaces the earlier decision not
+  to build a play button.

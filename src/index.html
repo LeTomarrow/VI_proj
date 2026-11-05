@@ -32,17 +32,24 @@
       <figure class="panel panel-marimekko">
         <figcaption>
           <h2 id="marimekko-title"></h2>
-          <p class="how-to-read">Column width is total generation; segment height is each source's share. The top strip repeats the map colour.</p>
+          <p class="how-to-read">Width = total generation, height = share of each source. Top strip = map colour.</p>
         </figcaption>
         <div class="chart" id="chart-marimekko"></div>
+      </figure>
+
+      <figure class="panel panel-emissions">
+        <figcaption>
+          <h2>CO₂ from electricity, 2000–2024</h2>
+          <p class="how-to-read">Stacked by continent; the top edge is the world total.</p>
+        </figcaption>
+        <div class="chart" id="chart-emissions"></div>
       </figure>
     </section>
   </main>
 
   <footer>
-    <p>Data: <a href="https://github.com/owid/energy-data" target="_blank" rel="noopener">Our World in Data — Energy</a>,
-      compiled from Ember and the Energy Institute (CC BY 4.0).
-      Built with <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js</a>.</p>
+    <p>Data: <a href="https://github.com/owid/energy-data" target="_blank" rel="noopener">Our World in Data</a>
+      (Ember, Energy Institute), CC BY 4.0 · Built with <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js</a></p>
   </footer>
 
   <script type="module" src="js/main.js"></script>

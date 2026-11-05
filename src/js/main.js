@@ -6,6 +6,7 @@ import { onStateChange, state } from "./state.js";
 import { createControls } from "./controls.js";
 import { createMap } from "./charts/map.js";
 import { createMarimekko } from "./charts/marimekko.js";
+import { createEmissionsArea } from "./charts/emissionsArea.js";
 
 async function init() {
   const data = await loadEnergyData();
@@ -23,6 +24,7 @@ async function init() {
   const controls = createControls("#global-filters", { coverage });
   const map = createMap("#chart-map", data);
   const marimekko = createMarimekko("#chart-marimekko", { maxTotal });
+  const emissions = createEmissionsArea("#chart-emissions", data);
 
   function render(s) {
     const stats = new Map(CONTINENTS.map((key) => [key, metricValue(byContinent.get(key), s)]));
@@ -30,15 +32,18 @@ async function init() {
     const period = s.mode === "year" ? s.year : `${s.rangeStart}–${s.year}`;
     const suffix = s.mode === "year" ? "" : ` (${MODES[s.mode].toLowerCase()})`;
 
-    d3.select("#map-title").text(`${METRICS[s.metric].label} by continent, ${period}${suffix}`);
-    d3.select("#map-how-to-read").text(`Each continent is the sum of its countries. ${
-      s.mode === "change" ? "Blue means cleaner, red means dirtier, pale means little change" : "Darker means a higher value"
-    }; hatching means partial coverage.`);
-    d3.select("#marimekko-title").text(`Electricity generation by source and continent, ${s.year}`);
+    d3.select("#map-title").text(`${METRICS[s.metric].label}, ${period}${suffix}`);
+    const { label, darker, cleanerIs } = METRICS[s.metric];
+    const [cleaner, dirtier] = cleanerIs > 0 ? ["rose", "fell"] : ["fell", "rose"];
+    d3.select("#map-how-to-read").text(`${s.mode === "change"
+      ? `Blue = ${label.toLowerCase()} ${cleaner} (cleaner), red = it ${dirtier}.`
+      : `Darker = ${darker}.`} Hatched = data for under 80% of the continent's electricity.`);
+    d3.select("#marimekko-title").text(`Electricity mix, ${s.year}`);
 
     controls.update(s);
     map.update(stats, s);
     marimekko.update(records, stats, s, metricColor(s.metric, s.mode));
+    emissions.update(s);
   }
 
   onStateChange(render);

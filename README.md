@@ -97,5 +97,6 @@ npm install && npm run build:iso
   (CC BY 4.0).
 - Base map: [world-atlas](https://github.com/topojson/world-atlas) 2.0.2 (`countries-50m.json`,
   derived from Natural Earth), read with [topojson-client](https://github.com/topojson/topojson-client).
-- Chart bases: D3 examples [World choropleth](https://observablehq.com/@d3/world-choropleth) and
-  [Marimekko chart](https://observablehq.com/@d3/marimekko-chart).
+- Chart bases: D3 examples [World choropleth](https://observablehq.com/@d3/world-choropleth),
+  [Marimekko chart](https://observablehq.com/@d3/marimekko-chart) and
+  [Stacked area chart](https://observablehq.com/@d3/stacked-area-chart).
