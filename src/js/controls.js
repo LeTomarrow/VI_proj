@@ -1,10 +1,11 @@
-// Shared controls: metric, mode, year slider (second handle in the range modes), coverage.
+// Shared controls: metric, mode, year slider (second handle in the range modes), play, coverage.
 
 import { COMPLETE_YEARS, YEARS } from "./data/constants.js";
 import { METRICS, MODES } from "./scales.js";
 import { setState } from "./state.js";
 
 const pct = (year) => (100 * (year - YEARS[0])) / (YEARS[1] - YEARS[0]);
+const PLAY_STEP = 1000; // ms per year
 
 export function createControls(selector, { coverage }) {
   const root = d3.select(selector);
@@ -22,10 +23,13 @@ export function createControls(selector, { coverage }) {
     .selectAll("button").data(Object.entries(MODES)).join("button")
     .attr("type", "button")
     .text(([, label]) => label)
-    .on("click", (_, [key]) => setState({ mode: key }));
+    .on("click", (_, [key]) => { stop(); setState({ mode: key }); });
 
   const years = root.append("div").attr("class", "control control-years");
-  const yearsLabel = years.append("span").attr("class", "control-label");
+  const yearsHead = years.append("div").attr("class", "control-head");
+  const yearsLabel = yearsHead.append("span").attr("class", "control-label");
+  const playButton = yearsHead.append("button").attr("type", "button").attr("class", "play")
+    .on("click", () => (timer ? stop() : play()));
   const slider = years.append("div").attr("class", "slider");
   const track = slider.append("div").attr("class", "slider-track");
   track.style("background", `linear-gradient(to right,
@@ -39,10 +43,37 @@ export function createControls(selector, { coverage }) {
     .on("input", onInput);
 
   let current;
+  let timer = null;
+
+  // Year mode only: moves the year forward to the end of the complete period, starting again
+  // from its first year when already at the end.
+  function play() {
+    const [first, last] = COMPLETE_YEARS;
+    if (current.year >= last) setState({ year: first });
+    timer = d3.interval(() => {
+      if (current.year >= last) return stop();
+      setState({ year: current.year + 1 });
+      if (current.year >= last) stop();
+    }, PLAY_STEP);
+    playButton.call(playLabel);
+  }
+
+  function stop() {
+    timer?.stop();
+    timer = null;
+    playButton.call(playLabel);
+  }
+
+  const playLabel = (button) => button
+    .text(timer ? "❚❚ Pause" : "▶ Play")
+    .attr("aria-label", timer ? "Pause" : "Play through the years");
+
   const startHandle = handle("Start of the year range", (event) => {
+    stop();
     setState({ rangeStart: Math.min(+event.target.value, current.year - 1) });
   });
   const yearHandle = handle("Selected year", (event) => {
+    stop();
     const year = +event.target.value;
     setState(current.mode === "year" ? { year } : { year: Math.max(year, current.rangeStart + 1) });
   });
@@ -53,6 +84,7 @@ export function createControls(selector, { coverage }) {
     .text((y) => y);
 
   const note = root.append("p").attr("class", "control-note");
+  playButton.call(playLabel);
 
   return {
     update(s) {
@@ -62,6 +94,7 @@ export function createControls(selector, { coverage }) {
       modeButtons.attr("aria-pressed", ([key]) => key === s.mode);
       yearsLabel.text(ranged ? `Years ${s.rangeStart}–${s.year}` : `Year ${s.year}`);
       startHandle.property("value", s.rangeStart).attr("hidden", ranged ? null : true);
+      playButton.attr("hidden", ranged ? true : null);
       yearHandle.property("value", s.year);
       selection
         .attr("hidden", ranged ? null : true)
@@ -72,7 +105,7 @@ export function createControls(selector, { coverage }) {
         || (ranged && s.rangeStart < COMPLETE_YEARS[0]);
       const { available, total } = coverage(s);
       note.selectAll("*").remove();
-      note.append("span").text(`Data available: ${available} / ${total} countries`);
+      note.append("span").text(`${available} of ${total} countries with data`);
       if (partialYear) note.append("span").attr("class", "control-warning").text("Electricity only / partial coverage");
     },
   };

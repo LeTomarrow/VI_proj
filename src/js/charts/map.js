@@ -6,10 +6,10 @@ import { CONTINENTS } from "../data/constants.js";
 import { NO_DATA, METRICS, formatMetric, metricColor, metricDomain } from "../scales.js";
 import { setState } from "../state.js";
 import { coverageLine, hideTooltip, showTooltip } from "../tooltip.js";
+import { fitToSize } from "./fitToSize.js";
 
-const WIDTH = 760;
-const HEIGHT = 420;
 const LEGEND_WIDTH = 220;
+const LEGEND_SPACE = 44; // below the map
 const VIEWS = { map: "Map", globe: "Globe" };
 const GLOBE_START = [-40, -20]; // rotation that opens on Europe, Africa and western Asia
 const DRAG_SPEED = 0.35; // degrees per pixel
@@ -35,17 +35,19 @@ function tooltipHtml(key, stat, s) {
   const value = formatMetric(s.metric, s.mode, stat.value);
   const detail = {
     year: `${label}: ${value} (${s.year})`,
-    average: `${label}: ${value}, average ${periodLabel(s)} (${stat.yearsWithData}/${stat.yearsTotal} years with data)`,
+    average: `${label}: ${value}, average ${periodLabel(s)}`,
     change: `${label}: ${value}, ${s.rangeStart} → ${s.year}`,
   }[s.mode];
-  return `<strong>${key}</strong><div>${detail}</div>${coverageLine(stat, s.mode)}`;
+  const years = s.mode === "average" && stat.yearsWithData < stat.yearsTotal
+    ? `<div class="tooltip-note">Data for ${stat.yearsWithData} of ${stat.yearsTotal} years</div>`
+    : "";
+  return `<strong>${key}</strong><div>${detail}</div>${years}${coverageLine(stat, s.mode)}`;
 }
 
 export function createMap(selector, { atlas, mapKey, continentOf }) {
-  const extent = [[4, 4], [WIDTH - 4, HEIGHT - 44]];
   const projections = {
-    map: d3.geoEqualEarth().fitExtent(extent, { type: "Sphere" }),
-    globe: d3.geoOrthographic().rotate(GLOBE_START).fitExtent(extent, { type: "Sphere" }),
+    map: d3.geoEqualEarth(),
+    globe: d3.geoOrthographic().rotate(GLOBE_START),
   };
   let view = "map";
 
@@ -63,7 +65,6 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
     .on("click", (_, [key]) => { view = key; draw(); });
 
   const svg = root.append("svg")
-    .attr("viewBox", `0 0 ${WIDTH} ${HEIGHT}`)
     .attr("role", "img")
     .attr("aria-label", "World map with one colour per continent");
 
@@ -90,7 +91,7 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
   labels.append("tspan").attr("class", "map-label-name").attr("x", 0).text((d) => d.key);
   const labelValues = labels.append("tspan").attr("class", "map-label-value").attr("x", 0).attr("dy", "1.15em");
 
-  const legend = svg.append("g").attr("transform", `translate(${(WIDTH - LEGEND_WIDTH) / 2}, ${HEIGHT - 38})`);
+  const legend = svg.append("g");
   legend.append("rect").attr("width", LEGEND_WIDTH).attr("height", 10).attr("fill", "url(#map-legend-gradient)");
   const legendAxis = legend.append("g").attr("class", "axis").attr("transform", "translate(0, 10)");
   const legendTitle = legend.append("text").attr("class", "axis-title").attr("x", LEGEND_WIDTH + 12).attr("y", 9);
@@ -117,6 +118,13 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
     viewButtons.attr("aria-pressed", ([key]) => key === view);
   }
 
+  function resize(width, height) {
+    const extent = [[4, 4], [width - 4, height - LEGEND_SPACE]];
+    Object.values(projections).forEach((p) => p.fitExtent(extent, { type: "Sphere" }));
+    legend.attr("transform", `translate(${(width - LEGEND_WIDTH) / 2}, ${height - 38})`);
+    draw();
+  }
+
   svg.call(d3.drag()
     .filter(() => view === "globe")
     .on("drag", (event) => {
@@ -128,7 +136,7 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
       draw();
     }));
 
-  draw();
+  fitToSize(svg, resize);
 
   return {
     update(stats, s) {
@@ -154,9 +162,9 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
         .attr("stop-color", (t) => color(lo + t * (hi - lo)));
       legendAxis.call(d3.axisBottom(d3.scaleLinear().domain([lo, hi]).range([0, LEGEND_WIDTH])).ticks(5).tickSize(4));
       legendAxis.select(".domain").remove();
-      const { unit, changeUnit, cleanerIs } = METRICS[s.metric];
+      const { unit, changeUnit } = METRICS[s.metric];
       legendTitle.text(s.mode === "change"
-        ? `${changeUnit.trim()} (blue = ${cleanerIs > 0 ? "rise" : "fall"}, cleaner)`
+        ? `${changeUnit.trim()}, blue = cleaner`
         : unit.trim());
     },
   };

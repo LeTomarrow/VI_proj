@@ -17,6 +17,6 @@ export function hideTooltip() {
 // Coverage line for a continent: says what the value sums and flags partial years.
 export function coverageLine({ partial, record }, mode) {
   if (!partial) return "";
-  if (mode !== "year") return `<div class="tooltip-note">Includes years with partial coverage</div>`;
-  return `<div class="tooltip-note">Sum of ${record.countriesWithData}/${record.countriesTotal} countries with data</div>`;
+  if (mode !== "year") return `<div class="tooltip-note">Some years are incomplete</div>`;
+  return `<div class="tooltip-note">Only ${record.countriesWithData} of ${record.countriesTotal} countries have data</div>`;
 }

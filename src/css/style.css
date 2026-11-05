@@ -20,7 +20,12 @@
   display: none !important;
 }
 
+/* The page fills the window so the three charts of a view are seen together. On short windows
+   the rows keep a minimum height and the page scrolls, so text never shrinks. */
 body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   margin: 0;
   font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
   color: var(--color-text);
@@ -50,6 +55,9 @@ header h1 {
 /* Controls */
 
 #global-filters {
+  position: sticky;
+  top: 0;
+  z-index: 5;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -109,6 +117,24 @@ select {
   color: #fff;
   background: var(--color-accent);
   border-color: var(--color-accent);
+}
+
+.control-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.play {
+  height: 1.4rem;
+  padding: 0 0.5rem;
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--color-accent);
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
 }
 
 .control-years {
@@ -208,26 +234,41 @@ select {
 /* Layout */
 
 main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
   max-width: 1500px;
   margin: 0 auto;
-  padding: 0.5rem calc(var(--spacing) * 2) var(--spacing);
+  padding: 0.5rem calc(var(--spacing) * 2);
 }
 
 .breadcrumb {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
   font-size: 0.85rem;
   color: var(--color-text-secondary);
 }
 
 .view-world {
   display: grid;
+  flex: 1;
+  min-height: 0;
   grid-template-columns: minmax(0, 1.27fr) minmax(0, 1fr);
-  gap: var(--spacing);
+  grid-template-rows: minmax(420px, 1.6fr) minmax(250px, 1fr);
+  gap: 0.75rem;
+}
+
+.panel-emissions {
+  grid-column: 1 / -1;
 }
 
 .panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   margin: 0;
-  padding: 0.75rem var(--spacing);
+  padding: 0.6rem var(--spacing);
   background: var(--color-bg);
   border: 1px solid var(--color-border);
   border-radius: 8px;
@@ -244,10 +285,19 @@ main {
   color: var(--color-text-secondary);
 }
 
+/* The svg takes the room left in the panel and keeps its aspect ratio. */
+.chart {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .chart svg {
   display: block;
+  flex: 1 1 0;
   width: 100%;
-  height: auto;
+  min-height: 0;
 }
 
 .legend {
@@ -356,12 +406,16 @@ svg.is-globe:active {
   font-size: 12px;
 }
 
-.column {
-  transition: opacity 120ms;
+.column-outline {
+  display: none;
+  fill: none;
+  pointer-events: none;
+  stroke: #0b0b0b;
+  stroke-width: 1.25;
 }
 
-.column.is-faded {
-  opacity: 0.3;
+.column.is-hovered .column-outline {
+  display: inline;
 }
 
 .column-label {
@@ -376,6 +430,46 @@ svg.is-globe:active {
 
 .segment-label {
   font-size: 11px;
+}
+
+.grid line {
+  stroke: var(--color-border);
+}
+
+.band {
+  stroke: var(--color-bg);
+  stroke-width: 1;
+}
+
+.band.is-hovered {
+  stroke: #0b0b0b;
+  stroke-width: 1.25;
+}
+
+.band-label {
+  font-size: 11px;
+  fill: var(--color-text-secondary);
+}
+
+.range-band {
+  fill: var(--color-accent);
+  fill-opacity: 0.08;
+}
+
+.year-line {
+  pointer-events: none;
+  stroke: #0b0b0b;
+  stroke-width: 1.5;
+}
+
+.crosshair {
+  pointer-events: none;
+  stroke: #0b0b0b;
+  stroke-opacity: 0.5;
+}
+
+.hit-area {
+  fill: transparent;
 }
 
 /* Tooltip */
@@ -397,9 +491,26 @@ svg.is-globe:active {
   color: var(--color-text-secondary);
 }
 
+.tooltip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tooltip-row.is-current,
+.tooltip-row.is-total {
+  font-weight: 600;
+}
+
 footer {
-  padding: 0.5rem calc(var(--spacing) * 2);
+  padding: 0.4rem calc(var(--spacing) * 2);
+  text-align: center;
   font-size: 0.8rem;
   color: var(--color-text-secondary);
   border-top: 1px solid var(--color-border);
+}
+
+footer p {
+  margin: 0;
 }

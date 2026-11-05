@@ -5,17 +5,21 @@ export const NO_DATA = "#d9d8d2";
 
 // domain: fixed across years, so a colour change always means a change in the data.
 // changeMax: limit of the symmetric Change scale. cleanerIs: direction of a cleaner grid.
+// darker: what a darker colour means, for the map's reading line.
 export const METRICS = {
   renewableShare: {
     label: "Renewable share", unit: "%", changeUnit: " pp", digits: 1,
+    darker: "more of the electricity is renewable",
     domain: [0, 100], changeMax: 30, cleanerIs: 1, ramp: d3.interpolateGreens,
   },
   fossilShare: {
     label: "Fossil share", unit: "%", changeUnit: " pp", digits: 1,
+    darker: "more of the electricity comes from fossil fuels",
     domain: [0, 100], changeMax: 30, cleanerIs: -1, ramp: d3.interpolateOranges,
   },
   carbonIntensity: {
     label: "Carbon intensity", unit: " gCO₂/kWh", changeUnit: " gCO₂/kWh", digits: 0,
+    darker: "more CO₂ per kWh generated",
     domain: [0, 800], changeMax: 250, cleanerIs: -1, ramp: d3.interpolateOranges,
   },
 };
