@@ -157,3 +157,17 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   where a lighter colour would read as a lower value (and grey already means *no data*); there
   the thick outline and the ✓ mark the compared continents. If the tests show that this focus
   gets in the way of T1, add a *Highlight compared* on/off switch next to the chips.
+- **Thin bands in the emissions area (review)**: Oceania and South America were hard to see and
+  to click. Every band now has its name and 2024 value on the right, moved apart when they would
+  overlap and joined to the band by a short leader line; the names are clickable like the bands.
+  The band hover and click zones are at least 18 px tall (was 12 px).
+- **Emissions chart with compared continents (review)**: in a stack only the bottom band starts
+  at zero, so two compared continents could not be compared, and thin ones (Oceania, ~1% of the
+  height) stayed thin. A y zoom does not help (thin bands sit at the top of the stack) and a
+  "Rest of world" band keeps the same problems. So, while continents are in the comparison list,
+  the chart shows one line per compared continent, each from zero, with the y axis fitted to
+  them; the title names them ("… : Europe vs Oceania") and the reading line says how to get the
+  world stack back (empty the list). The tooltip keeps the world total for context; the legend
+  keeps all six continents, the others faded, so they can be added from there. With the list
+  empty the stacked area is unchanged (T1). If the switch surprises users in the tests, use a
+  *Stack / Compare* toggle on the panel instead.

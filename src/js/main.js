@@ -7,7 +7,7 @@ import { createControls } from "./controls.js";
 import { createNavigation } from "./navigation.js";
 import { createMap } from "./charts/map.js";
 import { createMarimekko } from "./charts/marimekko.js";
-import { createEmissionsArea } from "./charts/emissionsArea.js";
+import { comparedContinents, createEmissionsArea } from "./charts/emissionsArea.js";
 
 async function init() {
   const data = await loadEnergyData();
@@ -41,6 +41,11 @@ async function init() {
       ? `Blue = ${label.toLowerCase()} ${cleaner} (cleaner), red = it ${dirtier}.`
       : `Darker = ${darker}.`} Hatched = data for under 80% of the continent's electricity.`);
     d3.select("#marimekko-title").text(`Electricity mix, ${s.year}`);
+    const compared = comparedContinents(s);
+    d3.select("#emissions-title").text(`CO₂ from electricity, 2000–2024${compared.length ? `: ${compared.join(" vs ")}` : ""}`);
+    d3.select("#emissions-how-to-read").text(compared.length
+      ? "Compared continents only, each from zero. Remove them from the comparison to see the world stack."
+      : "Stacked by continent; the top edge is the world total.");
 
     controls.update(s);
     navigation.update(s);
