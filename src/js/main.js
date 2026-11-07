@@ -4,6 +4,7 @@ import { CONTINENTS } from "./data/constants.js";
 import { METRICS, MODES, metricColor } from "./scales.js";
 import { onStateChange, state } from "./state.js";
 import { createControls } from "./controls.js";
+import { createNavigation } from "./navigation.js";
 import { createMap } from "./charts/map.js";
 import { createMarimekko } from "./charts/marimekko.js";
 import { createEmissionsArea } from "./charts/emissionsArea.js";
@@ -22,6 +23,7 @@ async function init() {
   });
 
   const controls = createControls("#global-filters", { coverage });
+  const navigation = createNavigation("#navigation");
   const map = createMap("#chart-map", data);
   const marimekko = createMarimekko("#chart-marimekko", { maxTotal });
   const emissions = createEmissionsArea("#chart-emissions", data);
@@ -41,6 +43,11 @@ async function init() {
     d3.select("#marimekko-title").text(`Electricity mix, ${s.year}`);
 
     controls.update(s);
+    navigation.update(s);
+    d3.select("#view-world").attr("hidden", s.level === "world" ? null : true);
+    d3.select("#view-continent").attr("hidden", s.level === "continent" ? null : true);
+    d3.select("#continent-title").text(s.continent ? `${s.continent}: countries` : "");
+
     map.update(stats, s);
     marimekko.update(records, stats, s, metricColor(s.metric, s.mode));
     emissions.update(s);

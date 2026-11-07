@@ -3,6 +3,7 @@
 // Base examples: d3 World choropleth (https://observablehq.com/@d3/world-choropleth).
 
 import { CONTINENTS } from "../data/constants.js";
+import { openEntityMenu } from "../entityMenu.js";
 import { NO_DATA, METRICS, formatMetric, metricColor, metricDomain } from "../scales.js";
 import { setState } from "../state.js";
 import { coverageLine, hideTooltip, showTooltip } from "../tooltip.js";
@@ -50,6 +51,7 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
     globe: d3.geoOrthographic().rotate(GLOBE_START),
   };
   let view = "map";
+  let raisedFor = null;
 
   // Polygons outside the six continents (Antarctica, small territories) stay neutral.
   const groups = d3.group(atlas.objects.countries.geometries, (g) => continentOf.get(mapKey(g)) ?? null);
@@ -79,8 +81,11 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
   const sphere = svg.append("path").datum({ type: "Sphere" }).attr("class", "map-sphere");
   const others = svg.append("path").datum(other).attr("class", "map-other");
 
-  const continents = svg.selectAll("g.map-continent").data(shapes, (d) => d.key).join("g")
-    .attr("class", "map-continent")
+  // In their own group, so a compared continent can be raised above its neighbours (its outline
+  // stays whole) without covering the labels.
+  const continents = svg.append("g").selectAll("g.map-continent").data(shapes, (d) => d.key).join("g")
+    .attr("class", "map-continent is-clickable")
+    .on("click", (event, d) => openEntityMenu(event, d.key))
     .on("mouseenter", (_, d) => setState({ hovered: d.key }))
     .on("mouseleave", () => { setState({ hovered: null }); hideTooltip(); });
   const fills = continents.append("path").attr("class", "map-fill");
@@ -88,7 +93,7 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
 
   const labels = svg.selectAll("text.map-label").data(shapes, (d) => d.key).join("text")
     .attr("class", "map-label");
-  labels.append("tspan").attr("class", "map-label-name").attr("x", 0).text((d) => d.key);
+  const labelNames = labels.append("tspan").attr("class", "map-label-name").attr("x", 0);
   const labelValues = labels.append("tspan").attr("class", "map-label-value").attr("x", 0).attr("dy", "1.15em");
 
   const legend = svg.append("g");
@@ -149,9 +154,18 @@ export function createMap(selector, { atlas, mapKey, continentOf }) {
 
       fills.attr("fill", fillOf);
       hatches.attr("display", (d) => (stats.get(d.key).partial ? null : "none"));
+      const isCompared = (d) => s.compared.includes(d.key);
+      labelNames.text((d) => (isCompared(d) ? `✓ ${d.key}` : d.key));
       continents
+        .classed("is-compared", isCompared)
         .classed("is-hovered", (d) => d.key === s.hovered)
         .on("mousemove", (event, d) => showTooltip(event, tooltipHtml(d.key, stats.get(d.key), s)));
+      // Only when the list changes: moving the node under the pointer on every hover would fire
+      // its mouse events again.
+      if (`${s.compared}` !== raisedFor) {
+        raisedFor = `${s.compared}`;
+        continents.filter(".is-compared").raise();
+      }
       labelValues.text((d) => {
         const { value } = stats.get(d.key);
         return value === null ? "no data" : formatMetric(s.metric, s.mode, value);

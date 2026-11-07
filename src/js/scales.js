@@ -61,4 +61,15 @@ export const SOURCE_GROUPS = [
   { key: "bioOther", label: "Bioenergy & other", color: "#3f9142", parts: ["bioenergy", "otherRenewable"] },
 ];
 
-export const SOURCE_LABELS = { bioenergy: "Bioenergy", otherRenewable: "Other renewables" };
+// One fixed colour per continent: emissions bands and comparison chips. Validated for the
+// adjacency of the emissions stack.
+export const CONTINENT_COLORS = {
+  Asia: "#2a78d6",
+  "North America": "#eb6834",
+  Europe: "#1baf7a",
+  Africa: "#eda100",
+  "South America": "#e87ba4",
+  Oceania: "#008300",
+};
+
+export const SOURCE_LABELS ={ bioenergy: "Bioenergy", otherRenewable: "Other renewables" };

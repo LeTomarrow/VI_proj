@@ -6,6 +6,8 @@ export const COMPLETE_YEARS = [2000, 2024]; // emissions available, near-complet
 export const COVERAGE_THRESHOLD = 0.8;      // continent-years below this are "partial"
 
 export const CONTINENTS = ["Africa", "Asia", "Europe", "North America", "South America", "Oceania"];
+// Continents with a country level (F2); the others are future work.
+export const COUNTRY_LEVEL = ["Europe", "Asia"];
 
 // Electricity sources: key used in the app → OWID column (TWh).
 // other_renewable_exc_biofuel_electricity avoids counting bioenergy twice (§1.2).

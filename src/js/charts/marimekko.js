@@ -1,6 +1,7 @@
 // One column per entity in the selected year: width = TWh, height = share of each source.
 // Base example: Marimekko chart (https://observablehq.com/@d3/marimekko-chart).
 
+import { openEntityMenu } from "../entityMenu.js";
 import { NO_DATA, SOURCE_GROUPS, SOURCE_LABELS } from "../scales.js";
 import { setState } from "../state.js";
 import { coverageLine, hideTooltip, showTooltip } from "../tooltip.js";
@@ -114,6 +115,7 @@ export function createMarimekko(selector, { maxTotal }) {
 
     groups
       .attr("transform", (d) => `translate(${d.x0}, 0)`)
+      .classed("is-compared", (d) => s.compared.includes(d.record.key))
       .classed("is-hovered", (d) => d.record.key === s.hovered);
 
     const columnWidth = (d) => Math.max(1, d.width - GAP);
@@ -124,7 +126,7 @@ export function createMarimekko(selector, { maxTotal }) {
         return value === null ? NO_DATA : stripColor(value);
       });
     groups.select(".column-label")
-      .text((d) => d.record.name)
+      .text((d) => (s.compared.includes(d.record.key) ? `✓ ${d.record.name}` : d.record.name))
       .attr("text-anchor", "start")
       .attr("transform", (d) => (d.width >= WIDE_COLUMN
         ? `translate(0, ${-STRIP - GAP - 5})`
@@ -160,11 +162,12 @@ export function createMarimekko(selector, { maxTotal }) {
 
     const zones = hitZones(layout.map((d) => [d.x0, d.x0 + d.width]), MIN_HIT);
     hits.selectAll("rect").data(layout, (d) => d.record.key).join("rect")
-      .attr("class", "hit-area")
+      .attr("class", "hit-area is-clickable")
       .attr("x", (_, i) => zones[i][0])
       .attr("width", (_, i) => zones[i][1] - zones[i][0])
       .attr("y", -STRIP - GAP)
       .attr("height", innerH + STRIP + GAP)
+      .on("click", (event, d) => openEntityMenu(event, d.record.key, d.record.name))
       .on("mouseenter", (_, d) => setState({ hovered: d.record.key }))
       .on("mousemove", (event, d) => {
         const share = y.invert(d3.pointer(event, plot.node())[1]);

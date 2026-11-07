@@ -244,10 +244,105 @@ main {
   padding: 0.5rem calc(var(--spacing) * 2);
 }
 
-.breadcrumb {
+/* Breadcrumb on the left, comparison list on the right. */
+.navigation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem 1.5rem;
+  min-height: 2rem;
   margin-bottom: 0.4rem;
-  font-size: 0.85rem;
+}
+
+.breadcrumb {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
   color: var(--color-text-secondary);
+}
+
+.breadcrumb li + li::before {
+  content: "›";
+  margin: 0 0.5rem;
+  color: var(--color-muted);
+}
+
+.breadcrumb [aria-current] {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.link {
+  padding: 0;
+  font: inherit;
+  color: var(--color-accent);
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-decoration: underline;
+}
+
+.compare-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.compare-hint {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--color-muted);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 1.75rem;
+  padding: 0 0.2rem 0 0.55rem;
+  font-size: 0.85rem;
+  background: #fff;
+  border: 1px solid var(--color-axis);
+  border-radius: 999px;
+}
+
+.chip.is-hovered {
+  border-color: #0b0b0b;
+}
+
+.chip-remove {
+  width: 1.35rem;
+  height: 1.35rem;
+  padding: 0;
+  font: inherit;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-radius: 50%;
+}
+
+.chip-remove:hover {
+  color: var(--color-text);
+  background: var(--color-border);
+}
+
+.view-continent {
+  flex: 1;
 }
 
 .view-world {
@@ -383,9 +478,21 @@ svg.is-globe:active {
   pointer-events: none;
 }
 
+/* Clickable marks open the entity menu. */
+.is-clickable {
+  cursor: pointer;
+}
+
+/* Hover = thin outline; compared = thick outline plus a ✓ in the label (not a fill, so it
+   never clashes with the metric or source colours). */
 .map-continent.is-hovered .map-fill {
   stroke: #0b0b0b;
   stroke-width: 1.25;
+}
+
+.map-continent.is-compared .map-fill {
+  stroke: #0b0b0b;
+  stroke-width: 2.5;
 }
 
 .map-label {
@@ -414,8 +521,13 @@ svg.is-globe:active {
   stroke-width: 1.25;
 }
 
-.column.is-hovered .column-outline {
+.column.is-hovered .column-outline,
+.column.is-compared .column-outline {
   display: inline;
+}
+
+.column.is-compared .column-outline {
+  stroke-width: 2.5;
 }
 
 .column-label {
@@ -449,6 +561,56 @@ svg.is-globe:active {
 .band-label {
   font-size: 11px;
   fill: var(--color-text-secondary);
+}
+
+/* Entity menu: opened by a click on any chart */
+
+.entity-menu {
+  position: fixed;
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 190px;
+  padding: 0.55rem 0.6rem;
+  font-size: 0.85rem;
+  background: #fff;
+  border: 1px solid var(--color-axis);
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(11, 11, 11, 0.16);
+}
+
+.entity-menu-title {
+  font-size: 0.95rem;
+}
+
+.entity-menu button {
+  height: 1.9rem;
+  padding: 0 0.6rem;
+  font: inherit;
+  text-align: left;
+  color: var(--color-accent);
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+}
+
+.entity-menu button.entity-menu-primary {
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.entity-menu button:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+  border-color: var(--color-axis);
+}
+
+.entity-menu-note {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--color-text-secondary);
 }
 
 .range-band {

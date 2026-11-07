@@ -90,7 +90,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 | Milestone | Status |
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
-| M2 Shared state + View A (static) | In progress: state, controls, map, Marimekko and emissions area done (`src/js/state.js`, `controls.js`, `charts/`); under review with the user. Clicking a continent is added with View B |
+| M2 Shared state + View A (static) | Done: state, controls, map, Marimekko and emissions area (`src/js/state.js`, `controls.js`, `charts/`); clicking a continent opens the pop-up (`entityMenu.js`) with *Explore countries →* and *+ Compare*; breadcrumb and comparison chips (`navigation.js`). The continent level is a placeholder until M3 |
 | M3 View B for Europe (static) | Planned |
 | M4 Comparison list, search + View C | Planned |
 | M5 View B for Asia; labels and units | Planned |
@@ -140,3 +140,12 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   year range is always at hand. In Year mode, a play button moves the year forward to 2024 (from 2000
   when already at the end), to follow progressions. The range modes have no play. Touching the slider or the mode stops it. This replaces the earlier decision not
   to build a play button.
+- **Continent click and comparison (View A)**: one click on a continent in any chart (map
+  or Marimekko column) opens the U7 pop-up with two explicit actions,
+  *Explore countries →* and *+ Compare*, instead of separate gestures (double-click, shift-click)
+  that users would not discover. Continents without a country level say so in the pop-up
+  instead of the drill-down button. The comparison list can now hold continents as well as
+  countries, 4 entries at most; it is shown as chips next to the breadcrumb, and each chip
+  removes its entry. Compared entities get a thick outline and a ✓ in their label in every chart
+  (hover keeps the thin outline). Continent chips use the continent colours of the emissions
+  area; the colours of compared countries are chosen with View C (M4).
