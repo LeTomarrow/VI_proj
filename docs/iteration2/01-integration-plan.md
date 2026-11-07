@@ -140,8 +140,8 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   year range is always at hand. In Year mode, a play button moves the year forward to 2024 (from 2000
   when already at the end), to follow progressions. The range modes have no play. Touching the slider or the mode stops it. This replaces the earlier decision not
   to build a play button.
-- **Continent click and comparison (View A)**: one click on a continent in any chart (map
-  or Marimekko column) opens the U7 pop-up with two explicit actions,
+- **Continent click and comparison (View A)**: one click on a continent in any chart (map,
+  Marimekko column, emissions band or legend) opens the U7 pop-up with two explicit actions,
   *Explore countries →* and *+ Compare*, instead of separate gestures (double-click, shift-click)
   that users would not discover. Continents without a country level say so in the pop-up
   instead of the drill-down button. The comparison list can now hold continents as well as
@@ -149,3 +149,11 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   removes its entry. Compared entities get a thick outline and a ✓ in their label in every chart
   (hover keeps the thin outline). Continent chips use the continent colours of the emissions
   area; the colours of compared countries are chosen with View C (M4).
+- **Focus on compared continents (View A)**: while the comparison list has entries, the other
+  continents fade to 30% opacity in the Marimekko (source segments only; the columns share the
+  0–100% baseline, so comparing them is not a problem) and return to full colour on hover. They
+  are not removed, because T1 needs every continent.
+  The map and the Marimekko's top strip are not faded, because their colour is the metric scale,
+  where a lighter colour would read as a lower value (and grey already means *no data*); there
+  the thick outline and the ✓ mark the compared continents. If the tests show that this focus
+  gets in the way of T1, add a *Highlight compared* on/off switch next to the chips.

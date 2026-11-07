@@ -25,6 +25,13 @@ export function onStateChange(listener) {
   dispatch.on("change", listener);
 }
 
+// While the comparison list is not empty, the other entities move to the background in charts
+// whose colour is categorical (never on the map, where a lighter colour means a lower value).
+// The hovered entity is always shown in full.
+export function isDimmed(key, s = state) {
+  return s.compared.length > 0 && !s.compared.includes(key) && key !== s.hovered;
+}
+
 export function toggleCompared(key) {
   const { compared } = state;
   if (compared.includes(key)) setState({ compared: compared.filter((k) => k !== key) });

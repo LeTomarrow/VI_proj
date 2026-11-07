@@ -3,7 +3,7 @@
 
 import { openEntityMenu } from "../entityMenu.js";
 import { NO_DATA, SOURCE_GROUPS, SOURCE_LABELS } from "../scales.js";
-import { setState } from "../state.js";
+import { isDimmed, setState } from "../state.js";
 import { coverageLine, hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
 import { hitZones } from "./hitZones.js";
@@ -116,6 +116,7 @@ export function createMarimekko(selector, { maxTotal }) {
     groups
       .attr("transform", (d) => `translate(${d.x0}, 0)`)
       .classed("is-compared", (d) => s.compared.includes(d.record.key))
+      .classed("is-dimmed", (d) => isDimmed(d.record.key, s))
       .classed("is-hovered", (d) => d.record.key === s.hovered);
 
     const columnWidth = (d) => Math.max(1, d.width - GAP);
