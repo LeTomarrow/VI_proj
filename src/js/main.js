@@ -5,11 +5,14 @@ import { METRICS, MODES, metricColor } from "./scales.js";
 import { onStateChange, state } from "./state.js";
 import { createControls } from "./controls.js";
 import { createNavigation } from "./navigation.js";
+import { createComparisonTabs } from "./comparisonTabs.js";
+import { createCountryProfiles } from "./charts/countryProfiles.js";
 import { createMap } from "./charts/map.js";
 import { createMarimekko } from "./charts/marimekko.js";
 import { comparedContinents, createEmissionsArea } from "./charts/emissionsArea.js";
 
 async function init() {
+  createComparisonTabs("#panel-continent");
   const data = await loadEnergyData();
 
   const byContinent = d3.index(data.continents, (r) => r.key, (r) => r.year);
@@ -30,6 +33,7 @@ async function init() {
   const map = createMap("#chart-map", { ...data, nameOf });
   const marimekko = createMarimekko("#chart-marimekko", { maxTotal });
   const emissions = createEmissionsArea("#chart-emissions", data);
+  const profiles = createCountryProfiles("#chart-profiles", data);
 
   function render(s) {
     const stats = new Map(CONTINENTS.map((key) => [key, metricValue(byContinent.get(key), s)]));
@@ -64,11 +68,12 @@ async function init() {
     // The map and the Marimekko stay; only the third panel changes with the level.
     d3.select("#panel-emissions").attr("hidden", atCountries ? true : null);
     d3.select("#panel-continent").attr("hidden", atCountries ? null : true);
-    d3.select("#continent-title").text(s.continent ? `${s.continent}: countries` : "");
+    d3.select("#continent-title").text(s.continent ? `Compare · ${s.continent}` : "Compare");
 
     map.update(mapStats, s);
     marimekko.update(records, stats, s, metricColor(s.metric, s.mode));
     emissions.update(s);
+    profiles.update(s);
   }
 
   onStateChange(render);

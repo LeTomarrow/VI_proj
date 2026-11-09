@@ -20,8 +20,8 @@
   display: none !important;
 }
 
-/* The page fills the window so the three charts of a view are seen together. On short windows
-   the rows keep a minimum height and the page scrolls, so text never shrinks. */
+/* Keep overview charts at a readable height; taller comparison content scrolls the page
+   without stretching the map and electricity mix. */
 body {
   display: flex;
   flex-direction: column;
@@ -346,7 +346,9 @@ main {
   flex: 1;
   min-height: 0;
   grid-template-columns: minmax(0, 1.27fr) minmax(0, 1fr);
-  grid-template-rows: minmax(420px, 1.6fr) minmax(250px, 1fr);
+  /* Fractional rows couple their intrinsic heights: a tall radar in row two would also
+     enlarge row one. Bound the overview row independently of comparison content. */
+  grid-template-rows: clamp(420px, 52vh, 620px) minmax(250px, auto);
   gap: 0.75rem;
 }
 
@@ -372,6 +374,58 @@ main {
 .panel h2 {
   margin: 0;
   font-size: 1rem;
+}
+
+.compare-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.compare-tabs button[aria-selected="true"] {
+  position: relative;
+  color: #fff;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.compare-tabs button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.profile-radar {
+  display: block;
+  width: 100%;
+  max-width: 850px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.profile-grid {
+  fill: none;
+  stroke: var(--color-border);
+}
+
+.profile-tick {
+  font-size: 10px;
+  fill: var(--color-muted);
+}
+
+.profile-axis-label {
+  font-size: 12px;
+  fill: var(--color-text-secondary);
+}
+
+.profile-legend {
+  justify-content: center;
+}
+
+.profile-radar circle:focus-visible {
+  outline: 2px solid var(--color-text);
 }
 
 .how-to-read {

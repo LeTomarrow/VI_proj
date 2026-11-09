@@ -1,20 +1,23 @@
 // Breadcrumb (World → Continent) and the comparison list, shown on every level.
 
-import { CONTINENT_COLORS } from "./scales.js";
-import { MAX_COMPARED, setState, toggleCompared } from "./state.js";
+import { CONTINENT_COLORS, COUNTRY_COMPARE_COLORS } from "./scales.js";
+import { MAX_COMPARED, comparisonType, setState, toggleCompared } from "./state.js";
 
 export function createNavigation(selector, { nameOf }) {
   const root = d3.select(selector);
   const crumbs = root.append("ol").attr("class", "breadcrumb");
 
   const compare = root.append("div").attr("class", "compare-list").attr("aria-label", "Comparison list");
-  compare.append("span").attr("class", "control-label").text(`Compare (up to ${MAX_COMPARED})`);
+  const label = compare.append("span").attr("class", "control-label");
   const chips = compare.append("ul").attr("class", "chips");
   const hint = compare.append("span").attr("class", "compare-hint")
     .text("Click a continent or a country, then + Compare");
 
   return {
     update(s) {
+      const type = s.compared.length ? comparisonType(s.compared[0]) : null;
+      label.text(type ? `Comparing ${type} (${s.compared.length}/${MAX_COMPARED})` : `Compare (up to ${MAX_COMPARED})`);
+      compare.attr("aria-label", type ? `Comparing ${type}` : "Comparison list");
       const steps = [{ label: "World", patch: { level: "world", continent: null } }];
       if (s.level === "continent") steps.push({ label: s.continent });
       crumbs.selectAll("li").data(steps).join("li").each(function (step, i) {
@@ -32,7 +35,7 @@ export function createNavigation(selector, { nameOf }) {
       hint.attr("hidden", s.compared.length ? true : null);
       const items = chips.selectAll("li").data(s.compared, (k) => k).join((enter) => {
         const li = enter.append("li").attr("class", "chip");
-        li.append("span").attr("class", "swatch").style("background", (k) => CONTINENT_COLORS[k] ?? "#6f6d68");
+        li.append("span").attr("class", "swatch");
         li.append("span").text((k) => nameOf.get(k) ?? k);
         li.append("button").attr("type", "button").attr("class", "chip-remove")
           .attr("aria-label", (k) => `Remove ${nameOf.get(k) ?? k} from the comparison`)
@@ -44,6 +47,7 @@ export function createNavigation(selector, { nameOf }) {
         .classed("is-hovered", (k) => k === s.hovered)
         .on("mouseenter", (_, k) => setState({ hovered: k }))
         .on("mouseleave", () => setState({ hovered: null }));
+      items.select(".swatch").style("background", (k, i) => CONTINENT_COLORS[k] ?? COUNTRY_COMPARE_COLORS[i]);
     },
   };
 }

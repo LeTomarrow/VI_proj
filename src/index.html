@@ -47,12 +47,24 @@
         <div class="chart" id="chart-emissions"></div>
       </figure>
 
-      <!-- View B (M3): bubble scatter and sorted bars of the continent's countries. -->
+      <!-- Country comparison: chart navigation stays in the continent panel. -->
       <figure class="panel panel-wide" id="panel-continent" hidden>
         <figcaption>
-          <h2 id="continent-title"></h2>
-          <p class="how-to-read">The scatter and the sorted bars are being built. Use the breadcrumb to go back to the World.</p>
+          <div class="compare-heading">
+            <h2 id="continent-title">Compare</h2>
+            <div class="segmented compare-tabs" role="tablist" aria-label="Comparison charts">
+              <button type="button" id="tab-scatter" role="tab" aria-selected="true" aria-controls="compare-scatter" tabindex="0">Scatter</button>
+              <button type="button" id="tab-profiles" role="tab" aria-selected="false" aria-controls="compare-profiles" tabindex="-1">Country profiles</button>
+            </div>
+          </div>
         </figcaption>
+        <div id="compare-scatter" role="tabpanel" aria-labelledby="tab-scatter" tabindex="0">
+          <p class="how-to-read">Compare countries using the bubble scatter. This chart is being built.</p>
+        </div>
+        <div id="compare-profiles" role="tabpanel" aria-labelledby="tab-profiles" tabindex="0" hidden>
+          <p class="how-to-read" id="profiles-description"></p>
+          <div id="chart-profiles"></div>
+        </div>
       </figure>
     </section>
   </main>

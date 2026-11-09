@@ -73,3 +73,6 @@ export const CONTINENT_COLORS = {
 };
 
 export const SOURCE_LABELS ={ bioenergy: "Bioenergy", otherRenewable: "Other renewables" };
+
+// Country identity colours are independent of source and map metric colours.
+export const COUNTRY_COMPARE_COLORS = ["#1c5cab", "#b34700", "#7b4291", "#087f6d"];

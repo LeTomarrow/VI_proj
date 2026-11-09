@@ -1,6 +1,8 @@
 // Shared state of the coordinated views. Every change notifies all subscribers, so an
 // interaction in one chart reaches the others.
 
+import { CONTINENTS } from "./data/constants.js";
+
 const dispatch = d3.dispatch("change");
 
 export const MAX_COMPARED = 4;
@@ -33,8 +35,15 @@ export function isDimmed(key, s, shown) {
   return shown.some((k) => s.compared.includes(k)) && !s.compared.includes(key) && key !== s.hovered;
 }
 
+export function comparisonType(key) {
+  return CONTINENTS.includes(key) ? "continents" : "countries";
+}
+
 export function toggleCompared(key) {
   const { compared } = state;
   if (compared.includes(key)) setState({ compared: compared.filter((k) => k !== key) });
-  else if (compared.length < MAX_COMPARED) setState({ compared: [...compared, key] });
+  else {
+    const sameType = compared.filter((k) => comparisonType(k) === comparisonType(key));
+    if (sameType.length < MAX_COMPARED) setState({ compared: [...sameType, key] });
+  }
 }
