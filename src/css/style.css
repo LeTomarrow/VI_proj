@@ -341,11 +341,7 @@ main {
   background: var(--color-border);
 }
 
-.view-continent {
-  flex: 1;
-}
-
-.view-world {
+.views {
   display: grid;
   flex: 1;
   min-height: 0;
@@ -354,8 +350,12 @@ main {
   gap: 0.75rem;
 }
 
-.panel-emissions {
+.panel-wide {
   grid-column: 1 / -1;
+}
+
+.panel[hidden] {
+  display: none;
 }
 
 .panel {
@@ -492,6 +492,23 @@ svg.is-globe:active {
 
 .map-continent.is-compared .map-fill {
   stroke: #0b0b0b;
+  stroke-width: 2.5;
+}
+
+/* Country level: hover and compared outlines are drawn on top of the countries. */
+.map-country {
+  stroke: #8a8880;
+  stroke-width: 0.4;
+}
+
+.map-outline {
+  fill: none;
+  pointer-events: none;
+  stroke: #0b0b0b;
+  stroke-width: 1.25;
+}
+
+.map-outline.is-compared {
   stroke-width: 2.5;
 }
 

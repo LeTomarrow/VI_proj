@@ -3,7 +3,7 @@
 import { CONTINENT_COLORS } from "./scales.js";
 import { MAX_COMPARED, setState, toggleCompared } from "./state.js";
 
-export function createNavigation(selector) {
+export function createNavigation(selector, { nameOf }) {
   const root = d3.select(selector);
   const crumbs = root.append("ol").attr("class", "breadcrumb");
 
@@ -11,7 +11,7 @@ export function createNavigation(selector) {
   compare.append("span").attr("class", "control-label").text(`Compare (up to ${MAX_COMPARED})`);
   const chips = compare.append("ul").attr("class", "chips");
   const hint = compare.append("span").attr("class", "compare-hint")
-    .text("Click a continent, then + Compare");
+    .text("Click a continent or a country, then + Compare");
 
   return {
     update(s) {
@@ -33,9 +33,9 @@ export function createNavigation(selector) {
       const items = chips.selectAll("li").data(s.compared, (k) => k).join((enter) => {
         const li = enter.append("li").attr("class", "chip");
         li.append("span").attr("class", "swatch").style("background", (k) => CONTINENT_COLORS[k] ?? "#6f6d68");
-        li.append("span").text((k) => k);
+        li.append("span").text((k) => nameOf.get(k) ?? k);
         li.append("button").attr("type", "button").attr("class", "chip-remove")
-          .attr("aria-label", (k) => `Remove ${k} from the comparison`)
+          .attr("aria-label", (k) => `Remove ${nameOf.get(k) ?? k} from the comparison`)
           .text("×")
           .on("click", (_, k) => { toggleCompared(k); setState({ hovered: null }); });
         return li;

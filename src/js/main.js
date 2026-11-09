@@ -13,6 +13,9 @@ async function init() {
   const data = await loadEnergyData();
 
   const byContinent = d3.index(data.continents, (r) => r.key, (r) => r.year);
+  const byCountry = d3.index(data.countries, (r) => r.key, (r) => r.year);
+  const countriesOf = d3.rollup(data.countries, (rows) => [...new Set(rows.map((r) => r.key))], (r) => r.continent);
+  const nameOf = new Map(data.countries.map((r) => [r.key, r.name]));
   const countriesByYear = d3.group(data.countries, (r) => r.year);
   const totalCountries = new Set(data.countries.map((r) => r.key)).size;
   const maxTotal = d3.max(d3.rollup(data.continents, (rows) => d3.sum(rows, (r) => r.generation), (r) => r.year).values());
@@ -23,23 +26,32 @@ async function init() {
   });
 
   const controls = createControls("#global-filters", { coverage });
-  const navigation = createNavigation("#navigation");
-  const map = createMap("#chart-map", data);
+  const navigation = createNavigation("#navigation", { nameOf });
+  const map = createMap("#chart-map", { ...data, nameOf });
   const marimekko = createMarimekko("#chart-marimekko", { maxTotal });
   const emissions = createEmissionsArea("#chart-emissions", data);
 
   function render(s) {
     const stats = new Map(CONTINENTS.map((key) => [key, metricValue(byContinent.get(key), s)]));
+    const atCountries = s.level === "continent";
+    const mapStats = atCountries
+      ? new Map((countriesOf.get(s.continent) ?? []).map((key) => [key, metricValue(byCountry.get(key), s)]))
+      : stats;
     const records = data.continents.filter((r) => r.year === s.year);
     const period = s.mode === "year" ? s.year : `${s.rangeStart}–${s.year}`;
     const suffix = s.mode === "year" ? "" : ` (${MODES[s.mode].toLowerCase()})`;
 
-    d3.select("#map-title").text(`${METRICS[s.metric].label}, ${period}${suffix}`);
     const { label, darker, cleanerIs } = METRICS[s.metric];
+    d3.select("#map-title").text(atCountries
+      ? `${label} by country, ${s.continent}, ${period}${suffix}`
+      : `${label}, ${period}${suffix}`);
     const [cleaner, dirtier] = cleanerIs > 0 ? ["rose", "fell"] : ["fell", "rose"];
-    d3.select("#map-how-to-read").text(`${s.mode === "change"
+    const colourLine = s.mode === "change"
       ? `Blue = ${label.toLowerCase()} ${cleaner} (cleaner), red = it ${dirtier}.`
-      : `Darker = ${darker}.`} Hatched = data for under 80% of the continent's electricity.`);
+      : `Darker = ${darker}.`;
+    d3.select("#map-how-to-read").text(atCountries
+      ? `${colourLine}${s.continent === "Europe" ? " Russia counts as Europe." : ""}`
+      : `${colourLine} Hatched = data for under 80% of the continent's electricity.`);
     d3.select("#marimekko-title").text(`Electricity mix, ${s.year}`);
     const compared = comparedContinents(s);
     d3.select("#emissions-title").text(`CO₂ from electricity, 2000–2024${compared.length ? `: ${compared.join(" vs ")}` : ""}`);
@@ -49,11 +61,12 @@ async function init() {
 
     controls.update(s);
     navigation.update(s);
-    d3.select("#view-world").attr("hidden", s.level === "world" ? null : true);
-    d3.select("#view-continent").attr("hidden", s.level === "continent" ? null : true);
+    // The map and the Marimekko stay; only the third panel changes with the level.
+    d3.select("#panel-emissions").attr("hidden", atCountries ? true : null);
+    d3.select("#panel-continent").attr("hidden", atCountries ? null : true);
     d3.select("#continent-title").text(s.continent ? `${s.continent}: countries` : "");
 
-    map.update(stats, s);
+    map.update(mapStats, s);
     marimekko.update(records, stats, s, metricColor(s.metric, s.mode));
     emissions.update(s);
   }

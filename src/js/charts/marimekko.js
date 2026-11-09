@@ -113,10 +113,11 @@ export function createMarimekko(selector, { maxTotal }) {
       return g;
     });
 
+    const shown = groups.data().map((d) => d.record.key);
     groups
       .attr("transform", (d) => `translate(${d.x0}, 0)`)
       .classed("is-compared", (d) => s.compared.includes(d.record.key))
-      .classed("is-dimmed", (d) => isDimmed(d.record.key, s))
+      .classed("is-dimmed", (d) => isDimmed(d.record.key, s, shown))
       .classed("is-hovered", (d) => d.record.key === s.hovered);
 
     const columnWidth = (d) => Math.max(1, d.width - GAP);

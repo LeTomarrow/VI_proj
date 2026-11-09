@@ -189,7 +189,7 @@ export function createEmissionsArea(selector, { continents }) {
     lines.selectAll("path").classed("is-hovered", (k) => k === s.hovered);
     // Legend: the continents not drawn as lines move to the background but stay clickable, so
     // they can be added to the comparison from here.
-    items.classed("is-compared", isCompared).classed("is-dimmed", (key) => isDimmed(key, s));
+    items.classed("is-compared", isCompared).classed("is-dimmed", (key) => isDimmed(key, s, EMISSIONS_STACK));
     itemNames.text(name);
     labels.selectAll(".band-label")
       .classed("is-hovered", (d) => d.key === s.hovered)

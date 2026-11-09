@@ -91,7 +91,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
 | M2 Shared state + View A (static) | Done: state, controls, map, Marimekko and emissions area (`src/js/state.js`, `controls.js`, `charts/`); clicking a continent opens the pop-up (`entityMenu.js`) with *Explore countries →* and *+ Compare*; breadcrumb and comparison chips (`navigation.js`). The continent level is a placeholder until M3 |
-| M3 View B for Europe (static) | Planned |
+| M3 View B for Europe (static) | In progress: country map for Europe and Asia (`charts/map.js`); the Marimekko still shows continents and the third panel is a placeholder |
 | M4 Comparison list, search + View C | Planned |
 | M5 View B for Asia; labels and units | Planned |
 | M6 Animated transitions, radar | Planned, cut first if late |
@@ -171,3 +171,12 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   keeps all six continents, the others faded, so they can be added from there. With the list
   empty the stacked area is unchanged (T1). If the switch surprises users in the tests, use a
   *Stack / Compare* toggle on the panel instead.
+- **Country map (View B)**: the map does not open a second chart. It changes level in the same
+  panel: an azimuthal equal-area projection centred on the continent, fitted to a fixed box
+  (Europe 24° W–42° E, 35–71° N; Asia 26–146° E, 10° S–54° N) and not to the countries' bounds,
+  which Russia would stretch to the Pacific. The countries of other continents stay grey for
+  context and are not clickable; the Map / Globe switch is hidden. The change is instant for now
+  (animation in M6). Hover and compared outlines are drawn as separate paths on top, and compared
+  countries are named on the visible part of their shape. Only the emissions panel is swapped for
+  the View B panel. A compared country does not fade a chart of continents: a chart fades only
+  when the list holds one of its own entities. Ukraine has no generation data from 2023 on (shown grey).
