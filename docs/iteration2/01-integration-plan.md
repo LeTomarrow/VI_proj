@@ -91,7 +91,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
 | M2 Shared state + View A (static) | Done: state, controls, map, Marimekko and emissions area (`src/js/state.js`, `controls.js`, `charts/`); clicking a continent opens the pop-up (`entityMenu.js`) with *Explore countries →* and *+ Compare*; breadcrumb and comparison chips (`navigation.js`). The continent level is a placeholder until M3 |
-| M3 View B for Europe (static) | In progress: country map and country Marimekko for Europe and Asia (`charts/map.js`, `charts/marimekko.js`, `data/countryColumns.js`); the bubble scatter, the brush and the sorted bars are not started |
+| M3 View B for Europe (static) | In progress: country map and country Marimekko for Europe and Asia and bubble scatter for Europe and Asia (`charts/map.js`, `charts/marimekko.js`, `data/countryColumns.js`, `charts/bubbleScatter.js`); the brush and the sorted bars are not started |
 | M4 Comparison list, search + View C | In progress: comparison list (continents or countries); the radar (`charts/countryProfiles.js`) is a tab of the View B panel until the View C screen exists |
 | M5 View B for Asia; labels and units | Planned |
 | M6 Animated transitions, radar | Planned, cut first if late |
@@ -189,6 +189,14 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   own column only if it is at least 28 px wide at the current chart width (otherwise it folds into
   *Others*, unless compared): with a fixed top 10, Europe and Asia showed 4–5 unreadable slivers
   and the names overlapped. A wider screen shows more countries.
+- **Bubble scatter (View B)**: one bubble per country of the continent in the selected year
+  (x = emissions per person, log; y = carbon intensity; area = total emissions; colour = renewable
+  share, the same ramp as the map). The axes and the bubble sizes are fixed per continent over
+  2000–2024, so a moving bubble means a change. The World's values are dashed lines. Named: the 5
+  largest emitters, the compared and the hovered countries, skipping names that would overlap.
+  Compared countries are outlined, not faded (the fill is a sequential value); in Range average
+  and Change their path since the range start is drawn. Hover picks the nearest bubble, so small
+  bubbles under large ones can be reached. The brush comes with linking.
 - **View B panel height**: at the country level the bottom row gets more room (the scatter and
   the radar need height). The charts in the tabs fit the panel instead of setting its height, so
   switching tabs never resizes the rows above.

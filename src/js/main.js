@@ -7,6 +7,7 @@ import { onStateChange, state } from "./state.js";
 import { createControls } from "./controls.js";
 import { createNavigation } from "./navigation.js";
 import { createComparisonTabs } from "./comparisonTabs.js";
+import { createBubbleScatter } from "./charts/bubbleScatter.js";
 import { createCountryProfiles } from "./charts/countryProfiles.js";
 import { createMap } from "./charts/map.js";
 import { createMarimekko } from "./charts/marimekko.js";
@@ -41,6 +42,7 @@ async function init() {
     onToggleOthers(expanded) { othersExpanded = expanded; render(state); },
   });
   const emissions = createEmissionsArea("#chart-emissions", data);
+  const scatter = createBubbleScatter("#chart-scatter", { ...data, countriesOf });
   const profiles = createCountryProfiles("#chart-profiles", data);
 
   function render(s) {
@@ -91,12 +93,16 @@ async function init() {
     d3.select("#continent-title").text(s.continent ? `${s.continent}: countries` : "");
     // The bottom row gets more room at the country level: the scatter and the radar need height.
     d3.select(".views").classed("is-continent", atCountries);
+    d3.select("#scatter-title").text(`Emissions from electricity by country, ${s.continent}, ${s.year}`);
+    d3.select("#scatter-how-to-read").text("x = emissions per person, y = CO₂ per kWh, area = total emissions. "
+      + (s.mode === "year" ? "Compared countries are outlined." : `Lines = path of compared countries since ${s.rangeStart}.`));
 
     map.update(mapStats, s);
     marimekko.update(columns, s, metricColor(s.metric, s.mode), atCountries
       ? { maxTotal: maxTotalOf.get(s.continent), others: { expanded: othersExpanded } }
       : { maxTotal });
     emissions.update(s);
+    scatter.update(s);
     profiles.update(s);
   }
 

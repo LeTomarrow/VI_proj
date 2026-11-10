@@ -387,6 +387,60 @@ main {
   min-height: 0;
 }
 
+.bubble {
+  fill-opacity: 0.85;
+  stroke: var(--color-bg);
+  stroke-width: 1;
+}
+
+.bubble.is-compared,
+.bubble.is-hovered {
+  stroke: #0b0b0b;
+  stroke-width: 2;
+}
+
+.bubble-label {
+  font-size: 11px;
+  fill: var(--color-text-secondary);
+  pointer-events: none;
+}
+
+.bubble-label.is-compared {
+  font-weight: 600;
+  fill: var(--color-text);
+}
+
+.trail path {
+  fill: none;
+  stroke: #0b0b0b;
+  stroke-opacity: 0.55;
+  stroke-width: 1.5;
+}
+
+.trail circle {
+  fill: var(--color-bg);
+  stroke: #0b0b0b;
+  stroke-width: 1.5;
+}
+
+.legend .ramp {
+  width: 5rem;
+  height: 0.6rem;
+  border-radius: 2px;
+}
+
+.legend .swatch-ring {
+  background: none;
+  border: 1.5px solid var(--color-muted);
+  border-radius: 50%;
+}
+
+.legend .swatch-dash {
+  height: 0;
+  border-radius: 0;
+  border-top: 1.5px dashed #0b0b0b;
+}
+
 .profile-grid {
   fill: none;
   stroke: var(--color-border);
