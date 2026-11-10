@@ -196,7 +196,10 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 - **Bubble scatter (View B)**: one bubble per country of the continent in the selected year
   (x = emissions per person, log; y = carbon intensity; area = total emissions; colour = renewable
   share, the same ramp as the map). The axes and the bubble sizes are fixed per continent over
-  2000–2024, so a moving bubble means a change. The World's values are dashed lines. Named: the 5
+  2000–2024, so a moving bubble means a change. The World's values are dashed lines that split
+  the plot in four, each corner labelled ("Cleaner than the World", "More polluting than the
+  World", "Carbon-heavy grid, low use per person", "Clean grid, high use per person"); the tooltip
+  says on which side of each World line the country is. Named: the 5
   largest emitters, the compared and the hovered countries, skipping names that would overlap.
   Compared countries are outlined, not faded (the fill is a sequential value); in Range average
   and Change their path since the range start is drawn. Hover picks the nearest bubble, so small

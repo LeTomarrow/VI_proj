@@ -410,6 +410,19 @@ main {
   fill: var(--color-text);
 }
 
+.quadrant-label {
+  font-size: 11px;
+  font-style: italic;
+  fill: var(--color-muted);
+  pointer-events: none;
+}
+
+.quadrant-label.is-cleaner,
+.quadrant-label.is-dirtier {
+  font-weight: 600;
+  fill: var(--color-text-secondary);
+}
+
 .trail path {
   fill: none;
   stroke: #0b0b0b;

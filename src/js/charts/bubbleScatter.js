@@ -21,13 +21,30 @@ const colorOf = metricColor("renewableShare", "year");
 const valid = (r) => r && r.emissionsPerCapita > 0 && r.carbonIntensity !== null && r.emissions > 0;
 const fmt = (digits) => d3.format(`,.${digits}f`);
 
-function tooltipHtml(r) {
+// The World's lines split the plot in four. Emissions per person = carbon intensity × electricity
+// per person, so right of the World line with a clean grid means a high use of clean electricity.
+const QUADRANTS = [
+  { left: true, top: false, text: "Cleaner than the World", cls: "is-cleaner" },
+  { left: false, top: true, text: "More polluting than the World", cls: "is-dirtier" },
+  { left: true, top: true, text: "Carbon-heavy grid, low use per person", cls: "" },
+  { left: false, top: false, text: "Clean grid, high use per person", cls: "" },
+];
+
+function versusWorld(r, w) {
+  if (!valid(w)) return "";
+  const perPerson = r.emissionsPerCapita < w.emissionsPerCapita ? "lower" : "higher";
+  const intensity = r.carbonIntensity < w.carbonIntensity ? "lower" : "higher";
+  return `<div class="tooltip-note">vs World: ${perPerson} per person, ${intensity} per kWh</div>`;
+}
+
+function tooltipHtml(r, w) {
   const row = (label, value) => `<div class="tooltip-row"><span>${label}</span><span>${value}</span></div>`;
   return `<strong>${r.name}, ${r.year}</strong>`
     + row("Emissions per person", `${fmt(2)(r.emissionsPerCapita)} t CO₂e`)
     + row("Carbon intensity", `${fmt(0)(r.carbonIntensity)} gCO₂/kWh`)
     + row("Total emissions", `${fmt(1)(r.emissions)} Mt CO₂e`)
     + row("Renewable share", r.renewableShare === null ? "no data" : `${fmt(1)(r.renewableShare)}%`)
+    + versusWorld(r, w)
     + `<div class="tooltip-note">From electricity generation. Click for details or + Compare</div>`;
 }
 
@@ -60,7 +77,11 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     .text("Carbon intensity (gCO₂/kWh)");
   const worldX = plot.append("line").attr("class", "reference-line");
   const worldY = plot.append("line").attr("class", "reference-line");
-  const worldLabel = plot.append("text").attr("class", "axis-title").text("World");
+  const worldLabel = plot.append("text").attr("class", "axis-title").attr("text-anchor", "end").text("World");
+  const quadrants = plot.append("g").selectAll("text").data(QUADRANTS).join("text")
+    .attr("class", (q) => `quadrant-label ${q.cls}`)
+    .attr("text-anchor", (q) => (q.left ? "start" : "end"))
+    .text((q) => q.text);
   const trails = plot.append("g");
   const bubbles = plot.append("g");
   const labels = plot.append("g");
@@ -122,12 +143,17 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     worldX.attr("display", showWorld ? null : "none");
     worldY.attr("display", showWorld ? null : "none");
     worldLabel.attr("display", showWorld ? null : "none");
+    quadrants.attr("display", showWorld ? null : "none");
     if (showWorld) {
       const wx = x(w.emissionsPerCapita);
       const wy = y(w.carbonIntensity);
       worldX.attr("x1", wx).attr("x2", wx).attr("y1", 0).attr("y2", innerH);
       worldY.attr("x1", 0).attr("x2", innerW).attr("y1", wy).attr("y2", wy);
-      worldLabel.attr("x", wx + 4).attr("y", 10);
+      worldLabel.attr("x", innerW).attr("y", wy - 4);
+      // Each label in the outer corner of its quadrant.
+      quadrants
+        .attr("x", (q) => (q.left ? 6 : innerW - 4))
+        .attr("y", (q) => (q.top ? 10 : innerH - 6));
     }
 
     // Path of each compared country over the range, from a hollow start dot to its bubble.
@@ -195,7 +221,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
         const p = nearest(event);
         const key = p?.r.key ?? null;
         if (key !== hoveredKey) { hoveredKey = key; setState({ hovered: key }); }
-        if (p) showTooltip(event, tooltipHtml(p.r));
+        if (p) showTooltip(event, tooltipHtml(p.r, w));
         else hideTooltip();
         overlay.style("cursor", p ? "pointer" : null);
       })
