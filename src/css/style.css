@@ -20,8 +20,8 @@
   display: none !important;
 }
 
-/* Keep overview charts at a readable height; taller comparison content scrolls the page
-   without stretching the map and electricity mix. */
+/* The page fills the window so the three charts of a view are seen together. On short windows
+   the rows keep a minimum height and the page scrolls, so text never shrinks. */
 body {
   display: flex;
   flex-direction: column;
@@ -343,13 +343,16 @@ main {
 
 .views {
   display: grid;
-  flex: 1;
+  /* Never shorter than its rows' minimum, so the View C panel below does not overlap it. */
+  flex: 1 0 auto;
   min-height: 0;
   grid-template-columns: minmax(0, 1.27fr) minmax(0, 1fr);
-  /* Fractional rows couple their intrinsic heights: a tall radar in row two would also
-     enlarge row one. Bound the overview row independently of comparison content. */
-  grid-template-rows: clamp(420px, 52vh, 620px) minmax(250px, auto);
+  grid-template-rows: minmax(420px, 1.6fr) minmax(250px, 1fr);
   gap: 0.75rem;
+}
+
+.views.is-continent {
+  grid-template-rows: minmax(380px, 1.1fr) minmax(360px, 1fr);
 }
 
 .panel-wide {
@@ -376,33 +379,12 @@ main {
   font-size: 1rem;
 }
 
-.compare-heading {
+/* Tabs of the View B panel: each fills the panel, and its chart takes the room left. */
+.tab-panel {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem 1rem;
-  margin-bottom: 0.6rem;
-}
-
-.compare-tabs button[aria-selected="true"] {
-  position: relative;
-  color: #fff;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.compare-tabs button:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 3px;
-}
-
-.profile-radar {
-  display: block;
-  width: 100%;
-  max-width: 850px;
-  height: auto;
-  margin: 0 auto;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .profile-grid {
@@ -424,8 +406,46 @@ main {
   justify-content: center;
 }
 
-.profile-radar circle:focus-visible {
+.profile-point {
+  stroke: var(--color-bg);
+  stroke-width: 1.5;
+}
+
+.profile-point:focus-visible {
   outline: 2px solid var(--color-text);
+}
+
+.profile-shape {
+  transition: opacity 150ms;
+}
+
+.profile-shape.is-dimmed {
+  opacity: 0.25;
+}
+
+.compare-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.compare-tabs button[aria-selected="true"] {
+  color: #fff;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.compare-tabs button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.tab-title {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .how-to-read {
@@ -787,3 +807,4 @@ footer {
 footer p {
   margin: 0;
 }
+

@@ -1,7 +1,7 @@
 // Breadcrumb (World → Continent) and the comparison list, shown on every level.
 
 import { CONTINENT_COLORS, COUNTRY_COMPARE_COLORS } from "./scales.js";
-import { MAX_COMPARED, comparisonType, setState, toggleCompared } from "./state.js";
+import { MAX_COMPARED, comparedSlot, comparisonType, setState, toggleCompared } from "./state.js";
 
 export function createNavigation(selector, { nameOf }) {
   const root = d3.select(selector);
@@ -47,7 +47,7 @@ export function createNavigation(selector, { nameOf }) {
         .classed("is-hovered", (k) => k === s.hovered)
         .on("mouseenter", (_, k) => setState({ hovered: k }))
         .on("mouseleave", () => setState({ hovered: null }));
-      items.select(".swatch").style("background", (k, i) => CONTINENT_COLORS[k] ?? COUNTRY_COMPARE_COLORS[i]);
+      items.select(".swatch").style("background", (k) => CONTINENT_COLORS[k] ?? COUNTRY_COMPARE_COLORS[comparedSlot(k)]);
     },
   };
 }

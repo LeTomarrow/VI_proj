@@ -68,7 +68,9 @@ async function init() {
     // The map and the Marimekko stay; only the third panel changes with the level.
     d3.select("#panel-emissions").attr("hidden", atCountries ? true : null);
     d3.select("#panel-continent").attr("hidden", atCountries ? null : true);
-    d3.select("#continent-title").text(s.continent ? `Compare · ${s.continent}` : "Compare");
+    d3.select("#continent-title").text(s.continent ? `${s.continent}: countries` : "");
+    // The bottom row gets more room at the country level: the scatter and the radar need height.
+    d3.select(".views").classed("is-continent", atCountries);
 
     map.update(mapStats, s);
     marimekko.update(records, stats, s, metricColor(s.metric, s.mode));

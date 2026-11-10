@@ -1,12 +1,18 @@
-import { SOURCE_GROUPS, COUNTRY_COMPARE_COLORS } from "../scales.js";
-import { comparisonType } from "../state.js";
+// Country profiles (View C): share of each source in the compared countries and the World.
 
-const CHART_WIDTH = 700;
-const CHART_HEIGHT = 460;
-const RADIUS = 155;
-const AXIS_LABEL_OFFSET = 32;
+import { SOURCE_GROUPS, COUNTRY_COMPARE_COLORS } from "../scales.js";
+import { comparedSlot, comparisonType, setState } from "../state.js";
+import { hideTooltip, showTooltip } from "../tooltip.js";
+import { fitToSize } from "./fitToSize.js";
+
+const LABEL_ROOM_X = 120; // beside the radar, for the axis names
+const LABEL_ROOM_Y = 30;
+const MIN_RADIUS = 40;
+const AXIS_LABEL_OFFSET = 16;
 const GRID_SHARES = [20, 40, 60, 80, 100];
 const WORLD_COLOR = "#6f6d68";
+const POINT_R = 4;  // 8 px markers
+const HIT_R = 10;   // hover zone around each marker
 
 // Source shares use a fixed scale across countries and years; polygon area is not a total.
 export function sourceProfile(record) {
@@ -33,6 +39,8 @@ function labelAnchor(x) {
 }
 
 function drawAxes(plot, radial, line) {
+  plot.selectAll("*").remove();
+  const radius = radial.range()[1];
   for (const value of GRID_SHARES) {
     const ring = SOURCE_GROUPS.map((_, index) => axisPoint(index, radial(value)));
     plot.append("path")
@@ -46,8 +54,8 @@ function drawAxes(plot, radial, line) {
   }
 
   SOURCE_GROUPS.forEach((source, index) => {
-    const [x, y] = axisPoint(index, RADIUS);
-    const [labelX, labelY] = axisPoint(index, RADIUS + AXIS_LABEL_OFFSET);
+    const [x, y] = axisPoint(index, radius);
+    const [labelX, labelY] = axisPoint(index, radius + AXIS_LABEL_OFFSET);
     plot.append("line")
       .attr("class", "profile-grid")
       .attr("x2", x)
@@ -79,26 +87,27 @@ export function createCountryProfiles(selector, { countries, world }) {
   const names = new Map(countries.map((r) => [r.key, r.name]));
   const note = root.append("p").attr("class", "how-to-read").attr("role", "status");
   const legend = root.append("ul").attr("class", "legend profile-legend").attr("aria-label", "Country colours");
-  const svg = root.append("svg").attr("class", "profile-radar")
-    .attr("viewBox", `0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`).attr("role", "img");
-  const plot = svg.append("g")
-    .attr("transform", `translate(${CHART_WIDTH / 2},${CHART_HEIGHT / 2})`);
-  const radial = d3.scaleLinear().domain([0, 100]).range([0, RADIUS]);
-  const line = d3.line().curve(d3.curveLinearClosed);
-  drawAxes(plot, radial, line);
+  // Sized to the panel (fitToSize), so opening the tab never makes the page rows grow.
+  const svg = root.append("svg").attr("class", "profile-radar").attr("role", "img");
+  const plot = svg.append("g");
+  const axes = plot.append("g");
   const shapes = plot.append("g");
+  const radial = d3.scaleLinear().domain([0, 100]);
+  const line = d3.line().curve(d3.curveLinearClosed);
+  let current = null;
+  let sized = false;
 
   function comparisonData(state) {
     const selected = state.compared.filter((key) => comparisonType(key) === "countries");
     const missing = [];
-    const series = selected.flatMap((key, i) => {
+    const series = selected.flatMap((key) => {
       const record = byCountry.get(key)?.get(state.year);
       const values = sourceProfile(record);
       if (!values) {
         missing.push(names.get(key) ?? key);
         return [];
       }
-      return [{ key, name: record.name, color: COUNTRY_COMPARE_COLORS[i], values }];
+      return [{ key, name: record.name, color: COUNTRY_COMPARE_COLORS[comparedSlot(key)], values }];
     });
     const reference = sourceProfile(byWorld.get(state.year));
     if (reference && selected.length) {
@@ -108,7 +117,8 @@ export function createCountryProfiles(selector, { countries, world }) {
   }
 
   function updateDescription(state, { selected, missing, series, reference }) {
-    d3.select("#profiles-description").text(`Electricity generation by source, ${state.year}. Each axis shows its share of total generation (0–100%). Grey dashed line = World. Hover or focus a point for values.`);
+    d3.select("#profiles-title").text(`Electricity mix of the compared countries, ${state.year}`);
+    d3.select("#profiles-description").text("Each axis is a source's share of generation (0–100%). Grey dashed = World.");
     const messages = [];
     if (!selected.length) messages.push("Add countries with + Compare to see their energy profiles.");
     else {
@@ -120,33 +130,61 @@ export function createCountryProfiles(selector, { countries, world }) {
       .attr("aria-label", `Electricity source shares in ${state.year}: ${series.map((d) => d.name).join(", ")}. All axes range from 0 to 100 percent.`);
   }
 
-  function updateShapes(series, year) {
-    const groups = shapes.selectAll("g").data(series, (d) => d.key).join("g").order();
+  function pointTooltip(profile, v, year) {
+    return `<strong>${profile.name}, ${year}</strong>`
+      + `<div class="tooltip-row"><span>${v.label}</span><span>${v.share.toFixed(1)}%</span></div>`
+      + `<div class="tooltip-row"><span>Generation</span><span>${d3.format(",.1f")(v.generation)} TWh</span></div>`;
+  }
+
+  function updateShapes(series, s) {
+    const year = s.year;
+    const point = (v, i) => axisPoint(i, radial(v.share));
+    const groups = shapes.selectAll("g.profile-shape").data(series, (d) => d.key).join("g")
+      .attr("class", "profile-shape")
+      // The hovered country is drawn on top and the others fade.
+      .classed("is-dimmed", (d) => s.hovered !== null && d.key !== "World" && series.some((p) => p.key === s.hovered) && d.key !== s.hovered)
+      .order();
+    groups.filter((d) => d.key === s.hovered).raise();
     groups.each(function (profile) {
       const group = d3.select(this);
+      const hovered = profile.key === s.hovered;
       group.selectAll("path").data([profile]).join("path")
-        .attr("d", line(profile.values.map((v, i) => axisPoint(i, radial(v.share)))))
-        .attr("fill", profile.color).attr("fill-opacity", profile.key === "World" ? 0 : 0.14)
-        .attr("stroke", profile.color).attr("stroke-width", 2)
-        .attr("stroke-dasharray", profile.key === "World" ? "5 4" : null);
-      group.selectAll("circle").data(profile.values).join("circle")
-        .attr("cx", (v, i) => axisPoint(i, radial(v.share))[0])
-        .attr("cy", (v, i) => axisPoint(i, radial(v.share))[1])
-        .attr("r", 2.5).attr("fill", profile.color).attr("tabindex", 0)
-        .attr("aria-label", (v) => `${profile.name}, ${year}, ${v.label}: ${v.share.toFixed(1)}%, ${v.generation.toFixed(2)} TWh`)
-        .each(function (v) {
-          d3.select(this).selectAll("title").data([v]).join("title")
-            .text(`${profile.name} · ${year}\n${v.label}: ${v.share.toFixed(1)}%\nGeneration: ${v.generation.toFixed(2)} TWh`);
-        });
+        .attr("d", line(profile.values.map(point)))
+        .attr("fill", profile.color).attr("fill-opacity", profile.key === "World" ? 0 : 0.1)
+        .attr("stroke", profile.color).attr("stroke-width", hovered ? 3 : 2)
+        .attr("stroke-dasharray", profile.key === "World" ? "5 4" : null)
+        .attr("pointer-events", "none");
+      group.selectAll("circle.profile-point").data(profile.values).join("circle")
+        .attr("class", "profile-point")
+        .attr("cx", (v, i) => point(v, i)[0]).attr("cy", (v, i) => point(v, i)[1])
+        .attr("r", POINT_R).attr("fill", profile.color).attr("tabindex", 0)
+        .attr("aria-label", (v) => `${profile.name}, ${year}, ${v.label}: ${v.share.toFixed(1)}%, ${v.generation.toFixed(1)} TWh`);
+      group.selectAll("circle.hit-area").data(profile.values).join("circle")
+        .attr("class", "hit-area")
+        .attr("cx", (v, i) => point(v, i)[0]).attr("cy", (v, i) => point(v, i)[1])
+        .attr("r", HIT_R)
+        .on("mouseenter", () => { if (profile.key !== "World") setState({ hovered: profile.key }); })
+        .on("mousemove", (event, v) => showTooltip(event, pointTooltip(profile, v, year)))
+        .on("mouseleave", () => { hideTooltip(); if (profile.key !== "World") setState({ hovered: null }); });
     });
   }
 
+  fitToSize(svg, (width, height) => {
+    const radius = Math.max(MIN_RADIUS, Math.min(width / 2 - LABEL_ROOM_X, height / 2 - LABEL_ROOM_Y));
+    radial.range([0, radius]);
+    sized = true;
+    plot.attr("transform", `translate(${width / 2},${height / 2})`);
+    drawAxes(axes, radial, line);
+    if (current) updateShapes(comparisonData(current).series, current);
+  });
+
   return {
     update(state) {
+      current = state;
       const data = comparisonData(state);
       updateDescription(state, data);
       updateLegend(legend, data.series);
-      updateShapes(data.series, state.year);
+      if (sized) updateShapes(data.series, state);
     },
   };
 }

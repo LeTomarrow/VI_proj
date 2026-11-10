@@ -92,7 +92,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
 | M2 Shared state + View A (static) | Done: state, controls, map, Marimekko and emissions area (`src/js/state.js`, `controls.js`, `charts/`); clicking a continent opens the pop-up (`entityMenu.js`) with *Explore countries →* and *+ Compare*; breadcrumb and comparison chips (`navigation.js`). The continent level is a placeholder until M3 |
 | M3 View B for Europe (static) | In progress: country map for Europe and Asia (`charts/map.js`); the Marimekko still shows continents and the third panel is a placeholder |
-| M4 Comparison list, search + View C | Planned |
+| M4 Comparison list, search + View C | In progress: comparison list (continents or countries); the radar (`charts/countryProfiles.js`) is a tab of the View B panel until the View C screen exists |
 | M5 View B for Asia; labels and units | Planned |
 | M6 Animated transitions, radar | Planned, cut first if late |
 | M7 Other continents | Future work |
@@ -180,3 +180,18 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   countries are named on the visible part of their shape. Only the emissions panel is swapped for
   the View B panel. A compared country does not fade a chart of continents: a chart fades only
   when the list holds one of its own entities. Ukraine has no generation data from 2023 on (shown grey).
+- **View B panel height**: at the country level the bottom row gets more room (the scatter and
+  the radar need height). The charts in the tabs fit the panel instead of setting its height, so
+  switching tabs never resizes the rows above.
+- **Country profiles (View C, built early)**: the radar belongs to View C (task T4, *Compare*),
+  but until that screen exists it is a tab (*Scatter* / *Country profiles*) of the View B panel,
+  so the page still fills the window. It moves to View C with M4. Markers are 8 px with a 20 px
+  hover zone and use the shared tooltip; hovering a country in any chart thickens its shape and
+  fades the other countries (not the World).
+- **Comparison type**: the list holds continents or countries, not both, because no chart
+  compares a continent with a country; adding the other type replaces the list, and the pop-up
+  says so.
+- **Colours of compared countries**: 4 fixed colours (violet, crimson, teal, olive), validated
+  for colour blindness on all pairs (worst CVD ΔE 10.7) and away from the source colours (the first
+  colour used to be the hydro blue). A country keeps its colour while it stays in the list, so
+  removing one never repaints the others; a new country takes the first free colour.

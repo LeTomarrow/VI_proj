@@ -39,6 +39,19 @@ export function comparisonType(key) {
   return CONTINENTS.includes(key) ? "continents" : "countries";
 }
 
+// Colour slot (0–3) of a compared country. A country keeps its slot while it stays in the list,
+// so removing one never repaints the others; a new country takes the lowest free slot.
+const slots = new Map();
+export function comparedSlot(key) {
+  for (const k of slots.keys()) if (!state.compared.includes(k)) slots.delete(k);
+  for (const k of state.compared) {
+    if (slots.has(k)) continue;
+    const used = new Set(slots.values());
+    slots.set(k, d3.range(MAX_COMPARED).find((i) => !used.has(i)));
+  }
+  return slots.get(key);
+}
+
 export function toggleCompared(key) {
   const { compared } = state;
   if (compared.includes(key)) setState({ compared: compared.filter((k) => k !== key) });

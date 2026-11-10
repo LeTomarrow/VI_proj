@@ -74,5 +74,7 @@ export const CONTINENT_COLORS = {
 
 export const SOURCE_LABELS ={ bioenergy: "Bioenergy", otherRenewable: "Other renewables" };
 
-// Country identity colours are independent of source and map metric colours.
-export const COUNTRY_COMPARE_COLORS = ["#1c5cab", "#b34700", "#7b4291", "#087f6d"];
+// Identity of compared countries (chips, View C). Validated all-pairs for colour blindness
+// (worst CVD ΔE 10.7) and kept off the source colours (nearest: coal, ΔE 8.5). The continent
+// colours are never on screen with them: the list holds continents or countries, not both.
+export const COUNTRY_COMPARE_COLORS = ["#5b3fd1", "#ad1457", "#26a69a", "#8d6e00"];
