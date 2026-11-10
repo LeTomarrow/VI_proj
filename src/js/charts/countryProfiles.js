@@ -6,10 +6,11 @@ import { hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
 
 const LABEL_ROOM_X = 120; // beside the radar, for the axis names
-const LABEL_ROOM_Y = 30;
+const LABEL_ROOM_Y = 24;
 const MIN_RADIUS = 40;
 const AXIS_LABEL_OFFSET = 16;
-const GRID_SHARES = [20, 40, 60, 80, 100];
+const RING_STEP = 20; // % between rings
+const MIN_MAX_SHARE = 40;
 const WORLD_COLOR = "#6f6d68";
 const POINT_R = 4;  // 8 px markers
 const HIT_R = 10;   // hover zone around each marker
@@ -41,7 +42,7 @@ function labelAnchor(x) {
 function drawAxes(plot, radial, line) {
   plot.selectAll("*").remove();
   const radius = radial.range()[1];
-  for (const value of GRID_SHARES) {
+  for (const value of d3.range(RING_STEP, radial.domain()[1] + 1, RING_STEP)) {
     const ring = SOURCE_GROUPS.map((_, index) => axisPoint(index, radial(value)));
     plot.append("path")
       .attr("class", "profile-grid")
@@ -86,9 +87,11 @@ export function createCountryProfiles(selector, { countries, world }) {
   const byWorld = d3.index(world, (r) => r.year);
   const names = new Map(countries.map((r) => [r.key, r.name]));
   const note = root.append("p").attr("class", "how-to-read").attr("role", "status");
-  const legend = root.append("ul").attr("class", "legend profile-legend").attr("aria-label", "Country colours");
+  // Legend beside the radar, so the radar gets the panel's full height.
+  const body = root.append("div").attr("class", "profile-body");
+  const legend = body.append("ul").attr("class", "legend profile-legend").attr("aria-label", "Country colours");
   // Sized to the panel (fitToSize), so opening the tab never makes the page rows grow.
-  const svg = root.append("svg").attr("class", "profile-radar").attr("role", "img");
+  const svg = body.append("svg").attr("class", "profile-radar").attr("role", "img");
   const plot = svg.append("g");
   const axes = plot.append("g");
   const shapes = plot.append("g");
@@ -118,7 +121,7 @@ export function createCountryProfiles(selector, { countries, world }) {
 
   function updateDescription(state, { selected, missing, series, reference }) {
     d3.select("#profiles-title").text(`Electricity mix of the compared countries, ${state.year}`);
-    d3.select("#profiles-description").text("Each axis is a source's share of generation (0–100%). Grey dashed = World.");
+    d3.select("#profiles-description").text(`Each axis is a source's share of generation (0–${radial.domain()[1]}%, the largest share shown). Grey dashed = World.`);
     const messages = [];
     if (!selected.length) messages.push("Add countries with + Compare to see their energy profiles.");
     else {
@@ -182,6 +185,14 @@ export function createCountryProfiles(selector, { countries, world }) {
     update(state) {
       current = state;
       const data = comparisonData(state);
+      // The outer ring is the largest share shown, rounded up, so small shares are not squeezed
+      // into the centre. Every axis keeps the same scale, so shapes stay comparable.
+      const top = d3.max(data.series, (p) => d3.max(p.values, (v) => v.share)) ?? 0;
+      const maxShare = Math.min(100, Math.max(MIN_MAX_SHARE, Math.ceil(top / RING_STEP) * RING_STEP));
+      if (maxShare !== radial.domain()[1]) {
+        radial.domain([0, maxShare]);
+        if (sized) drawAxes(axes, radial, line);
+      }
       updateDescription(state, data);
       updateLegend(legend, data.series);
       if (sized) updateShapes(data.series, state);

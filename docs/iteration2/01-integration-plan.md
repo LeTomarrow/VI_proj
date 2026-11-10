@@ -209,7 +209,9 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   switching tabs never resizes the rows above.
 - **Country profiles (View C, built early)**: the radar belongs to View C (task T4, *Compare*),
   but until that screen exists it is a tab (*Scatter* / *Country profiles*) of the View B panel,
-  so the page still fills the window. It moves to View C with M4. Markers are 8 px with a 20 px
+  so the page still fills the window. It moves to View C with M4. The legend sits beside the radar
+  and the outer ring is the largest share shown (rounded up to 20%, at least 40%), so the shapes
+  are not squeezed into the centre; every axis keeps the same scale. Markers are 8 px with a 20 px
   hover zone and use the shared tooltip; hovering a country in any chart thickens its shape and
   fades the other countries (not the World).
 - **Comparison type**: the list holds continents or countries, not both, because no chart

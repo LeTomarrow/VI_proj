@@ -352,7 +352,7 @@ main {
 }
 
 .views.is-continent {
-  grid-template-rows: minmax(380px, 1.1fr) minmax(360px, 1fr);
+  grid-template-rows: minmax(360px, 1fr) minmax(400px, 1.15fr);
 }
 
 .panel-wide {
@@ -469,8 +469,36 @@ main {
   fill: var(--color-text-secondary);
 }
 
-.profile-legend {
+/* Title and reading line on one row, so the charts below keep their height. */
+.tab-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 0.75rem;
+}
+
+.tab-heading .how-to-read {
+  margin: 0;
+}
+
+.profile-body {
+  display: flex;
+  flex: 1;
   justify-content: center;
+  gap: 1rem;
+  min-height: 0;
+}
+
+.profile-legend {
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+/* Wide enough for the radar and its axis names, so the legend stays next to it. */
+.chart .profile-body svg {
+  min-width: 0;
+  max-width: 640px;
 }
 
 .profile-point {
