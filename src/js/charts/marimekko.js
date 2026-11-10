@@ -1,6 +1,7 @@
 // One column per entity in the selected year: width = TWh, height = share of each source.
 // Base example: Marimekko chart (https://observablehq.com/@d3/marimekko-chart).
 
+import { OTHERS } from "../data/countryColumns.js";
 import { openEntityMenu } from "../entityMenu.js";
 import { NO_DATA, SOURCE_GROUPS, SOURCE_LABELS } from "../scales.js";
 import { isDimmed, setState } from "../state.js";
@@ -15,6 +16,8 @@ const MIN_LABEL_H = 15; // smallest segment that fits a source name
 const WIDE_COLUMN = 70; // narrower columns get a slanted name
 const LABEL_SPACING = 13; // between slanted names
 const MIN_HIT = 16;     // narrowest hover zone of a column
+const MIN_NAMED = 6;    // narrower columns get no name (except compared ones); the tooltip has it
+const MIN_COLUMN = 28;  // narrower countries fold into Others (unless compared)
 
 const format = (digits) => d3.format(`,.${digits}f`);
 
@@ -28,19 +31,24 @@ function columnTooltip(record, stat, current) {
   }).join("");
   const parts = SOURCE_GROUPS.find((g) => g.parts.length > 1).parts
     .map((k) => `${SOURCE_LABELS[k]} ${format(0)(record.sources[k])}`).join(", ");
-  return `<strong>${record.name}, ${record.year}</strong>${rows}`
+  const title = record.key === OTHERS ? `Others (${record.count} countries)` : record.name;
+  const expand = record.key === OTHERS ? `<div class="tooltip-note">Click to show every country</div>` : "";
+  return `<strong>${title}, ${record.year}</strong>${rows}`
     + `<div class="tooltip-row is-total"><span>Total</span><span>${format(0)(record.generation)} TWh</span></div>`
-    + `<div class="tooltip-note">${parts} TWh</div>${coverageLine(stat, "year")}`;
+    + `<div class="tooltip-note">${parts} TWh</div>${coverageLine(stat, "year")}${expand}`;
 }
 
-// maxTotal keeps the x scale fixed across years, so wider columns show growth (U5).
-export function createMarimekko(selector, { maxTotal }) {
-  const x = d3.scaleLinear().domain([0, maxTotal]);
+// The x scale is fixed across years (largest yearly total of the level), so wider columns show
+// growth (U5). onToggleOthers(expanded) shows every country or folds them back into Others.
+export function createMarimekko(selector, { onToggleOthers }) {
+  const x = d3.scaleLinear();
   const y = d3.scaleLinear().domain([0, 100]);
+  let innerW = 0;
   let innerH = 0;
   let current = null;
 
   const root = d3.select(selector);
+  const toggle = root.append("button").attr("type", "button").attr("class", "mekko-toggle").attr("hidden", true);
   const legend = root.append("ul").attr("class", "legend");
   const items = legend.selectAll("li").data(SOURCE_GROUPS).join("li");
   items.append("span").attr("class", "swatch").style("background", (d) => d.color);
@@ -69,7 +77,7 @@ export function createMarimekko(selector, { maxTotal }) {
   const hits = plot.append("g");
 
   function resize(width, height) {
-    const innerW = width - MARGIN.left - MARGIN.right;
+    innerW = width - MARGIN.left - MARGIN.right;
     innerH = height - MARGIN.top - MARGIN.bottom;
     x.range([0, innerW]);
     y.range([innerH, 0]);
@@ -77,14 +85,26 @@ export function createMarimekko(selector, { maxTotal }) {
     yAxis.call(d3.axisLeft(y).tickValues([0, 25, 50, 75, 100]).tickFormat((d) => `${d}%`).tickSize(4))
       .call((g) => g.select(".domain").remove());
     yTitle.attr("transform", `translate(-40, ${innerH / 2}) rotate(-90)`);
-    xAxis.attr("transform", `translate(0, ${innerH})`)
-      .call(d3.axisBottom(x).ticks(Math.max(2, Math.floor(innerW / 70))).tickFormat(d3.format(",")).tickSize(4));
     xTitle.attr("x", innerW / 2).attr("y", innerH + 34);
     reference.attr("x2", innerW).attr("y1", y(50)).attr("y2", y(50));
     if (current) render(...current);
   }
 
-  function render(records, stats, s, stripColor) {
+  // columnsFor(minGeneration) → { records, stats, total }: the columns to draw, given the smallest
+  // total that still gets a readable column at the current width. maxTotal: the x domain.
+  // others = { expanded } at the country level, null for continents.
+  function render(columnsFor, s, stripColor, { maxTotal, others = null }) {
+    x.domain([0, maxTotal]);
+    const { records, stats, total } = columnsFor(x.invert(MIN_COLUMN));
+    xAxis.attr("transform", `translate(0, ${innerH})`)
+      .call(d3.axisBottom(x).ticks(Math.max(2, Math.floor(innerW / 70))).tickFormat(d3.format(",")).tickSize(4));
+    svg.attr("aria-label", `Marimekko chart of the electricity mix by ${others ? `country, ${s.continent}` : "continent"}`);
+    toggle.attr("hidden", others && (others.expanded || records.some((r) => r.key === OTHERS)) ? null : true)
+      .text(others?.expanded ? `Show top countries + Others` : `Show all ${total} countries`)
+      .on("click", () => onToggleOthers(!others.expanded));
+
+    // Six continents always fit; at the country level the slivers are left to the tooltip.
+    const named = (record) => !others || s.compared.includes(record.key) || x(record.generation) >= MIN_NAMED;
     const widest = d3.greatest(records, (r) => r.generation)?.key;
     let start = 0;
     let lastLabel = -Infinity;
@@ -96,10 +116,10 @@ export function createMarimekko(selector, { maxTotal }) {
         top += share;
         return segment;
       });
-      const column = { record, x0: x(start), width: x(record.generation), segments };
+      const column = { record, x0: x(start), width: x(record.generation), segments, named: named(record) };
       const center = column.x0 + column.width / 2;
-      column.labelShift = Math.max(0, lastLabel + LABEL_SPACING - center);
-      lastLabel = center + column.labelShift;
+      column.labelShift = column.named ? Math.max(0, lastLabel + LABEL_SPACING - center) : 0;
+      if (column.named) lastLabel = center + column.labelShift;
       start += record.generation;
       return column;
     });
@@ -128,7 +148,11 @@ export function createMarimekko(selector, { maxTotal }) {
         return value === null ? NO_DATA : stripColor(value);
       });
     groups.select(".column-label")
-      .text((d) => (s.compared.includes(d.record.key) ? `✓ ${d.record.name}` : d.record.name))
+      .text((d) => {
+        if (!d.named) return "";
+        if (d.record.key === OTHERS) return `Others (${d.record.count})`;
+        return s.compared.includes(d.record.key) ? `✓ ${d.record.name}` : d.record.name;
+      })
       .attr("text-anchor", "start")
       .attr("transform", (d) => (d.width >= WIDE_COLUMN
         ? `translate(0, ${-STRIP - GAP - 5})`
@@ -169,7 +193,9 @@ export function createMarimekko(selector, { maxTotal }) {
       .attr("width", (_, i) => zones[i][1] - zones[i][0])
       .attr("y", -STRIP - GAP)
       .attr("height", innerH + STRIP + GAP)
-      .on("click", (event, d) => openEntityMenu(event, d.record.key, d.record.name))
+      .on("click", (event, d) => (d.record.key === OTHERS
+        ? (hideTooltip(), onToggleOthers(true))
+        : openEntityMenu(event, d.record.key, d.record.name)))
       .on("mouseenter", (_, d) => setState({ hovered: d.record.key }))
       .on("mousemove", (event, d) => {
         const share = y.invert(d3.pointer(event, plot.node())[1]);

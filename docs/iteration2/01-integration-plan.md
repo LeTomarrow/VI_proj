@@ -39,7 +39,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 | View | Charts | Mantra | Task |
 |---|---|---|---|
 | **A. World** | Equal Earth map, continents coloured by the chosen metric (Year / Range average / Change) · Marimekko by continent for the selected year (width = TWh, height = share of each source, top strip = map colour) · stacked area of emissions by continent, absolute MtCO₂e, 2000–2024 | Overview | T1 |
-| **B. Continent** (Europe, Asia) | Map zoomed to the continent (all countries) · Marimekko of the top 10 countries by generation + "Others" (click to expand), with compared countries always shown · bubble scatter (x = emissions per capita, log; y = carbon intensity; area = total emissions; colour = renewable share; start → end trail for compared countries) · bars of the change in renewable share over the range, sorted | Zoom and filter | T2, T3 |
+| **B. Continent** (Europe, Asia) | Map zoomed to the continent (all countries) · Marimekko of the largest countries by generation (up to 10, only those wide enough to read) + "Others" (click to expand), with compared countries always shown · bubble scatter (x = emissions per capita, log; y = carbon intensity; area = total emissions; colour = renewable share; start → end trail for compared countries) · bars of the change in renewable share over the range, sorted | Zoom and filter | T2, T3 |
 | **C. Compare** (≤ 4 countries + World) | One row per country on a shared 2000–2024 axis: mix over time (stacked area by source, kWh per person) · "Clean vs total generation growth" (difference chart) · "Why emissions changed" (demand / mix decomposition, LMDI). Above the rows: one radar with all countries and the World in grey (lowest priority, cut first) | Details on demand, relate | T4 |
 
 ### Linking
@@ -91,7 +91,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
 | M2 Shared state + View A (static) | Done: state, controls, map, Marimekko and emissions area (`src/js/state.js`, `controls.js`, `charts/`); clicking a continent opens the pop-up (`entityMenu.js`) with *Explore countries →* and *+ Compare*; breadcrumb and comparison chips (`navigation.js`). The continent level is a placeholder until M3 |
-| M3 View B for Europe (static) | In progress: country map for Europe and Asia (`charts/map.js`); the Marimekko still shows continents and the third panel is a placeholder |
+| M3 View B for Europe (static) | In progress: country map and country Marimekko for Europe and Asia (`charts/map.js`, `charts/marimekko.js`, `data/countryColumns.js`); the bubble scatter, the brush and the sorted bars are not started |
 | M4 Comparison list, search + View C | In progress: comparison list (continents or countries); the radar (`charts/countryProfiles.js`) is a tab of the View B panel until the View C screen exists |
 | M5 View B for Asia; labels and units | Planned |
 | M6 Animated transitions, radar | Planned, cut first if late |
@@ -180,6 +180,15 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   countries are named on the visible part of their shape. Only the emissions panel is swapped for
   the View B panel. A compared country does not fade a chart of continents: a chart fades only
   when the list holds one of its own entities. Ukraine has no generation data from 2023 on (shown grey).
+- **Country Marimekko (View B)**: the same chart, one column per country: the 10 largest by
+  generation in the selected year, the compared countries outside them, and *Others* (the rest,
+  summed; the same countries in every year of the range, so Range average and Change compare like
+  with like). Clicking *Others*, or the *Show all N countries* button, shows every country; the
+  button folds them back, and changing continent folds them again. The x axis is fixed to the
+  continent's largest yearly total, so columns still grow over the years (U5). A country gets its
+  own column only if it is at least 28 px wide at the current chart width (otherwise it folds into
+  *Others*, unless compared): with a fixed top 10, Europe and Asia showed 4–5 unreadable slivers
+  and the names overlapped. A wider screen shows more countries.
 - **View B panel height**: at the country level the bottom row gets more room (the scatter and
   the radar need height). The charts in the tabs fit the panel instead of setting its height, so
   switching tabs never resizes the rows above.

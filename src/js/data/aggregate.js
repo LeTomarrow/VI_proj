@@ -7,12 +7,13 @@ import { deriveRecord } from "./preprocess.js";
 // Shares and carbon intensity are recomputed from the sums by deriveRecord, never averaged.
 // Emissions are left null unless every country in the sum reports them, because carbon
 // intensity divides them by the total generation (before 2000 no country reports them).
-function sumCountries(continent, year, rows) {
+// Also used for the "Others" column of View B.
+export function sumCountries({ key, name, continent }, year, rows) {
   const sources = Object.fromEntries(Object.keys(SOURCES).map((k) => [k, d3.sum(rows, (r) => r.sources[k])]));
   const allEmissions = rows.every((r) => r.emissions !== null);
   return deriveRecord({
-    key: continent,
-    name: continent,
+    key,
+    name,
     continent,
     year,
     population: d3.sum(rows, (r) => r.population),
@@ -39,7 +40,7 @@ export function aggregateContinents(countries, owidContinents) {
   const records = [];
   for (const [continent, byYear] of d3.group(countries, (r) => r.continent, (r) => r.year)) {
     for (const [year, rows] of byYear) {
-      const record = sumCountries(continent, year, rows);
+      const record = sumCountries({ key: continent, name: continent, continent }, year, rows);
       const reference = coverageReference(owidByContinent, continent, year);
       record.countriesWithData = rows.length;
       record.countriesTotal = members.get(continent);
