@@ -188,7 +188,11 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   continent's largest yearly total, so columns still grow over the years (U5). A country gets its
   own column only if it is at least 28 px wide at the current chart width (otherwise it folds into
   *Others*, unless compared): with a fixed top 10, Europe and Asia showed 4–5 unreadable slivers
-  and the names overlapped. A wider screen shows more countries.
+  and the names overlapped. A wider screen shows more countries. Expanding does the inverse: the
+  largest countries become one *Largest* column of fixed width (not to scale), the x axis breaks
+  and starts again at 0, and every other country gets its own column, so the small ones open up
+  instead of all 41 columns sharing the same scale. Only the tiniest (< 1% of the continent) stay
+  slivers, named in the tooltip.
 - **Bubble scatter (View B)**: one bubble per country of the continent in the selected year
   (x = emissions per person, log; y = carbon intensity; area = total emissions; colour = renewable
   share, the same ramp as the map). The axes and the bubble sizes are fixed per continent over

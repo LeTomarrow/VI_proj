@@ -77,7 +77,7 @@ async function init() {
       ? `Electricity mix by country, ${s.continent}, ${s.year}`
       : `Electricity mix, ${s.year}`);
     d3.select("#marimekko-how-to-read").text(atCountries
-      ? `Width = total generation, height = share of each source. ${othersExpanded ? "Every country" : "The largest countries that fit (up to 10) and the compared ones; Others = the rest"}.`
+      ? `Width = total generation, height = share of each source. ${othersExpanded ? "The largest countries are one column (not to scale, after the axis break); every other country has its own" : "The largest countries that fit (up to 10) and the compared ones; Others = the rest"}.`
       : "Width = total generation, height = share of each source. Top strip = map colour.");
     const compared = comparedContinents(s);
     d3.select("#emissions-title").text(`CO₂ from electricity, 2000–2024${compared.length ? `: ${compared.join(" vs ")}` : ""}`);

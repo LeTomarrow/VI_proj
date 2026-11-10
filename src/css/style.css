@@ -876,6 +876,12 @@ footer p {
   border-radius: 6px;
 }
 
+.axis-break {
+  fill: none;
+  stroke: var(--color-muted);
+  stroke-width: 1.5;
+}
+
 .mekko-toggle[hidden] {
   display: none;
 }

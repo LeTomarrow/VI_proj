@@ -1,7 +1,7 @@
 // One column per entity in the selected year: width = TWh, height = share of each source.
 // Base example: Marimekko chart (https://observablehq.com/@d3/marimekko-chart).
 
-import { OTHERS } from "../data/countryColumns.js";
+import { LARGEST, OTHERS } from "../data/countryColumns.js";
 import { openEntityMenu } from "../entityMenu.js";
 import { NO_DATA, SOURCE_GROUPS, SOURCE_LABELS } from "../scales.js";
 import { isDimmed, setState } from "../state.js";
@@ -18,6 +18,8 @@ const LABEL_SPACING = 13; // between slanted names
 const MIN_HIT = 16;     // narrowest hover zone of a column
 const MIN_NAMED = 6;    // narrower columns get no name (except compared ones); the tooltip has it
 const MIN_COLUMN = 28;  // narrower countries fold into Others (unless compared)
+const GROUP_W = 56;     // expanded: fixed width of the Largest column, before an axis break
+const BREAK = 14;       // gap that marks the break in the x axis
 
 const format = (digits) => d3.format(`,.${digits}f`);
 
@@ -31,8 +33,12 @@ function columnTooltip(record, stat, current) {
   }).join("");
   const parts = SOURCE_GROUPS.find((g) => g.parts.length > 1).parts
     .map((k) => `${SOURCE_LABELS[k]} ${format(0)(record.sources[k])}`).join(", ");
-  const title = record.key === OTHERS ? `Others (${record.count} countries)` : record.name;
-  const expand = record.key === OTHERS ? `<div class="tooltip-note">Click to show every country</div>` : "";
+  const group = record.key === OTHERS || record.key === LARGEST;
+  const title = group ? `${record.key} (${record.count} countries)` : record.name;
+  const members = group ? `<div class="tooltip-note">${record.members.join(", ")}</div>` : "";
+  const action = record.key === OTHERS ? "Click to show them one by one"
+    : record.key === LARGEST ? "Width not to scale. Click to show them one by one" : "";
+  const expand = `${members}${action ? `<div class="tooltip-note">${action}</div>` : ""}`;
   return `<strong>${title}, ${record.year}</strong>${rows}`
     + `<div class="tooltip-row is-total"><span>Total</span><span>${format(0)(record.generation)} TWh</span></div>`
     + `<div class="tooltip-note">${parts} TWh</div>${coverageLine(stat, "year")}${expand}`;
@@ -72,6 +78,7 @@ export function createMarimekko(selector, { onToggleOthers }) {
   const xTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("Generation (TWh)");
 
   const columns = plot.append("g");
+  const breakMark = plot.append("path").attr("class", "axis-break");
   const reference = plot.append("line").attr("class", "reference-line").attr("x1", 0);
   // Above the columns, so thin columns are easy to hover.
   const hits = plot.append("g");
@@ -91,38 +98,48 @@ export function createMarimekko(selector, { onToggleOthers }) {
   }
 
   // columnsFor(minGeneration) → { records, stats, total }: the columns to draw, given the smallest
-  // total that still gets a readable column at the current width. maxTotal: the x domain.
-  // others = { expanded } at the country level, null for continents.
+  // total that gets a readable column when folded. maxTotal: the x domain when folded.
+  // others = { expanded } at the country level, null for continents. Expanded, the Largest column
+  // has a fixed width and the x axis breaks after it, so the small countries get the room.
   function render(columnsFor, s, stripColor, { maxTotal, others = null }) {
-    x.domain([0, maxTotal]);
-    const { records, stats, total } = columnsFor(x.invert(MIN_COLUMN));
+    const { records, stats, total } = columnsFor((MIN_COLUMN * maxTotal) / innerW);
+    const group = records[0]?.key === LARGEST ? records[0] : null;
+    // After the break the axis starts again at 0: it measures only the countries drawn to scale.
+    const first = 0;
+    if (group) {
+      x.domain([0, d3.sum(records.slice(1), (r) => r.generation)]).range([GROUP_W + BREAK, innerW]);
+    } else x.domain([0, maxTotal]).range([0, innerW]);
     xAxis.attr("transform", `translate(0, ${innerH})`)
-      .call(d3.axisBottom(x).ticks(Math.max(2, Math.floor(innerW / 70))).tickFormat(d3.format(",")).tickSize(4));
+      .call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((innerW - (group ? GROUP_W : 0)) / 70))).tickFormat(d3.format(",")).tickSize(4));
+    breakMark.attr("display", group ? null : "none")
+      .attr("d", `M${GROUP_W + 2},${innerH + 5} l4,-10 M${GROUP_W + 7},${innerH + 5} l4,-10`);
     svg.attr("aria-label", `Marimekko chart of the electricity mix by ${others ? `country, ${s.continent}` : "continent"}`);
     toggle.attr("hidden", others && (others.expanded || records.some((r) => r.key === OTHERS)) ? null : true)
-      .text(others?.expanded ? `Show top countries + Others` : `Show all ${total} countries`)
+      .text(others?.expanded ? "Back to the largest countries" : `Show all ${total} countries`)
       .on("click", () => onToggleOthers(!others.expanded));
 
     // Six continents always fit; at the country level the slivers are left to the tooltip.
-    const named = (record) => !others || s.compared.includes(record.key) || x(record.generation) >= MIN_NAMED;
-    const widest = d3.greatest(records, (r) => r.generation)?.key;
-    let start = 0;
+    const named = (record, width) => !others || record === group || s.compared.includes(record.key) || width >= MIN_NAMED;
+    let start = first;
     let lastLabel = -Infinity;
     const layout = records.map((record) => {
       let top = 0;
-      const segments = SOURCE_GROUPS.map((group) => {
-        const share = d3.sum(group.parts, (k) => record.shares[k]);
-        const segment = { group, y0: top, y1: top + share };
+      const segments = SOURCE_GROUPS.map((g) => {
+        const share = d3.sum(g.parts, (k) => record.shares[k]);
+        const segment = { group: g, y0: top, y1: top + share };
         top += share;
         return segment;
       });
-      const column = { record, x0: x(start), width: x(record.generation), segments, named: named(record) };
+      const x0 = record === group ? 0 : x(start);
+      const width = record === group ? GROUP_W : x(start + record.generation) - x(start);
+      const column = { record, x0, width, segments, named: named(record, width) };
       const center = column.x0 + column.width / 2;
       column.labelShift = column.named ? Math.max(0, lastLabel + LABEL_SPACING - center) : 0;
       if (column.named) lastLabel = center + column.labelShift;
-      start += record.generation;
+      if (record !== group) start += record.generation;
       return column;
     });
+    const widest = d3.greatest(layout, (d) => d.width)?.record.key;
 
     const groups = columns.selectAll("g.column").data(layout, (d) => d.record.key).join((enter) => {
       const g = enter.append("g").attr("class", "column");
@@ -150,7 +167,7 @@ export function createMarimekko(selector, { onToggleOthers }) {
     groups.select(".column-label")
       .text((d) => {
         if (!d.named) return "";
-        if (d.record.key === OTHERS) return `Others (${d.record.count})`;
+        if (d.record.key === OTHERS || d.record.key === LARGEST) return `${d.record.key} (${d.record.count})`;
         return s.compared.includes(d.record.key) ? `✓ ${d.record.name}` : d.record.name;
       })
       .attr("text-anchor", "start")
@@ -193,9 +210,12 @@ export function createMarimekko(selector, { onToggleOthers }) {
       .attr("width", (_, i) => zones[i][1] - zones[i][0])
       .attr("y", -STRIP - GAP)
       .attr("height", innerH + STRIP + GAP)
-      .on("click", (event, d) => (d.record.key === OTHERS
-        ? (hideTooltip(), onToggleOthers(true))
-        : openEntityMenu(event, d.record.key, d.record.name)))
+      .on("click", (event, d) => {
+        if (d.record.key === OTHERS || d.record.key === LARGEST) {
+          hideTooltip();
+          onToggleOthers(d.record.key === OTHERS);
+        } else openEntityMenu(event, d.record.key, d.record.name);
+      })
       .on("mouseenter", (_, d) => setState({ hovered: d.record.key }))
       .on("mousemove", (event, d) => {
         const share = y.invert(d3.pointer(event, plot.node())[1]);
