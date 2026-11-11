@@ -19,6 +19,19 @@ const CHAR_W = 6.2;     // estimated label width per character, to skip overlapp
 
 const colorOf = metricColor("renewableShare", "year");
 const valid = (r) => r && r.emissionsPerCapita > 0 && r.carbonIntensity !== null && r.emissions > 0;
+const inRegion = (r, { x, y }) => r.emissionsPerCapita >= x[0] && r.emissionsPerCapita <= x[1]
+  && r.carbonIntensity >= y[0] && r.carbonIntensity <= y[1];
+
+// Keys of the countries inside the brush in the selected year, or null without a brush. The
+// brush is a region in data units, so a country enters or leaves it when the year changes.
+export function brushedKeys(keys, byCountry, s) {
+  const b = s.brush;
+  if (!b || s.level !== "continent" || b.continent !== s.continent) return null;
+  return new Set(keys.filter((k) => {
+    const r = byCountry.get(k)?.get(s.year);
+    return valid(r) && inRegion(r, b);
+  }));
+}
 const fmt = (digits) => d3.format(`,.${digits}f`);
 
 // The World's lines split the plot in four. Emissions per person = carbon intensity × electricity
@@ -85,12 +98,38 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
   const trails = plot.append("g");
   const bubbles = plot.append("g");
   const labels = plot.append("g");
-  const overlay = plot.append("rect").attr("class", "hit-area is-clickable");
+  // The brush's overlay is also the hover and click layer (nearest bubble).
+  const brushLayer = plot.append("g").attr("class", "brush");
 
   let innerW = 0;
   let innerH = 0;
   let current = null;
   let hoveredKey = null;
+  let points = [];
+  let brushing = false;
+  let brushSignature = null;
+
+  // The region in data units of a pixel selection.
+  const regionOf = ([[px0, py0], [px1, py1]]) => ({
+    continent: current.continent,
+    x: [x.invert(px0), x.invert(px1)],
+    y: [y.invert(py1), y.invert(py0)],
+  });
+  // While dragging, the other charts are told only when the group changes.
+  const brush = d3.brush()
+    .on("start", (event) => { if (event.sourceEvent) { brushing = true; hideTooltip(); } })
+    .on("brush", (event) => {
+      if (!event.sourceEvent || !event.selection) return;
+      const region = regionOf(event.selection);
+      const signature = points.filter((p) => inRegion(p.r, region)).map((p) => p.r.key).join();
+      if (signature !== brushSignature) { brushSignature = signature; setState({ brush: region }); }
+    })
+    .on("end", (event) => {
+      if (!event.sourceEvent) return;
+      brushing = false;
+      brushSignature = null;
+      setState({ brush: event.selection ? regionOf(event.selection) : null });
+    });
 
   function domainsOf(continent) {
     if (!domains.has(continent)) {
@@ -111,7 +150,8 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     x.range([0, innerW]);
     y.range([innerH, 0]);
     radius.range([0, Math.max(12, Math.min(40, Math.min(innerW, innerH) / 8))]);
-    overlay.attr("width", innerW).attr("height", innerH);
+    brush.extent([[0, 0], [Math.max(1, innerW), Math.max(1, innerH)]]);
+    brushLayer.call(brush);
     xTitle.attr("x", innerW / 2).attr("y", innerH + 34);
     yTitle.attr("transform", `translate(-44, ${innerH / 2}) rotate(-90)`);
     if (current) render(current);
@@ -123,7 +163,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     y.domain(d.y).nice();
     radius.domain(d.r);
     const keys = countriesOf.get(s.continent) ?? [];
-    const points = keys.map((k) => byCountry.get(k)?.get(s.year)).filter(valid)
+    points = keys.map((k) => byCountry.get(k)?.get(s.year)).filter(valid)
       .sort((a, b) => b.emissions - a.emissions)
       .map((r) => ({ r, cx: x(r.emissionsPerCapita), cy: y(r.carbonIntensity), rr: Math.max(MIN_R, radius(r.emissions)) }));
     const withGeneration = keys.filter((k) => byCountry.get(k)?.get(s.year)?.generation > 0).length;
@@ -176,15 +216,19 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
       .attr("cx", (p) => p.cx).attr("cy", (p) => p.cy).attr("r", (p) => p.rr)
       .attr("fill", (p) => (p.r.renewableShare === null ? NO_DATA : colorOf(p.r.renewableShare)))
       .classed("is-compared", (p) => s.compared.includes(p.r.key))
-      .classed("is-hovered", (p) => p.r.key === s.hovered);
+      .classed("is-hovered", (p) => p.r.key === s.hovered)
+      .classed("is-outside", (p) => !!s.brushed && !s.brushed.has(p.r.key) && p.r.key !== s.hovered);
     // Marked bubbles on top, so their outline is never covered.
     bubbles.selectAll("circle.is-compared, circle.is-hovered").raise();
 
-    // Names: hovered, compared, then the largest emitters, skipping any that would overlap.
+    // Names: hovered, compared, then the largest emitters (of the brushed group, if any),
+    // skipping any that would overlap.
+    const marked = (p) => s.compared.includes(p.r.key) || p.r.key === s.hovered;
+    const others = s.brushed ? points.filter((p) => s.brushed.has(p.r.key)) : points.slice(0, TOP_LABELS);
     const ranked = [
       ...points.filter((p) => p.r.key === s.hovered),
       ...points.filter((p) => s.compared.includes(p.r.key) && p.r.key !== s.hovered),
-      ...points.slice(0, TOP_LABELS).filter((p) => !s.compared.includes(p.r.key) && p.r.key !== s.hovered),
+      ...others.filter((p) => !marked(p)),
     ];
     const boxes = [];
     const named = ranked.filter((p, i) => {
@@ -216,20 +260,27 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
       const p = points[delaunay.find(mx, my)];
       return Math.hypot(p.cx - mx, p.cy - my) <= p.rr + HOVER_PAD ? p : null;
     };
-    overlay
-      .on("mousemove", (event) => {
+    brushLayer
+      .on("mousemove.hover", (event) => {
+        if (brushing) return;
         const p = nearest(event);
         const key = p?.r.key ?? null;
         if (key !== hoveredKey) { hoveredKey = key; setState({ hovered: key }); }
         if (p) showTooltip(event, tooltipHtml(p.r, w));
         else hideTooltip();
-        overlay.style("cursor", p ? "pointer" : null);
+        brushLayer.select(".overlay").style("cursor", p ? "pointer" : null);
       })
-      .on("mouseleave", () => { hoveredKey = null; setState({ hovered: null }); hideTooltip(); })
-      .on("click", (event) => {
+      .on("mouseleave.hover", () => { hoveredKey = null; setState({ hovered: null }); hideTooltip(); })
+      .on("click.menu", (event) => {
         const p = nearest(event);
         if (p) openEntityMenu(event, p.r.key, p.r.name);
       });
+
+    // Redraw the stored region (resize, year change); clear it on another continent.
+    if (!brushing) {
+      const b = s.brush?.continent === s.continent ? s.brush : null;
+      brushLayer.call(brush.move, b ? [[x(b.x[0]), y(b.y[1])], [x(b.x[1]), y(b.y[0])]] : null);
+    }
   }
 
   fitToSize(svg, resize);

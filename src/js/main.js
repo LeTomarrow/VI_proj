@@ -7,7 +7,8 @@ import { onStateChange, state } from "./state.js";
 import { createControls } from "./controls.js";
 import { createNavigation } from "./navigation.js";
 import { createComparisonTabs } from "./comparisonTabs.js";
-import { createBubbleScatter } from "./charts/bubbleScatter.js";
+import { brushedKeys, createBubbleScatter } from "./charts/bubbleScatter.js";
+import { createChangeBars } from "./charts/changeBars.js";
 import { createCountryProfiles } from "./charts/countryProfiles.js";
 import { createMap } from "./charts/map.js";
 import { createMarimekko } from "./charts/marimekko.js";
@@ -43,9 +44,12 @@ async function init() {
   });
   const emissions = createEmissionsArea("#chart-emissions", data);
   const scatter = createBubbleScatter("#chart-scatter", { ...data, countriesOf });
+  const bars = createChangeBars("#chart-bars", { ...data, countriesOf });
   const profiles = createCountryProfiles("#chart-profiles", data);
 
-  function render(s) {
+  function render(current) {
+    // The scatter brush, as the keys inside it, for every chart of View B.
+    const s = { ...current, brushed: brushedKeys(countriesOf.get(current.continent) ?? [], byCountry, current) };
     const stats = new Map(CONTINENTS.map((key) => [key, metricValue(byContinent.get(key), s)]));
     const atCountries = s.level === "continent";
     const mapStats = atCountries
@@ -95,7 +99,10 @@ async function init() {
     d3.select(".views").classed("is-continent", atCountries);
     d3.select("#scatter-title").text(`Emissions from electricity by country, ${s.continent}, ${s.year}`);
     d3.select("#scatter-how-to-read").text("x = emissions per person, y = CO₂ per kWh, area = total emissions. "
-      + (s.mode === "year" ? "Compared countries are outlined." : `Lines = path of compared countries since ${s.rangeStart}.`));
+      + (s.mode === "year" ? "Compared countries are outlined." : `Lines = path of compared countries since ${s.rangeStart}.`)
+      + (s.brushed ? ` ${s.brushed.size} countries selected (dashed on the map); click outside the box to clear.` : " Drag to select a group in every chart."));
+    d3.select("#bars-title").text(`Change in renewable share, ${s.continent}, ${s.rangeStart}–${s.year}`);
+    d3.select("#bars-how-to-read").text("Sorted from the largest gain; blue = more renewable. Dashed line = World.");
 
     map.update(mapStats, s);
     marimekko.update(columns, s, metricColor(s.metric, s.mode), atCountries
@@ -103,6 +110,7 @@ async function init() {
       : { maxTotal });
     emissions.update(s);
     scatter.update(s);
+    bars.update(s);
     profiles.update(s);
   }
 

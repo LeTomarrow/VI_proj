@@ -246,12 +246,17 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
       .attr("fill", fillOf)
       .on("mousemove", (event, d) => showTooltip(event, tooltipHtml(name(d.key), stats.get(d.key), s)));
 
-    // Compared first, the hovered country last, so its outline is never covered.
+    // Brushed (dashed) first, then compared, the hovered country last, so its outline is never
+    // covered. The map is not faded for the brush: a lighter colour would mean a lower value.
+    const order = (d) => (d.key === s.hovered ? 2 : s.compared.includes(d.key) ? 1 : 0);
     const marked = countryShapes
-      .filter((d) => d.continent === continent && (s.compared.includes(d.key) || d.key === s.hovered))
-      .sort((a, b) => (a.key === s.hovered) - (b.key === s.hovered));
+      .filter((d) => d.continent === continent
+        && (s.compared.includes(d.key) || d.key === s.hovered || s.brushed?.has(d.key)))
+      .sort((a, b) => order(a) - order(b));
+    const outlineClass = (d) => (s.compared.includes(d.key) ? " is-compared"
+      : d.key === s.hovered ? "" : " is-brushed");
     outlines.selectAll("path").data(marked, (d) => d.shape.id ?? d.key).join("path")
-      .attr("class", (d) => `map-outline${s.compared.includes(d.key) ? " is-compared" : ""}`)
+      .attr("class", (d) => `map-outline${outlineClass(d)}`)
       .attr("d", (d) => path(d.shape))
       .order();
 

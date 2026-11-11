@@ -20,7 +20,7 @@ function summed(key, members, { byCountry, continent }, s) {
     const rows = keys.map((k) => byCountry.get(k)?.get(year)).filter(Boolean);
     if (rows.length) byYear.set(year, sumCountries({ key, name: key, continent }, year, rows));
   }
-  const record = { ...byYear.get(s.year), count: members.length, members: members.map((r) => r.name) };
+  const record = { ...byYear.get(s.year), count: members.length, members: members.map((r) => r.name), memberKeys: keys };
   byYear.set(s.year, record);
   return { record, stat: metricValue(byYear, s) };
 }

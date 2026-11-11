@@ -387,6 +387,75 @@ main {
   min-height: 0;
 }
 
+/* Emissions & change tab: the scatter on the left, the sorted bars on the right. */
+.tab-panel.tab-split {
+  flex-direction: row;
+  gap: 1.25rem;
+}
+
+.tab-part {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.tab-part-main {
+  flex-grow: 1.6;
+}
+
+/* Outside the scatter brush (the bars and bubbles fade; the map gets dashed outlines instead). */
+.bubble,
+.change-bar,
+.bubble-label,
+.bar-label {
+  transition: opacity 150ms;
+}
+
+.bubble.is-outside,
+.change-bar.is-outside {
+  opacity: 0.2;
+}
+
+.bubble-label.is-outside,
+.bar-label.is-outside {
+  opacity: 0.45;
+}
+
+.brush .selection {
+  fill: #0b0b0b;
+  fill-opacity: 0.06;
+  stroke: #0b0b0b;
+  stroke-dasharray: 4 3;
+}
+
+.change-bar.is-compared,
+.change-bar.is-hovered {
+  stroke: #0b0b0b;
+  stroke-width: 1.25;
+}
+
+.change-bar.is-compared {
+  stroke-width: 2;
+}
+
+.bar-label {
+  font-size: 11px;
+  fill: var(--color-text-secondary);
+  pointer-events: none;
+}
+
+.bar-label.is-compared {
+  font-weight: 600;
+  fill: var(--color-text);
+}
+
+.zero-line {
+  stroke: var(--color-text-secondary);
+  stroke-width: 1;
+}
+
 .bubble {
   fill-opacity: 0.85;
   stroke: var(--color-bg);
@@ -679,6 +748,10 @@ svg.is-globe:active {
 
 .map-outline.is-compared {
   stroke-width: 2.5;
+}
+
+.map-outline.is-brushed {
+  stroke-dasharray: 3 2;
 }
 
 .map-label {

@@ -53,17 +53,27 @@
           <div class="compare-heading">
             <h2 id="continent-title"></h2>
             <div class="segmented compare-tabs" role="tablist" aria-label="Country charts">
-              <button type="button" id="tab-scatter" role="tab" aria-selected="true" aria-controls="compare-scatter" tabindex="0">Scatter</button>
+              <button type="button" id="tab-scatter" role="tab" aria-selected="true" aria-controls="compare-scatter" tabindex="0">Emissions &amp; change</button>
               <button type="button" id="tab-profiles" role="tab" aria-selected="false" aria-controls="compare-profiles" tabindex="-1">Country profiles</button>
             </div>
           </div>
         </figcaption>
-        <div class="tab-panel" id="compare-scatter" role="tabpanel" aria-labelledby="tab-scatter" tabindex="0">
-          <div class="tab-heading">
-            <h3 class="tab-title" id="scatter-title"></h3>
-            <p class="how-to-read" id="scatter-how-to-read"></p>
+        <!-- The scatter and the sorted bars side by side, so the brush shows in both. -->
+        <div class="tab-panel tab-split" id="compare-scatter" role="tabpanel" aria-labelledby="tab-scatter" tabindex="0">
+          <div class="tab-part tab-part-main">
+            <div class="tab-heading">
+              <h3 class="tab-title" id="scatter-title"></h3>
+              <p class="how-to-read" id="scatter-how-to-read"></p>
+            </div>
+            <div class="chart" id="chart-scatter"></div>
           </div>
-          <div class="chart" id="chart-scatter"></div>
+          <div class="tab-part">
+            <div class="tab-heading">
+              <h3 class="tab-title" id="bars-title"></h3>
+              <p class="how-to-read" id="bars-how-to-read"></p>
+            </div>
+            <div class="chart" id="chart-bars"></div>
+          </div>
         </div>
         <div class="tab-panel" id="compare-profiles" role="tabpanel" aria-labelledby="tab-profiles" tabindex="0" hidden>
           <div class="tab-heading">

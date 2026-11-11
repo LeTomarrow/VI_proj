@@ -16,6 +16,7 @@ export const state = {
   level: "world",            // "world" | "continent"
   continent: null,           // continent shown at the continent level
   compared: [],              // keys in the comparison list, in the order they were added
+  brush: null,               // scatter brush: { continent, x: [lo, hi], y: [lo, hi] } in data units
 };
 
 export function setState(patch) {
@@ -33,6 +34,12 @@ export function onStateChange(listener) {
 // country does not fade a chart of continents.
 export function isDimmed(key, s, shown) {
   return shown.some((k) => s.compared.includes(k)) && !s.compared.includes(key) && key !== s.hovered;
+}
+
+// Outside the scatter brush, while there is one (s.brushed: Set of keys, added by main.js).
+// keys: the countries of a mark; a summed column is inside if any of its countries is.
+export function isOutsideBrush(keys, s) {
+  return !!s.brushed && !keys.some((k) => s.brushed.has(k) || k === s.hovered);
 }
 
 export function comparisonType(key) {

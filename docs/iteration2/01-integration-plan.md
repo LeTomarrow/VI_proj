@@ -91,7 +91,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
 | M2 Shared state + View A (static) | Done: state, controls, map, Marimekko and emissions area (`src/js/state.js`, `controls.js`, `charts/`); clicking a continent opens the pop-up (`entityMenu.js`) with *Explore countries →* and *+ Compare*; breadcrumb and comparison chips (`navigation.js`). The continent level is a placeholder until M3 |
-| M3 View B for Europe (static) | In progress: country map and country Marimekko for Europe and Asia and bubble scatter for Europe and Asia (`charts/map.js`, `charts/marimekko.js`, `data/countryColumns.js`, `charts/bubbleScatter.js`); the brush and the sorted bars are not started |
+| M3 View B for Europe (static) | Done for Europe and Asia: country map, country Marimekko, bubble scatter with a brush linked to the map, the Marimekko and the sorted bars of the change in renewable share (`charts/map.js`, `charts/marimekko.js`, `data/countryColumns.js`, `charts/bubbleScatter.js`, `charts/changeBars.js`) |
 | M4 Comparison list, search + View C | In progress: comparison list (continents or countries); the radar (`charts/countryProfiles.js`) is a tab of the View B panel until the View C screen exists |
 | M5 View B for Asia; labels and units | Planned |
 | M6 Animated transitions, radar | Planned, cut first if late |
@@ -203,12 +203,29 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   largest emitters, the compared and the hovered countries, skipping names that would overlap.
   Compared countries are outlined, not faded (the fill is a sequential value); in Range average
   and Change their path since the range start is drawn. Hover picks the nearest bubble, so small
-  bubbles under large ones can be reached. The brush comes with linking.
+  bubbles under large ones can be reached.
+- **Sorted bars (View B)**: change in renewable share (pp) of each country of the continent from
+  the range start to the selected year, sorted from the largest gain, one row per country. In the
+  Year mode the start is the last range start (2000 by default; the title gives the years), and a
+  note asks for a later year when the year is not after it. Colour = the map's Change scale (blue
+  = more renewable); the World's change is a dashed line. Names sit on the other side of the zero
+  line, which stays at least 40% in from the unused side; with ~45 rows only the hovered,
+  compared, brushed and the 3 largest gains and losses are named (all of them when rows are 11 px
+  or taller); each row is a full-width hover and click zone. The bars sit next to the scatter in
+  the same tab (*Emissions & change*), so the brush shows in both.
+- **Brush (View B)**: a 2D brush on the bubble scatter selects a group. It is stored as a region
+  in data units (per continent), so when the year changes the countries inside it are those whose
+  bubbles are in the box that year; another continent ignores it. The group is highlighted in
+  every View B chart: the other bubbles and bars fade, the Marimekko fades the other columns
+  (*Others* stays if one of its countries is in the group), and the map outlines the group with
+  dashes instead of fading (a lighter colour would mean a lower value). Dragging updates the other
+  charts only when the group changes. A click without dragging clears the brush (and still opens
+  the pop-up on a bubble). The group is not added to the comparison list (limit of 4).
 - **View B panel height**: at the country level the bottom row gets more room (the scatter and
   the radar need height). The charts in the tabs fit the panel instead of setting its height, so
   switching tabs never resizes the rows above.
 - **Country profiles (View C, built early)**: the radar belongs to View C (task T4, *Compare*),
-  but until that screen exists it is a tab (*Scatter* / *Country profiles*) of the View B panel,
+  but until that screen exists it is a tab (*Emissions & change* / *Country profiles*) of the View B panel,
   so the page still fills the window. It moves to View C with M4. The legend sits beside the radar
   and the outer ring is the largest share shown (rounded up to 20%, at least 40%), so the shapes
   are not squeezed into the centre; every axis keeps the same scale. Markers are 8 px with a 20 px
