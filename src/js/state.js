@@ -20,6 +20,7 @@ export const state = {
   mekkoRank: "generation",   // View B mix chart: key in RANKS (scales.js) that orders the countries
   mekkoTop: 10,              // View B mix chart: 5 or 10 = the ranked top N (bars + mix)
   mekkoCompared: true,       // View B mix chart: with 2+ compared countries, show only them (bars + mix)
+  barsTop: 10,               // View B sorted bars: 10 = the largest gains (or the brushed group) | "all"
 };
 
 export function setState(patch) {

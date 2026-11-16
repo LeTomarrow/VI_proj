@@ -211,8 +211,8 @@ Each question is answered by one group of linked charts. The design is detailed 
 2. **What is a continent's or country's electricity made of?** *(Marimekko in Views A and B;
    mix over time, in kWh per person, in View C)*
 3. **Which countries in a continent go against the trend?** Which had the largest rise in
-   renewable share, and did their emissions fall? *(View B: sorted bars of the change in
-   renewable share + bubble scatter + map)* (T2)
+   renewable share, and did their emissions fall? *(View B: sorted bars of the change in renewable share, with
+   whether emissions fell, + bubble scatter + map)* (T2)
 4. **Is clean generation keeping up with total generation, and why did emissions change?**
    *(View C: difference chart + demand/mix decomposition)* (T4)
 5. **How do the chosen countries compare, even across continents?** *(Country search +

@@ -1,64 +1,99 @@
-// View B: change in renewable share of each country of the continent, from the range start to
-// the selected year, sorted from the largest gain. Bars start at zero; names sit on the other
-// side of the zero line, so they never cover a bar. Colour = the map's Change scale.
+// View B: did the renewable share rise, and did emissions fall? (task T2) One row per country of
+// the continent, from the range start to the selected year, sorted from the largest gain in
+// renewable share. Bars of the change in renewable share (pp), and beside them a CO₂ column:
+// ▼ fell / ▲ rose with the change in emissions from electricity (%), so each row reads on its own
+// ("Germany +32.5 ▼ 48%"). Not bars: over 2000–2024 Asian emissions rise by hundreds of percent
+// (Cambodia +2680%), which no shared scale can show. Names in a gutter on the left. Top 10 or All.
 // Base example: Diverging bar chart (https://observablehq.com/@d3/diverging-bar-chart).
 
+import { changeRows } from "../data/change.js";
 import { openEntityMenu } from "../entityMenu.js";
 import { metricColor } from "../scales.js";
 import { setState } from "../state.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
 
-const MARGIN = { top: 16, right: 16, bottom: 40, left: 16 };
+const MARGIN = { top: 30, right: 8, bottom: 24, left: 4 };
+const GAP = 14;         // between the columns
+const NAME_W = [64, 108]; // name gutter, px (min, max); 28% of the width in between
+const CO2_W = 58;       // CO₂ column: arrow + value
+const VALUE_W = 30;     // room for a value label at a bar end
+const VALUE_MIN_W = 110; // a narrower bar column shows no values (the tooltip has them)
 const MIN_DOMAIN = 10;  // pp, so small changes are not blown up to the full width
+const MAX_BAND = 22;    // thickest row, so Top 10 does not draw slabs
 const LABEL_H = 11;     // rows thinner than this get a name only when marked or extreme
 const EXTREMES = 3;     // largest gains and losses always named
+const TOP = 10;
+const VIEWS = [[TOP, `Top ${TOP}`], ["all", "All"]];
 const colorOf = metricColor("renewableShare", "change");
-const fmt = d3.format("+.1f");
-const share = (r) => r?.renewableShare ?? null;
+const co2Text = (v) => `${d3.format(",.0f")(Math.abs(v))}%`;
+const pp = d3.format("+.1f");
+const pct = (v) => `${d3.format("+.0f")(v)}%`;
 const missingText = (n) => (n === 1 ? "1 country has" : `${n} countries have`);
 
-function tooltipHtml(d, start, end, world) {
+function tooltipHtml(d, i, total, start, end, world) {
   const row = (label, value) => `<div class="tooltip-row"><span>${label}</span><span>${value}</span></div>`;
-  const vsWorld = world === null ? ""
-    : `<div class="tooltip-note">World: ${fmt(world)} pp</div>`;
-  return `<strong>${d.name}</strong>`
+  const vsWorld = world ? `<div class="tooltip-note">World: ${pp(world.renewable)} pp, CO₂ ${world.emissions === null ? "no data" : pct(world.emissions)}</div>` : "";
+  return `<strong>${d.name}</strong> <span class="tooltip-note">${i + 1} of ${total}</span>`
     + row(`Renewable share ${start}`, `${d.from.toFixed(1)}%`)
     + row(`Renewable share ${end}`, `${d.to.toFixed(1)}%`)
-    + row("Change", `${fmt(d.value)} pp`)
+    + row("Change", `${pp(d.renewable)} pp`)
+    + row("CO₂ from electricity", d.emissions === null ? "no data"
+      : `${d3.format(",.1f")(d.e0)} → ${d3.format(",.1f")(d.e1)} Mt (${pct(d.emissions)})`)
     + `${vsWorld}<div class="tooltip-note">Click for details or + Compare</div>`;
 }
 
 export function createChangeBars(selector, { countries, world, countriesOf }) {
   const byCountry = d3.index(countries, (r) => r.key, (r) => r.year);
-  const byWorld = d3.index(world, (r) => r.year);
+  const byWorld = new Map([["World", d3.index(world, (r) => r.year)]]);
   const x = d3.scaleLinear();
   const y = d3.scaleBand().paddingInner(0.2);
 
   const root = d3.select(selector);
+  const tools = root.append("div").attr("class", "mekko-tools");
+  const viewButtons = tools.append("div").attr("class", "segmented").attr("role", "group")
+    .attr("aria-label", "Countries shown")
+    .selectAll("button").data(VIEWS).join("button")
+    .attr("type", "button")
+    .text(([, label]) => label)
+    .attr("title", ([n]) => (n === "all" ? "Every country of the continent"
+      : `The ${TOP} largest gains (with a brush: the selected group), plus the compared countries`))
+    .on("click", (_, [n]) => setState({ barsTop: n }));
   const note = root.append("p").attr("class", "how-to-read scatter-note").attr("role", "status");
   const svg = root.append("svg").attr("role", "img");
   const plot = svg.append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
-  const xAxis = plot.append("g").attr("class", "axis");
-  const xTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle")
-    .text("Change in renewable share (percentage points)");
-  const bars = plot.append("g");
-  const zero = plot.append("line").attr("class", "zero-line");
-  const worldLine = plot.append("line").attr("class", "reference-line");
-  const worldLabel = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("World");
-  const labels = plot.append("g");
+  const col1 = plot.append("g");
+  const col2 = plot.append("g");
+  const names = plot.append("g");
+  const xAxis = col1.append("g").attr("class", "axis");
+  const head = col1.append("text").attr("class", "column-title").attr("text-anchor", "middle")
+    .text("Renewables (pp)");
+  const head2 = col2.append("text").attr("class", "column-title").attr("text-anchor", "middle")
+    .text("CO₂");
+  const bars = col1.append("g");
+  const arrows = col2.append("g");
+  const zero = col1.append("line").attr("class", "zero-line");
+  const worldLine = col1.append("line").attr("class", "reference-line");
+  const worldLabel = col1.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("World");
+  const values = col1.append("g");
+  const values2 = col2.append("g");
   const hits = plot.append("g");
 
   let innerW = 0;
   let innerH = 0;
+  let nameW = 0;
+  let w1 = 0;
   let current = null;
 
   function resize(width, height) {
     innerW = width - MARGIN.left - MARGIN.right;
     innerH = height - MARGIN.top - MARGIN.bottom;
-    x.range([0, innerW]);
-    y.range([0, innerH]);
-    xTitle.attr("x", innerW / 2).attr("y", innerH + 34);
+    nameW = Math.max(NAME_W[0], Math.min(NAME_W[1], 0.28 * innerW));
+    w1 = Math.max(0, innerW - nameW - 2 * GAP - CO2_W);
+    col1.attr("transform", `translate(${nameW + GAP}, 0)`);
+    col2.attr("transform", `translate(${nameW + 2 * GAP + w1}, 0)`);
+    head.attr("x", w1 / 2).attr("y", -18);
+    head2.attr("x", 0).attr("y", -18).attr("text-anchor", "start");
     if (current) render(current);
   }
 
@@ -66,46 +101,62 @@ export function createChangeBars(selector, { countries, world, countriesOf }) {
     const start = s.rangeStart;
     const end = s.year;
     const keys = countriesOf.get(s.continent) ?? [];
-    const rows = end > start ? keys.map((key) => {
-      const from = share(byCountry.get(key)?.get(start));
-      const to = share(byCountry.get(key)?.get(end));
-      return { key, name: byCountry.get(key)?.get(end)?.name ?? key, from, to, value: from === null || to === null ? null : to - from };
-    }).filter((d) => d.value !== null).sort((a, b) => b.value - a.value) : [];
-    const w0 = share(byWorld.get(start));
-    const w1 = share(byWorld.get(end));
-    const worldChange = rows.length && w0 !== null && w1 !== null ? w1 - w0 : null;
+    const all = changeRows(keys, byCountry, start, end);
+    const position = new Map(all.map((d, i) => [d.key, i]));
+    const top = (s.barsTop ?? TOP) !== "all";
+    // Top 10: the largest gains, or the brushed group; compared countries always.
+    const rows = top
+      ? all.filter((d, i) => (s.brushed ? s.brushed.has(d.key) : i < TOP) || s.compared.includes(d.key))
+      : all;
+    const worldRow = changeRows(["World"], byWorld, start, end)[0] ?? null;
+    viewButtons.attr("aria-pressed", ([n]) => String(n === (top ? TOP : "all")));
 
+    const missing = all.length < keys.length ? ` ${missingText(keys.length - all.length)} no data for ${start} or ${end}.` : "";
     note.text(end <= start
       ? `Choose a year after ${start} (or set the start with Range average or Change).`
-      : rows.length < keys.length ? `${missingText(keys.length - rows.length)} no data for ${start} or ${end}.` : "");
-    svg.attr("aria-label", `Bar chart of the change in renewable share of ${rows.length} countries of ${s.continent}, ${start}–${end}, sorted.`);
+      : `${top ? `${rows.length} of ${all.length} countries.` : ""}${missing}`.trim());
+    svg.attr("aria-label", `Bar chart of the change in renewable share and in emissions of ${rows.length} countries of ${s.continent}, ${start}–${end}, sorted.`);
 
-    // Zero stays at least 40% in from the side the bars do not use, to leave room for the names.
-    const lo = Math.min(0, d3.min(rows, (d) => d.value) ?? 0);
-    const hi = Math.max(MIN_DOMAIN, d3.max(rows, (d) => d.value) ?? 0);
-    x.domain([Math.min(lo, -0.6 * hi), Math.max(hi, -0.6 * lo)]).nice();
-    y.domain(rows.map((d) => d.key));
-    xAxis.attr("transform", `translate(0, ${innerH})`)
-      .call(d3.axisBottom(x).ticks(Math.max(3, innerW / 70)).tickFormat((v) => (v ? d3.format("+")(v) : "0")).tickSize(4));
-    zero.attr("x1", x(0)).attr("x2", x(0)).attr("y1", 0).attr("y2", innerH)
-      .attr("display", rows.length ? null : "none");
-    worldLine.attr("display", worldChange === null ? "none" : null)
-      .attr("x1", x(worldChange ?? 0)).attr("x2", x(worldChange ?? 0)).attr("y1", 0).attr("y2", innerH);
-    worldLabel.attr("display", worldChange === null ? "none" : null)
-      .attr("x", x(worldChange ?? 0)).attr("y", -5);
+    // Room for a value label beyond the longest bar on each side that has bars.
+    const fit = (scale, width, lo, hi) => {
+      const pad = width >= VALUE_MIN_W ? VALUE_W : 0;
+      scale.domain([lo, hi]).range([lo < 0 ? pad : 0, Math.max(lo < 0 ? pad : 0, width - (hi > 0 ? pad : 0))]);
+      return pad > 0;
+    };
+    const valuesShown = fit(x, w1, Math.min(0, d3.min(rows, (d) => d.renewable) ?? 0), Math.max(MIN_DOMAIN, d3.max(rows, (d) => d.renewable) ?? 0));
+    // Rows fill the height up to MAX_BAND each, from the top.
+    const usedH = Math.min(innerH, rows.length * MAX_BAND / 0.8);
+    y.domain(rows.map((d) => d.key)).range([0, usedH]);
+
+    xAxis.attr("transform", `translate(0, ${usedH})`)
+      .call(d3.axisBottom(x).ticks(Math.max(1, w1 / 50)).tickFormat((v) => (v ? d3.format("+")(v) : "0")).tickSize(4));
+    const show = rows.length ? null : "none";
+    zero.attr("display", show).attr("x1", x(0)).attr("x2", x(0)).attr("y1", 0).attr("y2", usedH);
+    const wr = rows.length ? worldRow : null;
+    worldLine.attr("display", wr ? null : "none")
+      .attr("x1", x(wr?.renewable ?? 0)).attr("x2", x(wr?.renewable ?? 0)).attr("y1", 0).attr("y2", usedH);
+    worldLabel.attr("display", wr ? null : "none").attr("x", x(wr?.renewable ?? 0)).attr("y", -5);
 
     const outside = (d) => !!s.brushed && !s.brushed.has(d.key) && d.key !== s.hovered;
-    bars.selectAll("rect").data(rows, (d) => d.key).join("rect")
-      .attr("class", "change-bar")
-      .attr("x", (d) => x(Math.min(0, d.value)))
-      .attr("width", (d) => Math.max(1, Math.abs(x(d.value) - x(0))))
-      .attr("y", (d) => y(d.key))
-      .attr("height", y.bandwidth())
-      .attr("fill", (d) => colorOf(d.value))
+    const mark = (sel) => sel
       .classed("is-compared", (d) => s.compared.includes(d.key))
       .classed("is-hovered", (d) => d.key === s.hovered)
       .classed("is-outside", outside);
+    bars.selectAll("rect").data(rows, (d) => d.key).join("rect")
+      .attr("class", "change-bar")
+      .attr("x", (d) => x(Math.min(0, d.renewable)))
+      .attr("width", (d) => Math.max(1, Math.abs(x(d.renewable) - x(0))))
+      .attr("y", (d) => y(d.key))
+      .attr("height", y.bandwidth())
+      .attr("fill", (d) => colorOf(d.renewable))
+      .call(mark);
     bars.selectAll("rect.is-compared, rect.is-hovered").raise();
+    // One arrow per row, even when the row is too thin for text: the column reads as a pattern.
+    const size = Math.max(3, Math.min(9, y.bandwidth()));
+    arrows.selectAll("path").data(rows.filter((d) => d.emissions !== null), (d) => d.key).join("path")
+      .attr("class", (d) => `co2-arrow ${d.emissions < 0 ? "is-fall" : "is-rise"}${outside(d) ? " is-outside" : ""}`)
+      .attr("d", (d) => `M${-size / 2},0L${size / 2},0L0,${d.emissions < 0 ? size : -size}Z`)
+      .attr("transform", (d) => `translate(${size / 2 + 1}, ${y(d.key) + y.bandwidth() / 2 + (d.emissions < 0 ? -size / 2 : size / 2)})`);
 
     // Every name when the rows are tall enough; otherwise the hovered, compared, brushed and
     // extreme ones, skipping any that would overlap.
@@ -128,22 +179,41 @@ export function createChangeBars(selector, { countries, world, countriesOf }) {
         return true;
       })
       .map((c) => c.d);
-    labels.selectAll("text").data(named, (d) => d.key).join("text")
-      .attr("class", (d) => `bar-label${s.compared.includes(d.key) ? " is-compared" : ""}${outside(d) ? " is-outside" : ""}`)
-      .attr("x", (d) => x(0) + (d.value >= 0 ? -4 : 4))
-      .attr("y", (d) => y(d.key) + y.bandwidth() / 2)
-      .attr("dy", "0.32em")
-      .attr("text-anchor", (d) => (d.value >= 0 ? "end" : "start"))
-      .text((d) => `${s.compared.includes(d.key) ? "✓ " : ""}${d.name} ${fmt(d.value)}`);
+    const labelClass = (base) => (d) => `${base}${s.compared.includes(d.key) ? " is-compared" : ""}${outside(d) ? " is-outside" : ""}`;
+    const cy = (d) => y(d.key) + y.bandwidth() / 2;
+    names.selectAll("text").data(named, (d) => d.key).join("text")
+      .attr("class", labelClass("bar-label"))
+      .attr("x", nameW).attr("y", cy).attr("dy", "0.32em")
+      .attr("text-anchor", "end")
+      .text((d) => `${s.compared.includes(d.key) ? "✓ " : ""}${d.name}`)
+      .each(function () { // shorten to the gutter
+        let text = this.textContent;
+        while (text.length > 3 && this.getComputedTextLength() > nameW) {
+          text = text.slice(0, -1);
+          this.textContent = `${text.trimEnd()}…`;
+        }
+      });
+    const valueAt = (sel, scale, value, text) => sel
+      .attr("class", labelClass("bar-label"))
+      .attr("x", (d) => scale(value(d)) + (value(d) >= 0 ? 3 : -3))
+      .attr("y", cy).attr("dy", "0.32em")
+      .attr("text-anchor", (d) => (value(d) >= 0 ? "start" : "end"))
+      .text(text);
+    values.selectAll("text").data(valuesShown ? named : [], (d) => d.key).join("text")
+      .call(valueAt, x, (d) => d.renewable, (d) => pp(d.renewable));
+    values2.selectAll("text").data(named.filter((d) => d.emissions !== null), (d) => d.key).join("text")
+      .attr("class", labelClass("bar-label"))
+      .attr("x", size + 5).attr("y", cy).attr("dy", "0.32em")
+      .text((d) => co2Text(d.emissions));
 
-    // One full-width row per country, so thin bars are easy to hover.
+    // One full-width row per country (both columns), so thin bars are easy to hover.
     hits.selectAll("rect").data(rows, (d) => d.key).join("rect")
       .attr("class", "hit-area is-clickable")
-      .attr("x", 0).attr("width", innerW)
+      .attr("x", -MARGIN.left).attr("width", innerW + MARGIN.left)
       .attr("y", (d) => y(d.key) - (y.step() - y.bandwidth()) / 2)
       .attr("height", y.step())
       .on("mouseenter", (_, d) => setState({ hovered: d.key }))
-      .on("mousemove", (event, d) => showTooltip(event, tooltipHtml(d, start, end, worldChange)))
+      .on("mousemove", (event, d) => showTooltip(event, tooltipHtml(d, position.get(d.key), all.length, start, end, worldRow)))
       .on("mouseleave", () => { setState({ hovered: null }); hideTooltip(); })
       .on("click", (event, d) => openEntityMenu(event, d.key, d.name));
   }

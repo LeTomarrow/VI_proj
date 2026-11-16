@@ -116,8 +116,8 @@ async function init() {
     d3.select("#scatter-how-to-read").text("x = emissions per person, y = CO₂ per kWh, area = total emissions. "
       + (s.mode === "year" ? "Compared countries are outlined." : `Lines = path of compared countries since ${s.rangeStart}.`)
       + (s.brushed ? ` ${s.brushed.size} countries selected (dashed on the map); click outside the box to clear.` : " Drag to select a group in every chart."));
-    d3.select("#bars-title").text(`Change in renewable share, ${s.continent}, ${s.rangeStart}–${s.year}`);
-    d3.select("#bars-how-to-read").text("Sorted from the largest gain; blue = more renewable. Dashed line = World.");
+    d3.select("#bars-title").text(`Change by country, ${s.continent}, ${s.rangeStart}–${s.year}`);
+    d3.select("#bars-how-to-read").text("Sorted from the largest renewable gain; dashed line = World. CO₂: ▼ fell, ▲ rose.");
 
     map.update(mapStats, s);
     marimekko.update(s, atCountries
