@@ -72,9 +72,30 @@ export const CONTINENT_COLORS = {
   Oceania: "#008300",
 };
 
+// What View B's Marimekko ranks the countries by. groups: the source groups that move to the
+// base of each column; name: for titles. The ranked value is in TWh.
+const sourceTwh = (group) => (r) => d3.sum(group.parts, (k) => r.sources[k]);
+export const RANKS = [
+  { key: "generation", label: "Total generation", name: "total generation", groups: [], value: (r) => r.generation },
+  { key: "lowCarbon", label: "Low-carbon", name: "low-carbon generation",
+    groups: ["nuclear", "hydro", "wind", "solar", "bioOther"], value: (r) => r.lowCarbon },
+  { key: "fossil", label: "Fossil", name: "fossil generation",
+    groups: ["coal", "oil", "gas"], value: (r) => r.fossil },
+  ...SOURCE_GROUPS.map((g) => ({
+    key: g.key, label: g.label, name: `${g.label.toLowerCase()} generation`, groups: [g.key], color: g.color, value: sourceTwh(g),
+  })),
+];
+
+// Stack order with the ranked groups at the base, so their shares share one baseline.
+export function sourceOrder(rank) {
+  return [...SOURCE_GROUPS.filter((g) => rank.groups.includes(g.key)),
+    ...SOURCE_GROUPS.filter((g) => !rank.groups.includes(g.key))];
+}
+
 export const SOURCE_LABELS ={ bioenergy: "Bioenergy", otherRenewable: "Other renewables" };
 
 // Identity of compared countries (chips, View C). Validated all-pairs for colour blindness
-// (worst CVD ΔE 10.7) and kept off the source colours (nearest: coal, ΔE 8.5). The continent
+// (worst CVD ΔE 10.7) and kept off the source colours (nearest: coal, ΔE 8.5; the fifth, blue,
+// is ΔE 11.8 from hydro and wind). The continent
 // colours are never on screen with them: the list holds continents or countries, not both.
-export const COUNTRY_COMPARE_COLORS = ["#5b3fd1", "#ad1457", "#26a69a", "#8d6e00"];
+export const COUNTRY_COMPARE_COLORS = ["#5b3fd1", "#ad1457", "#26a69a", "#8d6e00", "#0088ee"];

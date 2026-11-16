@@ -10,6 +10,11 @@ export function createNavigation(selector, { nameOf }) {
   const compare = root.append("div").attr("class", "compare-list").attr("aria-label", "Comparison list");
   const label = compare.append("span").attr("class", "control-label");
   const chips = compare.append("ul").attr("class", "chips");
+  // Empties the list in one click (shown with two or more entries; one has its own ×).
+  const clear = compare.append("button").attr("type", "button").attr("class", "link compare-clear")
+    .text("Clear all")
+    .attr("aria-label", "Remove every entry from the comparison")
+    .on("click", () => setState({ compared: [], hovered: null }));
   const hint = compare.append("span").attr("class", "compare-hint")
     .text("Click a continent or a country, then + Compare");
 
@@ -33,6 +38,7 @@ export function createNavigation(selector, { nameOf }) {
       });
 
       hint.attr("hidden", s.compared.length ? true : null);
+      clear.attr("hidden", s.compared.length >= 2 ? null : true);
       const items = chips.selectAll("li").data(s.compared, (k) => k).join((enter) => {
         const li = enter.append("li").attr("class", "chip");
         li.append("span").attr("class", "swatch");

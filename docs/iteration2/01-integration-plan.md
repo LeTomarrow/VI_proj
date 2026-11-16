@@ -32,15 +32,16 @@ Raw notes in [../iteration1/03-usability-testing.md](../iteration1/03-usability-
 ## Final design: three coordinated views
 
 Each chart answers one task. Views A and B share one frame: the **map** and the
-**Marimekko** stay on screen and change level (continents → countries) instead of being
+**mix chart** stay on screen and change level (Marimekko of continents → ranked bars + mix of
+countries) instead of being
 repeated. Only the third panel changes. All views share the **year**, the **year range**
 (two-handle slider), the **metric** and the **comparison list**.
 
 | View | Charts | Mantra | Task |
 |---|---|---|---|
-| **A. World** | Equal Earth map, continents coloured by the chosen metric (Year / Range average / Change) · Marimekko by continent for the selected year (width = TWh, height = share of each source, top strip = map colour) · stacked area of emissions by continent, absolute MtCO₂e, 2000–2024 | Overview | T1 |
-| **B. Continent** (Europe, Asia) | Map zoomed to the continent (all countries) · Marimekko of the largest countries by generation (up to 10, only those wide enough to read) + "Others" (click to expand), with compared countries always shown · bubble scatter (x = emissions per capita, log; y = carbon intensity; area = total emissions; colour = renewable share; start → end trail for compared countries) · bars of the change in renewable share over the range, sorted | Zoom and filter | T2, T3 |
-| **C. Compare** (≤ 4 countries + World) | One row per country on a shared 2000–2024 axis: mix over time (stacked area by source, kWh per person) · "Clean vs total generation growth" (difference chart) · "Why emissions changed" (demand / mix decomposition, LMDI). Above the rows: one radar with all countries and the World in grey (lowest priority, cut first) | Details on demand, relate | T4 |
+| **A. World** | Equal Earth map, continents coloured by the chosen metric (Year / Range average / Change) · Marimekko by continent for the selected year (width = TWh, height = share of each source) · stacked area of emissions by continent, absolute MtCO₂e, 2000–2024 | Overview | T1 |
+| **B. Continent** (Europe, Asia) | Map zoomed to the continent (all countries) · countries ranked by a chosen value (total generation, low-carbon, fossil or one source): *Top 5 / Top 10* as bars of that value (TWh) above equal-width mix columns; with 2+ compared countries, *Compared* shows only them in that layout; compared countries outside the top N always shown · bubble scatter (x = emissions per capita, log; y = carbon intensity; area = total emissions; colour = renewable share; start → end trail for compared countries) · bars of the change in renewable share over the range, sorted | Zoom and filter | T2, T3 |
+| **C. Compare** (≤ 5 countries + World) | One row per country on a shared 2000–2024 axis: mix over time (stacked area by source, kWh per person) · "Clean vs total generation growth" (difference chart) · "Why emissions changed" (demand / mix decomposition, LMDI). Above the rows: one radar with all countries and the World in grey (lowest priority, cut first) | Details on demand, relate | T4 |
 
 ### Linking
 
@@ -48,7 +49,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 - **Click** a country → pop-up with *Details* and *+ Compare* (U7). A global **country search**
   does the same from any view, so T3 does not require leaving Europe to add an Asian country.
 - **Brush** (2D, bubble scatter only) → highlights the group on the map, in the Marimekko and in
-  the sorted bars. It does not add the group to the comparison list (limit of 4).
+  the sorted bars. It does not add the group to the comparison list (limit of 5).
 - **Compared countries** are marked in every chart with an **outline and a label**, not a fill
   colour, so they do not clash with the metric scale, the source colours or the difference
   chart. Their fixed colour is only used in View C (rows, radar) and on the chips.
@@ -57,7 +58,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 ### Transitions
 
 - **A → B** (click a continent in any chart): the map zooms to the continent's bounding box;
-  the continent's Marimekko column widens and splits into its countries; the emissions area
+  the Marimekko of the continents gives way to the continent's ranked countries; the emissions area
   is replaced by the scatter and the bars. **B → A** through the breadcrumb.
 - **A/B → C** with *Compare →*; **C → B** by clicking a country's name.
 - Charts are built static first, with an instant level switch. Animations are added last; if
@@ -84,6 +85,8 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 | Normalised (100%) areas | Hide totals and growth (U5); cannot answer "who emits most" | Absolute areas; kWh per person in View C |
 | Difference chart by continent in View A | No task needs it at continent level | Difference chart per country in View C |
 | 1D time brush | Does the same as the two-handle slider | Two-handle slider; brushing only in the scatter |
+| Marimekko of the countries (View B *All*, Others / Largest, magnified copies) | Serves no persona task (no task asks what slice of the continent each country is); China or Russia take half the axis and *Others* hides most countries, so it confused more than it showed | Ranked bars + mix (*Top 5 / Top 10*, *Compared*); every country stays on the map and in the sorted bars |
+| Map-colour strip above the Marimekko columns | Repeats the map's colour and clutters the chart; the link is made by selecting on the map | Hover and click link the map and the Marimekko (outline, ✓) |
 
 ## Status
 
@@ -91,7 +94,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
 |---|---|
 | M1 Data: load, preprocess, continent mapping and aggregation, ISO join | Done (`src/js/data/`); continent sums match OWID for 2000–2024 |
 | M2 Shared state + View A (static) | Done: state, controls, map, Marimekko and emissions area (`src/js/state.js`, `controls.js`, `charts/`); clicking a continent opens the pop-up (`entityMenu.js`) with *Explore countries →* and *+ Compare*; breadcrumb and comparison chips (`navigation.js`). The continent level is a placeholder until M3 |
-| M3 View B for Europe (static) | Done for Europe and Asia: country map, country Marimekko, bubble scatter with a brush linked to the map, the Marimekko and the sorted bars of the change in renewable share (`charts/map.js`, `charts/marimekko.js`, `data/countryColumns.js`, `charts/bubbleScatter.js`, `charts/changeBars.js`) |
+| M3 View B for Europe (static) | Done for Europe and Asia: country map, ranked bars + mix of the countries (*Rank by*, *Compared / Top 5 / Top 10*), bubble scatter with a brush linked to the map, the Marimekko and the sorted bars of the change in renewable share (`charts/map.js`, `charts/marimekko.js`, `data/countryColumns.js`, `charts/bubbleScatter.js`, `charts/changeBars.js`) |
 | M4 Comparison list, search + View C | In progress: comparison list (continents or countries); the radar (`charts/countryProfiles.js`) is a tab of the View B panel until the View C screen exists |
 | M5 View B for Asia; labels and units | Planned |
 | M6 Animated transitions, radar | Planned, cut first if late |
@@ -153,7 +156,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   continents fade to 30% opacity in the Marimekko (source segments only; the columns share the
   0–100% baseline, so comparing them is not a problem) and return to full colour on hover. They
   are not removed, because T1 needs every continent.
-  The map and the Marimekko's top strip are not faded, because their colour is the metric scale,
+  The map is not faded, because its colour is the metric scale,
   where a lighter colour would read as a lower value (and grey already means *no data*); there
   the thick outline and the ✓ mark the compared continents. If the tests show that this focus
   gets in the way of T1, add a *Highlight compared* on/off switch next to the chips.
@@ -193,6 +196,65 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   and starts again at 0, and every other country gets its own column, so the small ones open up
   instead of all 41 columns sharing the same scale. Only the tiniest (< 1% of the continent) stay
   slivers, named in the tooltip.
+- **Magnified compared countries (Marimekko, View B)**: comparing a large country with a very
+  small one (Germany ~500 TWh, Malta ~2 TWh) left the small one as an unreadable sliver. A compared
+  country narrower than 28 px gets a magnified copy (34 px, not to scale) at the right end, after a
+  second axis break, with its real TWh under it; its name moves to the copy and the tooltip says the
+  width is not to scale. Only those countries get a copy, and only when needed, so the chart is
+  unchanged otherwise. Rejected: a separate strip of 100% bars for every compared country (more
+  clutter), equal widths (loses size, U5) and a log or square-root width (areas would lie).
+- **Ranked top N (View B, instructor's tip, 11/2026)**: the instructor suggested making the
+  country Marimekko filterable (top 10 by generation, by hydro, by nuclear, …) and breaking up its
+  clutter. Measured on 2024: in a Marimekko the width is the total generation, so China (Asia) and
+  Russia (Europe) take most of the axis, and 5–8 of a source's top 10 are under 28 px wide; fitting
+  the axis to the top 10 only saves 1–2 of them. So the chart is *deconstructed*: a **Rank by**
+  menu (total generation, low-carbon, fossil, or one source) and **Top 5 / Top 10 / All** above the
+  chart. Top N shows the two dimensions of the Marimekko as two aligned charts: bars of the ranked
+  value (TWh, scale fixed to the continent's largest value in any year, so growth stays visible,
+  U5; value on each bar) and, under each bar, an equal-width column of the mix with the ranked
+  sources at the base, so their shares sit on a common baseline; a dashed line gives the
+  continent's share. Compared countries outside the top N follow after a gap; the tooltip gives
+  the rank (*#5 in Europe by hydro generation*). *All* keeps the Marimekko (and its Others /
+  Largest / magnified copies), now ordered by the chosen ranking with its sources at the base.
+  Clicking a source in the legend ranks by it (again: back to total generation). Default: Top 10
+  by total generation, so the continent opens on a readable chart. This revisits the rejection of
+  equal widths below: the size is not lost, it moves to the bars. The World Marimekko is
+  unchanged (six continents always fit). Rejected: a top N inside the Marimekko with magnified
+  copies (~7 copies in Asia) or folding the thin ones (2–3 columns left in Asia).
+- **Compared view, no map strip, 5 compared (View B, 11/2026)**: after the ranked top N, the team
+  asked for three changes. (1) The strip of map colour above each Marimekko column (both levels)
+  is removed: it repeated the map and added clutter; the map and the Marimekko are linked by
+  hover and selection instead. (2) With two or more compared countries, a **Compared** button
+  (first in *Top 5 / Top 10 / All*, disabled with fewer) shows only them in the bars + mix layout:
+  bars of the ranked value (scale fixed to their largest value in any year) and normalised
+  (equal-width, 100%) mix columns, ordered by *Rank by*. They can come from any continent; the
+  tooltip gives the rank in their own continent, and the continent's dashed line is drawn only
+  when all of them belong to the shown continent. Adding the second compared country switches to
+  it; Top 5 / Top 10 / All go back to the whole continent. This revisits the rejected separate
+  strip of 100% bars (magnified compared countries): it replaces the chart instead of adding one. (3) The comparison holds 5 instead of 4;
+  the fifth country colour, `#0088ee`, was chosen with the dataviz validator over a colour grid:
+  all-pairs worst CVD ΔE stays 10.7 and it is ΔE 11.8 from the nearest source colour.
+- **Horizontal rows tried and reverted (View B, 11/2026)**: a layout with one row per country
+  (name, bar of the ranked value, 100% mix bar with the ranked share written in it) was tried to
+  stop names being cut, and reverted at the team's request: the vertical bars above mix columns
+  stay. Not done (proposed): animated reordering when the ranking changes, and highlighting one
+  source on legend hover.
+- **Clear all (comparison list, 11/2026)**: with two or more entries, a *Clear all* link after
+  the chips empties the list in one click (before, each chip had to be removed with its ×).
+- **Country Marimekko removed, less text (View B, 11/2026)**: the *All* view (Marimekko of the
+  continent's countries) still confused: in Asia China takes half the axis, only India and Japan
+  get a readable column and *Others (47)* hides the rest; the title, two reading lines, the tools,
+  a wrapped *Show all 50 countries* button and the legend left the chart ~150 px tall. Research
+  (Marimekko guides: 6–7 columns at most, one dominant category squeezes the others; dataviz
+  guide: more than 6 parts to compare → ranked bars) and the persona decide it: the instructor's
+  tip was a suggestion, not a required chart, and no task of Carla's asks what slice of the
+  continent each country is. Q2 (what a country's electricity is made of), T2 and T3 are served by
+  the ranked bars + mix (*Top 5 / Top 10*), the *Compared* view, the map and the sorted bars, which
+  show every country. So *All*, *Others* / *Largest*, the magnified copies, the axis breaks and the
+  *Show all* button are removed; the Marimekko stays for the six continents (View A), where it
+  works. Less text: one short reading line (details in the tooltips), shorter title (*Top 10 by
+  hydro generation, Asia, 2024*), smaller tools and legend. Names of narrow columns (Top 10 in a
+  narrow panel) are slanted instead of cut ("Germ…").
 - **Bubble scatter (View B)**: one bubble per country of the continent in the selected year
   (x = emissions per person, log; y = carbon intensity; area = total emissions; colour = renewable
   share, the same ramp as the map). The axes and the bubble sizes are fixed per continent over
@@ -220,7 +282,7 @@ repeated. Only the third panel changes. All views share the **year**, the **year
   (*Others* stays if one of its countries is in the group), and the map outlines the group with
   dashes instead of fading (a lighter colour would mean a lower value). Dragging updates the other
   charts only when the group changes. A click without dragging clears the brush (and still opens
-  the pop-up on a bubble). The group is not added to the comparison list (limit of 4).
+  the pop-up on a bubble). The group is not added to the comparison list (limit of 5).
 - **View B panel height**: at the country level the bottom row gets more room (the scatter and
   the radar need height). The charts in the tabs fit the panel instead of setting its height, so
   switching tabs never resizes the rows above.

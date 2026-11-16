@@ -5,7 +5,7 @@ import { CONTINENTS } from "./data/constants.js";
 
 const dispatch = d3.dispatch("change");
 
-export const MAX_COMPARED = 4;
+export const MAX_COMPARED = 5;
 
 export const state = {
   year: 2024,                // selected year; end of the range in the Range average and Change modes
@@ -17,6 +17,9 @@ export const state = {
   continent: null,           // continent shown at the continent level
   compared: [],              // keys in the comparison list, in the order they were added
   brush: null,               // scatter brush: { continent, x: [lo, hi], y: [lo, hi] } in data units
+  mekkoRank: "generation",   // View B mix chart: key in RANKS (scales.js) that orders the countries
+  mekkoTop: 10,              // View B mix chart: 5 or 10 = the ranked top N (bars + mix)
+  mekkoCompared: true,       // View B mix chart: with 2+ compared countries, show only them (bars + mix)
 };
 
 export function setState(patch) {
@@ -46,7 +49,7 @@ export function comparisonType(key) {
   return CONTINENTS.includes(key) ? "continents" : "countries";
 }
 
-// Colour slot (0–3) of a compared country. A country keeps its slot while it stays in the list,
+// Colour slot (0–4) of a compared country. A country keeps its slot while it stays in the list,
 // so removing one never repaints the others; a new country takes the lowest free slot.
 const slots = new Map();
 export function comparedSlot(key) {
@@ -64,6 +67,9 @@ export function toggleCompared(key) {
   if (compared.includes(key)) setState({ compared: compared.filter((k) => k !== key) });
   else {
     const sameType = compared.filter((k) => comparisonType(k) === comparisonType(key));
-    if (sameType.length < MAX_COMPARED) setState({ compared: [...sameType, key] });
+    if (sameType.length >= MAX_COMPARED) return;
+    // A second compared country switches View B's mix chart to the compared countries only.
+    const second = comparisonType(key) === "countries" && sameType.length === 1;
+    setState({ compared: [...sameType, key], ...(second ? { mekkoCompared: true } : {}) });
   }
 }

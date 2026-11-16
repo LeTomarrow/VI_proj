@@ -1,9 +1,9 @@
 import { loadEnergyData } from "./data/loadData.js";
 import { metricValue } from "./data/metrics.js";
-import { countryColumns } from "./data/countryColumns.js";
+import { comparedColumns, rankedColumns, rankMax } from "./data/countryColumns.js";
 import { CONTINENTS } from "./data/constants.js";
-import { METRICS, MODES, metricColor } from "./scales.js";
-import { onStateChange, state } from "./state.js";
+import { METRICS, MODES, RANKS } from "./scales.js";
+import { comparisonType, onStateChange, state } from "./state.js";
 import { createControls } from "./controls.js";
 import { createNavigation } from "./navigation.js";
 import { createComparisonTabs } from "./comparisonTabs.js";
@@ -25,11 +25,13 @@ async function init() {
   const countriesByYear = d3.group(data.countries, (r) => r.year);
   const totalCountries = new Set(data.countries.map((r) => r.key)).size;
   const maxTotal = d3.max(d3.rollup(data.continents, (rows) => d3.sum(rows, (r) => r.generation), (r) => r.year).values());
-  // At the country level the Marimekko's x axis is the continent's largest yearly total.
-  const maxTotalOf = d3.rollup(data.continents, (rows) => d3.max(rows, (r) => r.generation), (r) => r.key);
-  // Others is folded again whenever the continent changes.
-  let othersExpanded = false;
-  let shownContinent = null;
+  // Scale of the ranked bars: the largest value of the continent's countries in any year.
+  const rankMaxCache = new Map();
+  const rankMaxOf = (continent, rank) => {
+    const key = `${continent}|${rank.key}`;
+    if (!rankMaxCache.has(key)) rankMaxCache.set(key, rankMax(byCountry, countriesOf.get(continent) ?? [], rank));
+    return rankMaxCache.get(key);
+  };
 
   const coverage = ({ year, metric }) => ({
     available: (countriesByYear.get(year) ?? []).filter((r) => r[metric] !== null).length,
@@ -39,9 +41,7 @@ async function init() {
   const controls = createControls("#global-filters", { coverage });
   const navigation = createNavigation("#navigation", { nameOf });
   const map = createMap("#chart-map", { ...data, nameOf });
-  const marimekko = createMarimekko("#chart-marimekko", {
-    onToggleOthers(expanded) { othersExpanded = expanded; render(state); },
-  });
+  const marimekko = createMarimekko("#chart-marimekko");
   const emissions = createEmissionsArea("#chart-emissions", data);
   const scatter = createBubbleScatter("#chart-scatter", { ...data, countriesOf });
   const bars = createChangeBars("#chart-bars", { ...data, countriesOf });
@@ -55,14 +55,24 @@ async function init() {
     const mapStats = atCountries
       ? new Map((countriesOf.get(s.continent) ?? []).map((key) => [key, metricValue(byCountry.get(key), s)]))
       : stats;
-    if (s.continent !== shownContinent) { othersExpanded = false; shownContinent = s.continent; }
-    // The Marimekko picks the columns once it knows how wide a readable column is.
-    const columns = atCountries
-      ? (minGeneration) => countryColumns({
-        byCountry, keys: countriesOf.get(s.continent) ?? [], continent: s.continent,
-        compared: s.compared, expanded: othersExpanded, minGeneration,
-      }, s)
-      : () => ({ records: data.continents.filter((r) => r.year === s.year), stats });
+    const rank = RANKS.find((r) => r.key === s.mekkoRank) ?? RANKS[0];
+    const keys = countriesOf.get(s.continent) ?? [];
+    // Country level, as bars + mix: two or more compared countries show only them; otherwise the
+    // ranked top N (Top 5 / Top 10).
+    const comparedCountries = s.compared.filter((k) => comparisonType(k) === "countries");
+    const onlyCompared = atCountries && s.mekkoCompared && comparedCountries.length >= 2;
+    const continentRecord = byContinent.get(s.continent)?.get(s.year) ?? null;
+    const ranking = onlyCompared ? {
+      view: "compared",
+      columns: comparedColumns({ byCountry, countriesOf, compared: comparedCountries, rank }, s),
+      max: rankMax(byCountry, comparedCountries, rank),
+      continentRecord,
+    } : atCountries ? {
+      view: "top",
+      columns: rankedColumns({ byCountry, keys, compared: s.compared, rank }, s, s.mekkoTop ?? 10),
+      max: rankMaxOf(s.continent, rank),
+      continentRecord,
+    } : null;
     const period = s.mode === "year" ? s.year : `${s.rangeStart}–${s.year}`;
     const suffix = s.mode === "year" ? "" : ` (${MODES[s.mode].toLowerCase()})`;
 
@@ -77,12 +87,17 @@ async function init() {
     d3.select("#map-how-to-read").text(atCountries
       ? `${colourLine}${s.continent === "Europe" ? " Russia counts as Europe." : ""}`
       : `${colourLine} Hatched = data for under 80% of the continent's electricity.`);
-    d3.select("#marimekko-title").text(atCountries
-      ? `Electricity mix by country, ${s.continent}, ${s.year}`
-      : `Electricity mix, ${s.year}`);
-    d3.select("#marimekko-how-to-read").text(atCountries
-      ? `Width = total generation, height = share of each source. ${othersExpanded ? "The largest countries are one column (not to scale, after the axis break); every other country has its own" : "The largest countries that fit (up to 10) and the compared ones; Others = the rest"}.`
-      : "Width = total generation, height = share of each source. Top strip = map colour.");
+    // One short reading line; the tooltips give the details.
+    const atBase = rank.groups.length ? `, ${rank.name.replace(/ generation$/, "")} at the base` : "";
+    d3.select("#marimekko-title").text(!atCountries ? `Electricity mix, ${s.year}`
+      : onlyCompared ? `Compared countries by ${rank.name}, ${s.year}`
+        : `Top ${s.mekkoTop ?? 10} by ${rank.name}, ${s.continent}, ${s.year}`);
+    const dashed = rank.groups.length && ranking?.columns.records.every((r) => r.continent === s.continent)
+      ? ` (dashed = ${s.continent})` : "";
+    const extraNote = ranking?.columns.extra.length ? " Compared countries outside it on the right." : "";
+    d3.select("#marimekko-how-to-read").text(!atCountries
+      ? "Width = total generation, height = share of each source."
+      : `Bars = TWh; columns = share of each source${atBase}${dashed}.${onlyCompared ? "" : extraNote}`);
     const compared = comparedContinents(s);
     d3.select("#emissions-title").text(`CO₂ from electricity, 2000–2024${compared.length ? `: ${compared.join(" vs ")}` : ""}`);
     d3.select("#emissions-how-to-read").text(compared.length
@@ -105,9 +120,9 @@ async function init() {
     d3.select("#bars-how-to-read").text("Sorted from the largest gain; blue = more renewable. Dashed line = World.");
 
     map.update(mapStats, s);
-    marimekko.update(columns, s, metricColor(s.metric, s.mode), atCountries
-      ? { maxTotal: maxTotalOf.get(s.continent), others: { expanded: othersExpanded } }
-      : { maxTotal });
+    marimekko.update(s, atCountries
+      ? { rank, ranking }
+      : { records: data.continents.filter((r) => r.year === s.year), stats, maxTotal });
     emissions.update(s);
     scatter.update(s);
     bars.update(s);

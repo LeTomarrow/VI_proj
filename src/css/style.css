@@ -112,6 +112,12 @@ select {
   border-radius: 0 6px 6px 0;
 }
 
+.segmented button:disabled {
+  cursor: default;
+  color: var(--color-text-secondary);
+  opacity: 0.5;
+}
+
 .segmented button[aria-pressed="true"] {
   position: relative;
   color: #fff;
@@ -290,6 +296,14 @@ main {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+}
+
+.compare-clear {
+  font-size: 0.8rem;
+}
+
+.compare-clear[hidden] {
+  display: none;
 }
 
 .compare-hint {
@@ -789,8 +803,7 @@ svg.is-globe:active {
   stroke-width: 2.5;
 }
 
-/* Not compared, while the comparison list has entries. The top strip keeps its colour: it is
-   the map's metric scale, where lighter would mean a lower value. */
+/* Not compared, while the comparison list has entries. */
 .segment,
 .segment-label,
 .legend .swatch {
@@ -976,26 +989,88 @@ footer p {
   margin: 0;
 }
 
-/* View B: show every country of the continent, or fold the small ones into Others. */
-.mekko-toggle {
-  align-self: flex-end;
-  height: 1.6rem;
-  padding: 0 0.6rem;
-  font: inherit;
-  font-size: 0.8rem;
-  color: var(--color-accent);
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid var(--color-accent);
-  border-radius: 6px;
+/* View B: rank the countries (Rank by, Compared / Top 5 / Top 10) above the chart. */
+.mekko-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.6rem;
+  margin-bottom: 0.25rem;
 }
 
-.axis-break {
-  fill: none;
-  stroke: var(--color-muted);
-  stroke-width: 1.5;
-}
-
-.mekko-toggle[hidden] {
+.mekko-tools[hidden] {
   display: none;
+}
+
+.mekko-tools label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.mekko-tools select,
+.mekko-tools .segmented button {
+  height: 1.5rem;
+  padding: 0 0.5rem;
+  font-size: 0.78rem;
+}
+
+/* Compact legend in the mix chart: one line in most panels. */
+#chart-marimekko .legend {
+  gap: 0 0.55rem;
+  font-size: 0.74rem;
+}
+
+.legend li.is-clickable {
+  cursor: pointer;
+}
+
+.legend li.is-clickable:hover,
+.legend li.is-current {
+  color: var(--color-text);
+}
+
+.legend li.is-current {
+  font-weight: 600;
+}
+
+/* Ranked top N: bars above the mix columns. */
+.rank-value,
+.rank-name {
+  font-size: 11px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.rank-value {
+  fill: var(--color-text-secondary);
+}
+
+.rank-name {
+  font-weight: 600;
+  fill: var(--color-text);
+}
+
+.rank-name.is-slanted {
+  text-anchor: end;
+}
+
+.rank-bar {
+  transition: opacity 150ms;
+}
+
+.column.is-dimmed .rank-bar {
+  opacity: 0.3;
+}
+
+.reference-label {
+  font-size: 11px;
+  fill: var(--color-text-secondary);
+  paint-order: stroke;
+  stroke: var(--color-bg);
+  stroke-width: 3px;
+  pointer-events: none;
 }

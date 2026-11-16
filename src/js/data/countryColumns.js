@@ -1,56 +1,52 @@
-// Columns of View B's Marimekko. Folded: the continent's largest countries by generation in the
-// selected year (at most 10, and only those wide enough to read), the compared countries outside
-// them, and "Others" (the rest, summed). Expanded, the inverse: the largest countries are summed
-// into one "Largest" column and every other country gets its own column.
+// Columns of View B's mix chart (bars + mix), in the order of the chosen ranking (rank, from RANKS
+// in scales.js). rankedColumns: the continent's ranked top N, then the compared countries outside
+// it; comparedColumns: the compared countries only, from any continent.
 
 import { metricValue } from "./metrics.js";
-import { sumCountries } from "./aggregate.js";
 
-export const TOP_COUNTRIES = 10;
-export const OTHERS = "Others";
-export const LARGEST = "Largest";
-
-// One column that sums the same countries in every year, so Range average and Change compare
-// like with like. Returns the record of the selected year and its stat.
-function summed(key, members, { byCountry, continent }, s) {
-  const keys = members.map((r) => r.key);
-  const years = s.mode === "year" ? [s.year] : d3.range(s.rangeStart, s.year + 1);
-  const byYear = new Map();
-  for (const year of years) {
-    const rows = keys.map((k) => byCountry.get(k)?.get(year)).filter(Boolean);
-    if (rows.length) byYear.set(year, sumCountries({ key, name: key, continent }, year, rows));
-  }
-  const record = { ...byYear.get(s.year), count: members.length, members: members.map((r) => r.name), memberKeys: keys };
-  byYear.set(s.year, record);
-  return { record, stat: metricValue(byYear, s) };
+// The continent's countries with generation in the selected year, from the highest ranked value
+// (ties: the larger total first).
+function byRank(byCountry, keys, rank, s) {
+  return keys.map((k) => byCountry.get(k)?.get(s.year))
+    .filter((r) => r?.generation > 0)
+    .sort((a, b) => rank.value(b) - rank.value(a) || b.generation - a.generation);
 }
 
-// byCountry: key → year → record. keys: the continent's countries. minGeneration: the smallest
-// total (TWh) whose column is wide enough to read when folded. Returns the records in column
-// order and the stat of each column for the top strip.
-export function countryColumns(input, s) {
-  const { byCountry, keys, compared, expanded, minGeneration = 0 } = input;
-  const ofYear = keys.map((k) => byCountry.get(k)?.get(s.year))
-    .filter((r) => r?.generation > 0)
-    .sort((a, b) => b.generation - a.generation);
-  const largest = ofYear.filter((r, i) => i < TOP_COUNTRIES && r.generation >= minGeneration);
+// Top N by the ranked value (only countries that have some), then the compared countries outside
+// it. position: rank of each shown country among the continent's countries.
+export function rankedColumns({ byCountry, keys, compared, rank }, s, n) {
+  const ofYear = byRank(byCountry, keys, rank, s);
+  const top = ofYear.filter((r) => rank.value(r) > 0).slice(0, n);
+  const extra = ofYear.filter((r) => compared.includes(r.key) && !top.includes(r));
+  const shown = [...top, ...extra];
+  return {
+    records: top,
+    extra,
+    stats: new Map(shown.map((r) => [r.key, metricValue(byCountry.get(r.key), s)])),
+    position: new Map(shown.map((r) => [r.key, ofYear.indexOf(r) + 1])),
+    total: ofYear.length,
+  };
+}
 
-  // Compared countries keep their own column in both states.
-  const grouped = expanded
-    ? largest.filter((r) => !compared.includes(r.key))
-    : ofYear.filter((r) => !largest.includes(r) && !compared.includes(r.key));
-  const own = ofYear.filter((r) => !grouped.includes(r));
+// The compared countries (any continent) with data in the selected year, from the highest ranked
+// value. position: rank of each one among the countries of its own continent.
+export function comparedColumns({ byCountry, countriesOf, compared, rank }, s) {
+  const records = byRank(byCountry, compared, rank, s);
+  const position = new Map(records.map((r) => {
+    const ofContinent = byRank(byCountry, countriesOf.get(r.continent) ?? [], rank, s);
+    return [r.key, ofContinent.findIndex((o) => o.key === r.key) + 1];
+  }));
+  return {
+    records,
+    extra: [],
+    stats: new Map(records.map((r) => [r.key, metricValue(byCountry.get(r.key), s)])),
+    position,
+    total: records.length,
+  };
+}
 
-  const stats = new Map(own.map((r) => [r.key, metricValue(byCountry.get(r.key), s)]));
-  let records = [...own];
-  if (grouped.length > 1) {
-    const key = expanded ? LARGEST : OTHERS;
-    const { record, stat } = summed(key, grouped, input, s);
-    records = expanded ? [record, ...own] : [...own, record];
-    stats.set(key, stat);
-  } else {
-    records = ofYear;
-    for (const r of grouped) stats.set(r.key, metricValue(byCountry.get(r.key), s));
-  }
-  return { records, stats, total: ofYear.length };
+// Largest ranked value of any of the countries in any year: the bars keep one scale over the
+// years, so a taller bar means growth (U5).
+export function rankMax(byCountry, keys, rank) {
+  return d3.max(keys, (k) => d3.max(byCountry.get(k)?.values() ?? [], rank.value)) ?? 0;
 }

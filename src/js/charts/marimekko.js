@@ -1,30 +1,54 @@
-// One column per entity in the selected year: width = TWh, height = share of each source.
+// The electricity mix of the selected year.
+// World level: a Marimekko of the continents (width = TWh, height = share of each source).
 // Base example: Marimekko chart (https://observablehq.com/@d3/marimekko-chart).
+// Country level: the Marimekko "deconstructed" for the persona's tasks: bars of a ranked value
+// (TWh) above equal-width columns of the mix, for the ranked top N or for the compared countries.
 
-import { LARGEST, OTHERS } from "../data/countryColumns.js";
 import { openEntityMenu } from "../entityMenu.js";
-import { NO_DATA, SOURCE_GROUPS, SOURCE_LABELS } from "../scales.js";
-import { isDimmed, isOutsideBrush, setState } from "../state.js";
+import { RANKS, SOURCE_GROUPS, SOURCE_LABELS, sourceOrder } from "../scales.js";
+import { comparisonType, isDimmed, isOutsideBrush, setState } from "../state.js";
 import { coverageLine, hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
 import { hitZones } from "./hitZones.js";
 
-const MARGIN = { top: 92, right: 44, bottom: 40, left: 52 };
-const STRIP = 10;       // the map colour, above the column
+const MARGIN = { top: 76, right: 44, bottom: 40, left: 52 }; // top: the continent names (slanted)
 const GAP = 2;          // between columns and between segments
 const MIN_LABEL_H = 15; // smallest segment that fits a source name
 const WIDE_COLUMN = 70; // narrower columns get a slanted name
 const LABEL_SPACING = 13; // between slanted names
 const MIN_HIT = 16;     // narrowest hover zone of a column
-const MIN_NAMED = 6;    // narrower columns get no name (except compared ones); the tooltip has it
-const MIN_COLUMN = 28;  // narrower countries fold into Others (unless compared)
-const GROUP_W = 56;     // expanded: fixed width of the Largest column, before an axis break
-const BREAK = 14;       // gap that marks the break in the x axis
+
+// Country level: bars + mix columns.
+const RANK_MARGIN = { top: 18, right: 64, bottom: 24, left: 52 }; // right: the continent label
+const SLANT_BOTTOM = 58; // bottom margin when the names are slanted
+const SLANT_BELOW = 64; // narrower columns get a slanted name, so it is not cut
+const SLANT_NAME = 84;  // longest slanted name
+const MAX_BAND = 96;    // widest column, so Top 5 does not turn into blocks
+const EXTRA_GAP = 16;   // before the compared countries outside the top N
+const BARS_SHARE = 0.36; // of the height, for the bars
+const NEUTRAL_BAR = "#8c8a83"; // bars of totals (no single source colour)
+const VIEWS = [["compared", "Compared"], [5, "Top 5"], [10, "Top 10"]];
+const VIEW_TITLES = {
+  compared: "Only the compared countries (needs 2 or more)",
+  5: "The 5 highest by the ranked value",
+  10: "The 10 highest by the ranked value",
+};
 
 const format = (digits) => d3.format(`,.${digits}f`);
+const formatTwh = (v) => format(v < 10 ? 1 : 0)(v);
+
+// Shortens an SVG text to fit maxWidth, with an ellipsis; the tooltip has the full name.
+function fitText(node, text, maxWidth) {
+  node.textContent = text;
+  let cut = text;
+  while (cut.length > 1 && node.getComputedTextLength() > maxWidth) {
+    cut = cut.slice(0, -1);
+    node.textContent = `${cut.trimEnd()}…`;
+  }
+}
 
 // The whole column, in legend order, with the source under the pointer in bold.
-function columnTooltip(record, stat, current) {
+function columnTooltip(record, stat, current, rankNote = "") {
   const rows = SOURCE_GROUPS.map((group) => {
     const twh = d3.sum(group.parts, (k) => record.sources[k]);
     const share = d3.sum(group.parts, (k) => record.shares[k]);
@@ -33,32 +57,62 @@ function columnTooltip(record, stat, current) {
   }).join("");
   const parts = SOURCE_GROUPS.find((g) => g.parts.length > 1).parts
     .map((k) => `${SOURCE_LABELS[k]} ${format(0)(record.sources[k])}`).join(", ");
-  const group = record.key === OTHERS || record.key === LARGEST;
-  const title = group ? `${record.key} (${record.count} countries)` : record.name;
-  const members = group ? `<div class="tooltip-note">${record.members.join(", ")}</div>` : "";
-  const action = record.key === OTHERS ? "Click to show them one by one"
-    : record.key === LARGEST ? "Width not to scale. Click to show them one by one" : "";
-  const expand = `${members}${action ? `<div class="tooltip-note">${action}</div>` : ""}`;
-  return `<strong>${title}, ${record.year}</strong>${rows}`
+  const ranking = rankNote ? `<div class="tooltip-note">${rankNote}</div>` : "";
+  return `<strong>${record.name}, ${record.year}</strong>${ranking}${rows}`
     + `<div class="tooltip-row is-total"><span>Total</span><span>${format(0)(record.generation)} TWh</span></div>`
-    + `<div class="tooltip-note">${parts} TWh</div>${coverageLine(stat, "year")}${expand}`;
+    + `<div class="tooltip-note">${parts} TWh</div>${coverageLine(stat, "year")}`;
 }
 
-// The x scale is fixed across years (largest yearly total of the level), so wider columns show
-// growth (U5). onToggleOthers(expanded) shows every country or folds them back into Others.
-export function createMarimekko(selector, { onToggleOthers }) {
+// The x scale of the Marimekko is fixed across years (largest yearly world total), so wider
+// columns show growth (U5).
+export function createMarimekko(selector) {
   const x = d3.scaleLinear();
   const y = d3.scaleLinear().domain([0, 100]);
   let innerW = 0;
   let innerH = 0;
+  let fullW = 0;
+  let fullH = 0;
   let current = null;
 
   const root = d3.select(selector);
-  const toggle = root.append("button").attr("type", "button").attr("class", "mekko-toggle").attr("hidden", true);
+  // Country level only: what to rank the countries by, and which countries to show.
+  const tools = root.append("div").attr("class", "mekko-tools").attr("hidden", true);
+  const rankControl = tools.append("label");
+  rankControl.append("span").text("Rank by");
+  const rankSelect = rankControl.append("select")
+    .on("change", (event) => setState({ mekkoRank: event.target.value }));
+  rankSelect.selectAll("option").data(RANKS).join("option")
+    .attr("value", (d) => d.key)
+    .text((d) => d.label);
+  const viewButtons = tools.append("div").attr("class", "segmented").attr("role", "group")
+    .attr("aria-label", "Countries shown")
+    .selectAll("button").data(VIEWS).join("button")
+    .attr("type", "button")
+    .text(([, label]) => label)
+    .attr("title", ([n]) => VIEW_TITLES[n])
+    .on("click", (_, [n]) => setState(n === "compared" ? { mekkoCompared: true } : { mekkoTop: n, mekkoCompared: false }));
   const legend = root.append("ul").attr("class", "legend");
-  const items = legend.selectAll("li").data(SOURCE_GROUPS).join("li");
-  items.append("span").attr("class", "swatch").style("background", (d) => d.color);
-  items.append("span").text((d) => d.label);
+
+  // Legend in stack order (ranked groups first). At the country level an entry ranks by its source.
+  function renderLegend(order, rank, clickable) {
+    const pick = (d) => setState({ mekkoRank: rank.groups.length === 1 && rank.key === d.key ? "generation" : d.key });
+    legend.selectAll("li").data(order, (d) => d.key).join((enter) => {
+      const li = enter.append("li");
+      li.append("span").attr("class", "swatch").style("background", (d) => d.color);
+      li.append("span").text((d) => d.label);
+      return li;
+    })
+      .order()
+      .classed("is-current", (d) => rank.groups.includes(d.key))
+      .classed("is-clickable", clickable)
+      .attr("role", clickable ? "button" : null)
+      .attr("tabindex", clickable ? 0 : null)
+      .attr("title", (d) => (clickable ? `Rank the countries by ${d.label.toLowerCase()}` : null))
+      .on("click", clickable ? (_, d) => pick(d) : null)
+      .on("keydown", clickable ? (event, d) => {
+        if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pick(d); }
+      } : null);
+  }
 
   const svg = root.append("svg")
     .attr("role", "img")
@@ -70,20 +124,31 @@ export function createMarimekko(selector, { onToggleOthers }) {
     .append("line").attr("x1", 0).attr("x2", 0).attr("y1", 0).attr("y2", 6)
     .attr("stroke", "#fcfcfb").attr("stroke-opacity", 0.7).attr("stroke-width", 1.5);
 
+  // World: Marimekko of the continents.
   const plot = svg.append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
-
   const yAxis = plot.append("g").attr("class", "axis");
   const yTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("Share (%)");
   const xAxis = plot.append("g").attr("class", "axis");
   const xTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("Generation (TWh)");
-
   const columns = plot.append("g");
-  const breakMark = plot.append("path").attr("class", "axis-break");
   const reference = plot.append("line").attr("class", "reference-line").attr("x1", 0);
   // Above the columns, so thin columns are easy to hover.
   const hits = plot.append("g");
 
+  // Country level: bars of the ranked value above equal-width mix columns.
+  const ranked = svg.append("g").attr("display", "none");
+  const rBarsTitle = ranked.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("TWh");
+  const rMixAxis = ranked.append("g").attr("class", "axis");
+  const rMixTitle = ranked.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("Share (%)");
+  const rColumns = ranked.append("g");
+  const rReference = ranked.append("line").attr("class", "reference-line");
+  const rReferenceLabel = ranked.append("text").attr("class", "reference-label");
+  const rEmpty = ranked.append("text").attr("class", "axis-title").attr("text-anchor", "middle");
+  const rHits = ranked.append("g");
+
   function resize(width, height) {
+    fullW = width;
+    fullH = height;
     innerW = width - MARGIN.left - MARGIN.right;
     innerH = height - MARGIN.top - MARGIN.bottom;
     x.range([0, innerW]);
@@ -97,30 +162,37 @@ export function createMarimekko(selector, { onToggleOthers }) {
     if (current) render(...current);
   }
 
-  // columnsFor(minGeneration) → { records, stats, total }: the columns to draw, given the smallest
-  // total that gets a readable column when folded. maxTotal: the x domain when folded.
-  // others = { expanded } at the country level, null for continents. Expanded, the Largest column
-  // has a fixed width and the x axis breaks after it, so the small countries get the room.
-  function render(columnsFor, s, stripColor, { maxTotal, others = null }) {
-    const { records, stats, total } = columnsFor((MIN_COLUMN * maxTotal) / innerW);
-    const group = records[0]?.key === LARGEST ? records[0] : null;
-    // After the break the axis starts again at 0: it measures only the countries drawn to scale.
-    const first = 0;
-    if (group) {
-      x.domain([0, d3.sum(records.slice(1), (r) => r.generation)]).range([GROUP_W + BREAK, innerW]);
-    } else x.domain([0, maxTotal]).range([0, innerW]);
-    xAxis.attr("transform", `translate(0, ${innerH})`)
-      .call(d3.axisBottom(x).ticks(Math.max(2, Math.floor((innerW - (group ? GROUP_W : 0)) / 70))).tickFormat(d3.format(",")).tickSize(4));
-    breakMark.attr("display", group ? null : "none")
-      .attr("d", `M${GROUP_W + 2},${innerH + 5} l4,-10 M${GROUP_W + 7},${innerH + 5} l4,-10`);
-    svg.attr("aria-label", `Marimekko chart of the electricity mix by ${others ? `country, ${s.continent}` : "continent"}`);
-    toggle.attr("hidden", others && (others.expanded || records.some((r) => r.key === OTHERS)) ? null : true)
-      .text(others?.expanded ? "Back to the largest countries" : `Show all ${total} countries`)
-      .on("click", () => onToggleOthers(!others.expanded));
+  // World: { records, stats, maxTotal } (one record per continent; maxTotal = the x domain).
+  // Country level: { rank, ranking }, rank: entry of RANKS; ranking = { view, columns, max,
+  // continentRecord }, view "compared" (the compared countries only) or "top" (the ranked top N).
+  function render(s, options) {
+    const { rank = RANKS[0], ranking = null } = options;
+    tools.attr("hidden", ranking ? null : true);
+    if (!ranking) {
+      renderLegend(SOURCE_GROUPS, RANKS[0], false);
+      renderContinents(s, options);
+      return;
+    }
+    rankSelect.property("value", rank.key);
+    const comparedCountries = s.compared.filter((k) => comparisonType(k) === "countries").length;
+    const view = ranking.view === "compared" ? "compared" : s.mekkoTop;
+    viewButtons.attr("aria-pressed", ([n]) => n === view)
+      .property("disabled", ([n]) => n === "compared" && comparedCountries < 2)
+      .text(([n, label]) => (n === "compared" && comparedCountries >= 2 ? `${label} (${comparedCountries})` : label));
+    const order = sourceOrder(rank);
+    renderLegend(order, rank, true);
+    renderRanked(s, rank, order, ranking);
+  }
 
-    // Six continents always fit; at the country level the slivers are left to the tooltip.
-    const named = (record, width) => !others || record === group || s.compared.includes(record.key) || width >= MIN_NAMED;
-    let start = first;
+  function renderContinents(s, { records, stats, maxTotal }) {
+    plot.attr("display", null);
+    ranked.attr("display", "none");
+    x.domain([0, maxTotal]);
+    xAxis.attr("transform", `translate(0, ${innerH})`)
+      .call(d3.axisBottom(x).ticks(Math.max(2, Math.floor(innerW / 70))).tickFormat(d3.format(",")).tickSize(4));
+    svg.attr("aria-label", "Marimekko chart of the electricity mix by continent");
+
+    let start = 0;
     let lastLabel = -Infinity;
     const layout = records.map((record) => {
       let top = 0;
@@ -130,51 +202,38 @@ export function createMarimekko(selector, { onToggleOthers }) {
         top += share;
         return segment;
       });
-      const x0 = record === group ? 0 : x(start);
-      const width = record === group ? GROUP_W : x(start + record.generation) - x(start);
-      const column = { record, x0, width, segments, named: named(record, width) };
-      const center = column.x0 + column.width / 2;
-      column.labelShift = column.named ? Math.max(0, lastLabel + LABEL_SPACING - center) : 0;
-      if (column.named) lastLabel = center + column.labelShift;
-      if (record !== group) start += record.generation;
-      return column;
+      const x0 = x(start);
+      const width = x(start + record.generation) - x0;
+      const center = x0 + width / 2;
+      const labelShift = Math.max(0, lastLabel + LABEL_SPACING - center);
+      lastLabel = center + labelShift;
+      start += record.generation;
+      return { record, x0, width, segments, labelShift, id: record.key };
     });
     const widest = d3.greatest(layout, (d) => d.width)?.record.key;
 
-    const groups = columns.selectAll("g.column").data(layout, (d) => d.record.key).join((enter) => {
+    const groups = columns.selectAll("g.column").data(layout, (d) => d.id).join((enter) => {
       const g = enter.append("g").attr("class", "column");
-      g.append("rect").attr("class", "column-strip").attr("y", -STRIP - GAP).attr("height", STRIP);
       g.append("text").attr("class", "column-label");
       g.append("rect").attr("class", "column-hatch").attr("fill", "url(#mekko-hatch)");
-      g.append("rect").attr("class", "column-outline").attr("y", -STRIP - GAP);
+      g.append("rect").attr("class", "column-outline");
       return g;
     });
 
-    const shown = groups.data().map((d) => d.record.key);
+    const shown = layout.map((d) => d.record.key);
     groups
       .attr("transform", (d) => `translate(${d.x0}, 0)`)
       .classed("is-compared", (d) => s.compared.includes(d.record.key))
-      .classed("is-dimmed", (d) => isDimmed(d.record.key, s, shown)
-        || isOutsideBrush(d.record.memberKeys ?? [d.record.key], s))
+      .classed("is-dimmed", (d) => isDimmed(d.record.key, s, shown))
       .classed("is-hovered", (d) => d.record.key === s.hovered);
 
     const columnWidth = (d) => Math.max(1, d.width - GAP);
-    groups.select(".column-strip")
-      .attr("width", columnWidth)
-      .attr("fill", (d) => {
-        const { value } = stats.get(d.record.key);
-        return value === null ? NO_DATA : stripColor(value);
-      });
     groups.select(".column-label")
-      .text((d) => {
-        if (!d.named) return "";
-        if (d.record.key === OTHERS || d.record.key === LARGEST) return `${d.record.key} (${d.record.count})`;
-        return s.compared.includes(d.record.key) ? `✓ ${d.record.name}` : d.record.name;
-      })
+      .text((d) => (s.compared.includes(d.record.key) ? `✓ ${d.record.name}` : d.record.name))
       .attr("text-anchor", "start")
       .attr("transform", (d) => (d.width >= WIDE_COLUMN
-        ? `translate(0, ${-STRIP - GAP - 5})`
-        : `translate(${d.width / 2 + d.labelShift}, ${-STRIP - GAP - 5}) rotate(-65)`));
+        ? "translate(0, -6)"
+        : `translate(${d.width / 2 + d.labelShift}, -6) rotate(-65)`));
     groups.select(".column-hatch")
       .attr("width", columnWidth)
       .attr("height", innerH)
@@ -189,7 +248,7 @@ export function createMarimekko(selector, { onToggleOthers }) {
       .attr("height", (d) => Math.max(0, y(d.y0) - y(d.y1) - (d.y1 - d.y0 > 1 ? GAP : 0)))
       .attr("fill", (d) => d.group.color);
     groups.select(".column-hatch").raise();
-    groups.select(".column-outline").attr("width", columnWidth).attr("height", innerH + STRIP + GAP).raise();
+    groups.select(".column-outline").attr("width", columnWidth).attr("height", innerH).raise();
 
     // Direct labels only on the widest column; the legend covers the rest.
     groups.selectAll("text.segment-label")
@@ -205,23 +264,166 @@ export function createMarimekko(selector, { onToggleOthers }) {
       .text((d) => d.group.label);
 
     const zones = hitZones(layout.map((d) => [d.x0, d.x0 + d.width]), MIN_HIT);
-    hits.selectAll("rect").data(layout, (d) => d.record.key).join("rect")
+    hits.selectAll("rect").data(layout, (d) => d.id).join("rect")
       .attr("class", "hit-area is-clickable")
       .attr("x", (_, i) => zones[i][0])
       .attr("width", (_, i) => zones[i][1] - zones[i][0])
-      .attr("y", -STRIP - GAP)
-      .attr("height", innerH + STRIP + GAP)
-      .on("click", (event, d) => {
-        if (d.record.key === OTHERS || d.record.key === LARGEST) {
-          hideTooltip();
-          onToggleOthers(d.record.key === OTHERS);
-        } else openEntityMenu(event, d.record.key, d.record.name);
-      })
+      .attr("y", 0)
+      .attr("height", innerH)
+      .on("click", (event, d) => openEntityMenu(event, d.record.key, d.record.name))
       .on("mouseenter", (_, d) => setState({ hovered: d.record.key }))
       .on("mousemove", (event, d) => {
         const share = y.invert(d3.pointer(event, plot.node())[1]);
         const source = d.segments.find((seg) => share >= seg.y0 && share < seg.y1)?.group.key;
         showTooltip(event, columnTooltip(d.record, stats.get(d.record.key), source));
+      })
+      .on("mouseleave", () => { setState({ hovered: null }); hideTooltip(); });
+  }
+
+  // The Marimekko split in two aligned charts: bars of the ranked value (TWh, one scale over the
+  // years) and, under each bar, an equal-width column of the mix with the ranked sources at the
+  // base, so their shares are compared on a common baseline. Names are slanted when the columns
+  // are narrow. The compared countries outside the top N follow after a gap. Dashed line = the
+  // continent's share of the ranked sources.
+  // view "compared": only the compared countries (any continent), so none is outlined or marked.
+  function renderRanked(s, rank, order, { view, columns: shownColumns, max, continentRecord }) {
+    plot.attr("display", "none");
+    ranked.attr("display", null);
+    const { records, extra, stats, position } = shownColumns;
+    const onlyCompared = view === "compared";
+    const all = [...records, ...extra];
+    const w = fullW - RANK_MARGIN.left - RANK_MARGIN.right;
+    const gapBefore = extra.length && records.length ? EXTRA_GAP : 0;
+    const band = Math.min(MAX_BAND, (w - gapBefore) / Math.max(1, all.length));
+    const slanted = band < SLANT_BELOW;
+    const h = fullH - RANK_MARGIN.top - (slanted ? SLANT_BOTTOM : RANK_MARGIN.bottom);
+    ranked.attr("transform", `translate(${RANK_MARGIN.left}, ${RANK_MARGIN.top})`);
+    const barsH = Math.round(h * BARS_SHARE);
+    const mixTop = barsH + 10;
+    const mixBottom = h;
+
+    const yBar = d3.scaleLinear().domain([0, max || 1]).range([barsH, 0]);
+    const yMix = d3.scaleLinear().domain([0, 100]).range([mixBottom, mixTop]);
+    const barColor = rank.color ?? NEUTRAL_BAR;
+    svg.attr("aria-label", onlyCompared
+      ? `Bar chart of the ${records.length} compared countries by ${rank.name}, with their electricity mix`
+      : `Bar chart of the top ${records.length} countries of ${s.continent} by ${rank.name}, with their electricity mix`);
+
+    rBarsTitle.attr("transform", `translate(-40, ${barsH / 2}) rotate(-90)`);
+    rMixAxis.call(d3.axisLeft(yMix).tickValues([0, 50, 100]).tickFormat((d) => `${d}%`).tickSize(4))
+      .call((g) => g.select(".domain").remove());
+    rMixTitle.attr("transform", `translate(-40, ${(mixTop + mixBottom) / 2}) rotate(-90)`);
+    rEmpty.attr("x", w / 2).attr("y", (mixTop + mixBottom) / 2)
+      .text(all.length ? "" : onlyCompared ? `No compared country has data in ${s.year}`
+        : `No country of ${s.continent} has ${rank.name} in ${s.year}`);
+
+    const layout = all.map((record, i) => {
+      let base = 0;
+      const segments = order.map((g) => {
+        const share = d3.sum(g.parts, (k) => record.shares[k]);
+        const segment = { group: g, y0: base, y1: base + share };
+        base += share;
+        return segment;
+      });
+      const x0 = i * band + (i >= records.length ? gapBefore : 0);
+      return { record, x0, segments, value: rank.value(record), id: record.key };
+    });
+
+    // The continent's share of the ranked sources, as a reference for the mix columns (not when
+    // the compared countries come from other continents).
+    const sameContinent = all.every((r) => r.continent === s.continent);
+    const share = rank.groups.length && continentRecord && sameContinent
+      ? d3.sum(SOURCE_GROUPS.filter((g) => rank.groups.includes(g.key)), (g) => d3.sum(g.parts, (k) => continentRecord.shares[k]))
+      : null;
+    const end = layout.length ? layout.at(-1).x0 + band - GAP : 0;
+    rReference.attr("display", share === null || !layout.length ? "none" : null)
+      .attr("x1", 0).attr("x2", end).attr("y1", yMix(share ?? 0)).attr("y2", yMix(share ?? 0));
+    rReferenceLabel.attr("display", share === null || !layout.length ? "none" : null)
+      .attr("x", end + 4)
+      .attr("y", yMix(share ?? 0) + 4)
+      .text(share === null ? "" : `${s.continent} ${format(0)(share)}%`);
+
+    const groups = rColumns.selectAll("g.column").data(layout, (d) => d.id).join((enter) => {
+      const g = enter.append("g").attr("class", "column");
+      g.append("rect").attr("class", "rank-bar");
+      g.append("text").attr("class", "rank-value");
+      g.append("rect").attr("class", "column-hatch").attr("fill", "url(#mekko-hatch)");
+      g.append("rect").attr("class", "column-outline");
+      g.append("text").attr("class", "rank-name");
+      return g;
+    });
+    const shown = layout.map((d) => d.record.key);
+    const columnWidth = Math.max(1, band - GAP);
+    groups
+      .attr("transform", (d) => `translate(${d.x0}, 0)`)
+      .classed("is-compared", (d) => !onlyCompared && s.compared.includes(d.record.key))
+      .classed("is-dimmed", (d) => (!onlyCompared && isDimmed(d.record.key, s, shown)) || isOutsideBrush([d.record.key], s))
+      .classed("is-hovered", (d) => d.record.key === s.hovered);
+    groups.select(".rank-bar")
+      .attr("width", columnWidth)
+      .attr("y", (d) => yBar(d.value))
+      .attr("height", (d) => Math.max(0, barsH - yBar(d.value)))
+      .attr("fill", barColor);
+    let lastValue = { right: -Infinity, top: -Infinity };
+    groups.order().select(".rank-value")
+      .attr("x", columnWidth / 2)
+      .attr("y", (d) => yBar(d.value) - 4)
+      // Only where it fits: at most a little wider than its bar and clear of the previous value
+      // shown (similar values sit at the same height); the tooltip has every value.
+      .each(function (d) {
+        this.textContent = formatTwh(d.value);
+        const half = this.getComputedTextLength() / 2;
+        const center = d.x0 + columnWidth / 2;
+        const top = yBar(d.value) - 4;
+        const clear = center - half > lastValue.right + 3 || Math.abs(top - lastValue.top) > 12;
+        if (half * 2 > band + 8 || !clear) this.textContent = "";
+        else lastValue = { right: center + half, top };
+      });
+    groups.selectAll("rect.segment")
+      .data((d) => d.segments.map((segment) => ({ ...segment, column: d })), (d) => d.group.key)
+      .join("rect")
+      .attr("class", "segment")
+      .attr("y", (d) => yMix(d.y1))
+      .attr("width", columnWidth)
+      .attr("height", (d) => Math.max(0, yMix(d.y0) - yMix(d.y1) - (d.y1 - d.y0 > 1 ? GAP : 0)))
+      .attr("fill", (d) => d.group.color);
+    groups.select(".column-hatch")
+      .attr("y", mixTop)
+      .attr("width", columnWidth)
+      .attr("height", mixBottom - mixTop)
+      .attr("display", (d) => (stats.get(d.record.key).partial ? null : "none"))
+      .raise();
+    groups.select(".column-outline")
+      .attr("y", mixTop)
+      .attr("width", columnWidth)
+      .attr("height", mixBottom - mixTop)
+      .raise();
+    groups.select(".rank-name")
+      .classed("is-slanted", slanted)
+      .attr("x", 0)
+      .attr("y", 0)
+      .attr("transform", slanted
+        ? `translate(${columnWidth / 2 + 4}, ${mixBottom + 8}) rotate(-40)`
+        : `translate(${columnWidth / 2}, ${mixBottom + 15})`)
+      .each(function (d) {
+        const name = !onlyCompared && s.compared.includes(d.record.key) ? `✓ ${d.record.name}` : d.record.name;
+        fitText(this, name, slanted ? SLANT_NAME : band - 2);
+      });
+
+    const rankNote = (d) => `#${position.get(d.record.key)} in ${d.record.continent} by ${rank.name}`
+      + (rank.key === "generation" ? "" : ` (${formatTwh(d.value)} TWh)`);
+    rHits.selectAll("rect").data(layout, (d) => d.id).join("rect")
+      .attr("class", "hit-area is-clickable")
+      .attr("x", (d) => d.x0)
+      .attr("width", band)
+      .attr("y", 0)
+      .attr("height", mixBottom + 20)
+      .on("click", (event, d) => openEntityMenu(event, d.record.key, d.record.name))
+      .on("mouseenter", (_, d) => setState({ hovered: d.record.key }))
+      .on("mousemove", (event, d) => {
+        const pointerShare = yMix.invert(d3.pointer(event, ranked.node())[1]);
+        const source = d.segments.find((seg) => pointerShare >= seg.y0 && pointerShare < seg.y1)?.group.key;
+        showTooltip(event, columnTooltip(d.record, stats.get(d.record.key), source, rankNote(d)));
       })
       .on("mouseleave", () => { setState({ hovered: null }); hideTooltip(); });
   }
