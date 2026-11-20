@@ -1,7 +1,7 @@
 // Breadcrumb (World → Continent) and the comparison list, shown on every level.
 
 import { CONTINENT_COLORS, COUNTRY_COMPARE_COLORS } from "./scales.js";
-import { MAX_COMPARED, comparedSlot, comparisonType, setState, toggleCompared } from "./state.js";
+import { comparisonLimit, comparedSlot, comparisonType, setState, toggleCompared } from "./state.js";
 
 export function createNavigation(selector, { nameOf }) {
   const root = d3.select(selector);
@@ -21,7 +21,7 @@ export function createNavigation(selector, { nameOf }) {
   return {
     update(s) {
       const type = s.compared.length ? comparisonType(s.compared[0]) : null;
-      label.text(type ? `Comparing ${type} (${s.compared.length}/${MAX_COMPARED})` : `Compare (up to ${MAX_COMPARED})`);
+      label.text(type ? `Comparing ${type} (${s.compared.length}/${comparisonLimit(type ?? (s.level === "world" ? "continents" : "countries"))})` : `Compare (up to ${comparisonLimit(type ?? (s.level === "world" ? "continents" : "countries"))})`);
       compare.attr("aria-label", type ? `Comparing ${type}` : "Comparison list");
       const steps = [{ label: "World", patch: { level: "world", continent: null } }];
       if (s.level === "continent") steps.push({ label: s.continent });

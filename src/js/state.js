@@ -6,6 +6,8 @@ import { CONTINENTS } from "./data/constants.js";
 const dispatch = d3.dispatch("change");
 
 export const MAX_COMPARED = 5;
+export const MAX_COMPARED_COUNTRIES = 4;
+export const comparisonLimit = (type) => type === "countries" ? MAX_COMPARED_COUNTRIES : MAX_COMPARED;
 
 export const state = {
   year: 2024,                // selected year; end of the range in the Range average and Change modes
@@ -68,7 +70,7 @@ export function toggleCompared(key) {
   if (compared.includes(key)) setState({ compared: compared.filter((k) => k !== key) });
   else {
     const sameType = compared.filter((k) => comparisonType(k) === comparisonType(key));
-    if (sameType.length >= MAX_COMPARED) return;
+    if (sameType.length >= comparisonLimit(comparisonType(key))) return;
     // A second compared country switches View B's mix chart to the compared countries only.
     const second = comparisonType(key) === "countries" && sameType.length === 1;
     setState({ compared: [...sameType, key], ...(second ? { mekkoCompared: true } : {}) });

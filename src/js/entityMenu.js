@@ -2,7 +2,7 @@
 // drilling down and comparing never depend on a hidden gesture.
 
 import { COUNTRY_LEVEL } from "./data/constants.js";
-import { MAX_COMPARED, comparisonType, setState, state, toggleCompared } from "./state.js";
+import { comparisonLimit, comparisonType, setState, state, toggleCompared } from "./state.js";
 import { hideTooltip } from "./tooltip.js";
 
 const menu = d3.select("body").append("div")
@@ -37,12 +37,12 @@ export function openEntityMenu(event, key, name = key) {
 
   const compared = state.compared.includes(key);
   const sameType = state.compared.filter((k) => comparisonType(k) === comparisonType(key));
-  const full = !compared && sameType.length >= MAX_COMPARED;
+  const full = !compared && sameType.length >= comparisonLimit(comparisonType(key));
   menu.append("button").attr("type", "button")
     .text(compared ? "✓ In comparison · Remove" : "+ Compare")
     .attr("disabled", full ? true : null)
     .on("click", () => { closeEntityMenu(); toggleCompared(key); });
-  if (full) menu.append("p").attr("class", "entity-menu-note").text(`The comparison holds ${MAX_COMPARED} at most`);
+  if (full) menu.append("p").attr("class", "entity-menu-note").text(`The comparison holds ${comparisonLimit(comparisonType(key))} at most`);
   if (state.compared.length && !sameType.length) {
     menu.append("p").attr("class", "entity-menu-note")
       .text(`Adding this ${comparisonType(key) === "countries" ? "country" : "continent"} replaces the current comparison.`);

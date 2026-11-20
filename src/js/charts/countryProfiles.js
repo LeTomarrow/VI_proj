@@ -1,21 +1,19 @@
-// Country profiles (View C): share of each source in the compared countries and the World.
+// Country profiles (View C): one radar per compared country, with shared source-share scales.
 
 import { SOURCE_GROUPS, COUNTRY_COMPARE_COLORS } from "../scales.js";
 import { comparedSlot, comparisonType, setState } from "../state.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
-import { fitToSize } from "./fitToSize.js";
 
-const LABEL_ROOM_X = 120; // beside the radar, for the axis names
+const LABEL_ROOM_X = 88; // beside the radar, for the axis names
 const LABEL_ROOM_Y = 24;
 const MIN_RADIUS = 40;
 const AXIS_LABEL_OFFSET = 16;
 const RING_STEP = 20; // % between rings
 const MIN_MAX_SHARE = 40;
-const WORLD_COLOR = "#6f6d68";
 const POINT_R = 4;  // 8 px markers
 const HIT_R = 10;   // hover zone around each marker
 
-// Source shares use a fixed scale across countries and years; polygon area is not a total.
+// Source shares use a shared scale across countries; polygon area is not a total.
 export function sourceProfile(record) {
   if (!record || !(record.generation > 0)) return null;
   return SOURCE_GROUPS.map((group) => {
@@ -61,44 +59,29 @@ function drawAxes(plot, radial, line) {
       .attr("class", "profile-grid")
       .attr("x2", x)
       .attr("y2", y);
-    plot.append("text")
+    const label = plot.append("text")
       .attr("class", "profile-axis-label")
       .attr("x", labelX)
       .attr("y", labelY)
-      .attr("dy", "0.35em")
-      .attr("text-anchor", labelAnchor(labelX))
-      .text(`${source.label} (%)`);
+      .attr("text-anchor", labelAnchor(labelX));
+    const lines = source.key === "bioOther" ? ["Bioenergy", "& other (%)"] : [`${source.label} (%)`];
+    label.selectAll("tspan").data(lines).join("tspan")
+      .attr("x", labelX)
+      .attr("dy", (_, i) => i === 0 ? (lines.length > 1 ? "-0.25em" : "0.35em") : "1.15em")
+      .text((text) => text);
   });
 }
 
-function updateLegend(legend, series) {
-  legend.selectAll("li").data(series, (profile) => profile.key).join("li")
-    .each(function (profile) {
-      const item = d3.select(this);
-      item.selectAll("*").remove();
-      item.append("span").attr("class", "swatch").style("background", profile.color);
-      item.append("span").text(profile.key === "World" ? "World (dashed)" : profile.name);
-    });
-}
-
-export function createCountryProfiles(selector, { countries, world }) {
+export function createCountryProfiles(selector, { countries }) {
   const root = d3.select(selector);
   const byCountry = d3.index(countries, (r) => r.key, (r) => r.year);
-  const byWorld = d3.index(world, (r) => r.year);
   const names = new Map(countries.map((r) => [r.key, r.name]));
   const note = root.append("p").attr("class", "how-to-read").attr("role", "status");
-  // Legend beside the radar, so the radar gets the panel's full height.
   const body = root.append("div").attr("class", "profile-body");
-  const legend = body.append("ul").attr("class", "legend profile-legend").attr("aria-label", "Country colours");
-  // Sized to the panel (fitToSize), so opening the tab never makes the page rows grow.
-  const svg = body.append("svg").attr("class", "profile-radar").attr("role", "img");
-  const plot = svg.append("g");
-  const axes = plot.append("g");
-  const shapes = plot.append("g");
+  const cards = new Map();
   const radial = d3.scaleLinear().domain([0, 100]);
   const line = d3.line().curve(d3.curveLinearClosed);
   let current = null;
-  let sized = false;
 
   function comparisonData(state) {
     const selected = state.compared.filter((key) => comparisonType(key) === "countries");
@@ -112,25 +95,15 @@ export function createCountryProfiles(selector, { countries, world }) {
       }
       return [{ key, name: record.name, color: COUNTRY_COMPARE_COLORS[comparedSlot(key)], values }];
     });
-    const reference = sourceProfile(byWorld.get(state.year));
-    if (reference && selected.length) {
-      series.unshift({ key: "World", name: "World", color: WORLD_COLOR, values: reference });
-    }
-    return { selected, missing, series, reference };
+    return { selected, missing, series };
   }
 
-  function updateDescription(state, { selected, missing, series, reference }) {
+  function updateDescription(state, { selected, missing }) {
     d3.select("#profiles-title").text(`Electricity mix of the compared countries, ${state.year}`);
-    d3.select("#profiles-description").text(`Each axis is a source's share of generation (0–${radial.domain()[1]}%, the largest share shown). Grey dashed = World.`);
-    const messages = [];
-    if (!selected.length) messages.push("Add countries with + Compare to see their energy profiles.");
-    else {
-      if (missing.length) messages.push(`No generation data for ${missing.join(", ")} in ${state.year}.`);
-      if (!reference) messages.push(`World reference unavailable for ${state.year}.`);
-    }
-    note.text(messages.join(" "));
-    svg.attr("hidden", selected.length ? null : true)
-      .attr("aria-label", `Electricity source shares in ${state.year}: ${series.map((d) => d.name).join(", ")}. All axes range from 0 to 100 percent.`);
+    d3.select("#profiles-description").text(`One chart per country. Each axis shows a source's share of generation; every chart uses the same 0–${radial.domain()[1]}% scale.`);
+    note.text(!selected.length
+      ? "Add up to four countries with + Compare to see their energy profiles."
+      : missing.length ? `No generation data for ${missing.join(", ")} in ${state.year}.` : "");
   }
 
   function pointTooltip(profile, v, year) {
@@ -139,23 +112,19 @@ export function createCountryProfiles(selector, { countries, world }) {
       + `<div class="tooltip-row"><span>Generation</span><span>${d3.format(",.1f")(v.generation)} TWh</span></div>`;
   }
 
-  function updateShapes(series, s) {
+  function updateShapes(shapes, series, s, scale) {
     const year = s.year;
-    const point = (v, i) => axisPoint(i, radial(v.share));
+    const point = (v, i) => axisPoint(i, scale(v.share));
     const groups = shapes.selectAll("g.profile-shape").data(series, (d) => d.key).join("g")
       .attr("class", "profile-shape")
-      // The hovered country is drawn on top and the others fade.
-      .classed("is-dimmed", (d) => s.hovered !== null && d.key !== "World" && series.some((p) => p.key === s.hovered) && d.key !== s.hovered)
       .order();
-    groups.filter((d) => d.key === s.hovered).raise();
     groups.each(function (profile) {
       const group = d3.select(this);
       const hovered = profile.key === s.hovered;
       group.selectAll("path").data([profile]).join("path")
         .attr("d", line(profile.values.map(point)))
-        .attr("fill", profile.color).attr("fill-opacity", profile.key === "World" ? 0 : 0.1)
+        .attr("fill", profile.color).attr("fill-opacity", 0.15)
         .attr("stroke", profile.color).attr("stroke-width", hovered ? 3 : 2)
-        .attr("stroke-dasharray", profile.key === "World" ? "5 4" : null)
         .attr("pointer-events", "none");
       group.selectAll("circle.profile-point").data(profile.values).join("circle")
         .attr("class", "profile-point")
@@ -166,20 +135,57 @@ export function createCountryProfiles(selector, { countries, world }) {
         .attr("class", "hit-area")
         .attr("cx", (v, i) => point(v, i)[0]).attr("cy", (v, i) => point(v, i)[1])
         .attr("r", HIT_R)
-        .on("mouseenter", () => { if (profile.key !== "World") setState({ hovered: profile.key }); })
+        .on("mouseenter", () => setState({ hovered: profile.key }))
         .on("mousemove", (event, v) => showTooltip(event, pointTooltip(profile, v, year)))
-        .on("mouseleave", () => { hideTooltip(); if (profile.key !== "World") setState({ hovered: null }); });
+        .on("mouseleave", () => { hideTooltip(); setState({ hovered: null }); });
     });
   }
 
-  fitToSize(svg, (width, height) => {
-    const radius = Math.max(MIN_RADIUS, Math.min(width / 2 - LABEL_ROOM_X, height / 2 - LABEL_ROOM_Y));
-    radial.range([0, radius]);
-    sized = true;
-    plot.attr("transform", `translate(${width / 2},${height / 2})`);
-    drawAxes(axes, radial, line);
-    if (current) updateShapes(comparisonData(current).series, current);
-  });
+  function drawCard(card) {
+    if (!current || !card.width || !card.height) return;
+    const radius = Math.max(MIN_RADIUS, Math.min(card.width / 2 - LABEL_ROOM_X, card.height / 2 - LABEL_ROOM_Y));
+    const scale = radial.copy().range([0, radius]);
+    card.plot.attr("transform", `translate(${card.width / 2},${card.height / 2})`);
+    drawAxes(card.axes, scale, line);
+    updateShapes(card.shapes, [card.profile], current, scale);
+  }
+
+  function updateCards(series, state) {
+    body.selectAll("section.profile-card").data(series, (d) => d.key).join(
+      (enter) => enter.append("section").attr("class", "profile-card")
+        .each(function (profile) {
+          const element = d3.select(this);
+          const title = element.append("h4").attr("class", "profile-card-title");
+          title.append("span").attr("class", "swatch");
+          title.append("span").attr("class", "profile-country-name");
+          const svg = element.append("svg").attr("class", "profile-radar").attr("role", "img");
+          const plot = svg.append("g");
+          const card = { profile, svg, plot, axes: plot.append("g"), shapes: plot.append("g") };
+          cards.set(profile.key, card);
+          // Disconnect observers when a country leaves the comparison.
+          card.observer = new ResizeObserver(([entry]) => {
+            card.width = entry.contentRect.width;
+            card.height = entry.contentRect.height;
+            svg.attr("viewBox", `0 0 ${card.width} ${card.height}`);
+            drawCard(card);
+          });
+          card.observer.observe(svg.node());
+        }),
+      (update) => update,
+      (exit) => exit.each((profile) => {
+        cards.get(profile.key).observer.disconnect();
+        cards.delete(profile.key);
+      }).remove(),
+    ).each(function (profile) {
+      const element = d3.select(this);
+      element.select(".swatch").style("background", profile.color);
+      element.select(".profile-country-name").text(profile.name);
+      const card = cards.get(profile.key);
+      card.profile = profile;
+      card.svg.attr("aria-label", `${profile.name}, electricity source shares in ${state.year}. All axes range from 0 to ${radial.domain()[1]} percent.`);
+      drawCard(card);
+    });
+  }
 
   return {
     update(state) {
@@ -191,11 +197,9 @@ export function createCountryProfiles(selector, { countries, world }) {
       const maxShare = Math.min(100, Math.max(MIN_MAX_SHARE, Math.ceil(top / RING_STEP) * RING_STEP));
       if (maxShare !== radial.domain()[1]) {
         radial.domain([0, maxShare]);
-        if (sized) drawAxes(axes, radial, line);
       }
       updateDescription(state, data);
-      updateLegend(legend, data.series);
-      if (sized) updateShapes(data.series, state);
+      updateCards(data.series, state);
     },
   };
 }

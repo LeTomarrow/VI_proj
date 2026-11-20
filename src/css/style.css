@@ -582,22 +582,36 @@ main {
 
 .profile-body {
   display: flex;
+  flex-wrap: wrap;
   flex: 1;
-  justify-content: center;
   gap: 1rem;
-  min-height: 0;
-}
-
-.profile-legend {
-  flex-direction: column;
-  justify-content: center;
-  gap: 0.35rem;
-}
-
-/* Wide enough for the radar and its axis names, so the legend stays next to it. */
-.chart .profile-body svg {
   min-width: 0;
-  max-width: 640px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.profile-card {
+  display: flex;
+  flex: 1 1 calc(50% - 0.5rem);
+  flex-direction: column;
+  min-width: 0;
+  min-height: 280px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.profile-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.chart .profile-card svg {
+  min-height: 240px;
 }
 
 .profile-point {
