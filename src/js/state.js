@@ -14,6 +14,7 @@ export const state = {
   rangeStart: 2000,
   metric: "renewableShare",  // key in METRICS (scales.js)
   mode: "year",              // "year" | "average" | "change"
+  greenGrowthCountry: null, // country explored in the bottom panel; separate from comparison
   hovered: null,             // key of the highlighted entity
   level: "world",            // "world" | "continent"
   continent: null,           // continent shown at the continent level
@@ -26,6 +27,9 @@ export const state = {
 };
 
 export function setState(patch) {
+  if ((patch.level !== undefined && patch.level !== state.level)
+    || (patch.continent !== undefined && patch.continent !== state.continent)
+    || (patch.compared?.length > 0)) patch = { ...patch, greenGrowthCountry: null };
   Object.assign(state, patch);
   dispatch.call("change", null, state);
 }
@@ -39,6 +43,8 @@ export function onStateChange(listener) {
 // The hovered entity is always shown in full. shown: keys drawn in the chart, so a compared
 // country does not fade a chart of continents.
 export function isDimmed(key, s, shown) {
+  const focused = s.greenGrowthCountry;
+  if (focused && shown.includes(focused)) return key !== focused && key !== s.hovered;
   return shown.some((k) => s.compared.includes(k)) && !s.compared.includes(key) && key !== s.hovered;
 }
 
@@ -75,4 +81,10 @@ export function toggleCompared(key) {
     const second = comparisonType(key) === "countries" && sameType.length === 1;
     setState({ compared: [...sameType, key], ...(second ? { mekkoCompared: true } : {}) });
   }
+}
+
+// Exploring a country replaces the comparison; returning leaves it empty.
+export function exploreGreenGrowth(key) {
+  if (comparisonType(key) !== "countries") return;
+  setState({ greenGrowthCountry: key, compared: [], hovered: null, brush: null });
 }

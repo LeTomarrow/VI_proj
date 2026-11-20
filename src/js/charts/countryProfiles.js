@@ -1,6 +1,6 @@
 // Country profiles (View C): one radar per compared country, with shared source-share scales.
 
-import { SOURCE_GROUPS, COUNTRY_COMPARE_COLORS } from "../scales.js";
+import { SOURCE_GROUPS, COUNTRY_COMPARE_COLORS, CONTINENT_COLORS } from "../scales.js";
 import { comparedSlot, comparisonType, setState } from "../state.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
 
@@ -72,9 +72,10 @@ function drawAxes(plot, radial, line) {
   });
 }
 
-export function createCountryProfiles(selector, { countries }) {
+export function createCountryProfiles(selector, { countries, continents }) {
   const root = d3.select(selector);
   const byCountry = d3.index(countries, (r) => r.key, (r) => r.year);
+  const byContinent = d3.index(continents, (r) => r.key, (r) => r.year);
   const names = new Map(countries.map((r) => [r.key, r.name]));
   const note = root.append("p").attr("class", "how-to-read").attr("role", "status");
   const body = root.append("div").attr("class", "profile-body");
@@ -95,15 +96,24 @@ export function createCountryProfiles(selector, { countries }) {
       }
       return [{ key, name: record.name, color: COUNTRY_COMPARE_COLORS[comparedSlot(key)], values }];
     });
+    if (!selected.length && state.continent) {
+      const record = byContinent.get(state.continent)?.get(state.year);
+      const values = sourceProfile(record);
+      if (values) series.push({ key: state.continent, name: state.continent, color: CONTINENT_COLORS[state.continent], values });
+      else missing.push(state.continent);
+    }
     return { selected, missing, series };
   }
 
   function updateDescription(state, { selected, missing }) {
-    d3.select("#profiles-title").text(`Electricity mix of the compared countries, ${state.year}`);
-    d3.select("#profiles-description").text(`One chart per country. Each axis shows a source's share of generation; every chart uses the same 0–${radial.domain()[1]}% scale.`);
-    note.text(!selected.length
-      ? "Add up to four countries with + Compare to see their energy profiles."
-      : missing.length ? `No generation data for ${missing.join(", ")} in ${state.year}.` : "");
+    d3.select("#profiles-title").text(selected.length
+      ? `Electricity mix of the compared countries, ${state.year}`
+      : `Electricity mix of ${state.continent ?? "the continent"}, ${state.year}`);
+    d3.select("#profiles-description").text(`${selected.length ? "One chart per country." : "Continent energy profile."} Each axis shows a source's share of generation; every chart uses the same 0–${radial.domain()[1]}% scale.`);
+    const messages = [];
+    if (!selected.length) messages.push("Select countries with + Compare to view their energy profiles (up to four).");
+    if (missing.length) messages.push(`No generation data for ${missing.join(", ")} in ${state.year}.`);
+    note.text(messages.join(" "));
   }
 
   function pointTooltip(profile, v, year) {

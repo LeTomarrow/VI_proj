@@ -17,7 +17,7 @@ function byRank(byCountry, keys, rank, s) {
 export function rankedColumns({ byCountry, keys, compared, rank }, s, n) {
   const ofYear = byRank(byCountry, keys, rank, s);
   const top = ofYear.filter((r) => rank.value(r) > 0).slice(0, n);
-  const extra = ofYear.filter((r) => compared.includes(r.key) && !top.includes(r));
+  const extra = ofYear.filter((r) => (compared.includes(r.key) || r.key === s.greenGrowthCountry) && !top.includes(r));
   const shown = [...top, ...extra];
   return {
     records: top,

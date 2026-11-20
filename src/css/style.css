@@ -790,7 +790,8 @@ svg.is-globe:active {
   stroke-width: 1.25;
 }
 
-.map-outline.is-compared {
+.map-outline.is-compared,
+.map-outline.is-focused {
   stroke-width: 2.5;
 }
 
@@ -825,11 +826,13 @@ svg.is-globe:active {
 }
 
 .column.is-hovered .column-outline,
-.column.is-compared .column-outline {
+.column.is-compared .column-outline,
+.column.is-focused .column-outline {
   display: inline;
 }
 
-.column.is-compared .column-outline {
+.column.is-compared .column-outline,
+.column.is-focused .column-outline {
   stroke-width: 2.5;
 }
 
@@ -1103,4 +1106,42 @@ footer p {
   stroke: var(--color-bg);
   stroke-width: 3px;
   pointer-events: none;
+}
+
+/* Green growth replaces the country tabs inside their existing bottom panel. */
+.country-overview,
+.green-growth {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.green-growth-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.green-growth-tools input {
+  width: 5rem;
+}
+
+.green-growth-charts {
+  overflow-y: auto;
+  gap: 1rem;
+}
+
+.green-growth-panel {
+  display: flex;
+  flex: 1 0 280px;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.green-growth-panel svg {
+  min-height: 210px;
 }

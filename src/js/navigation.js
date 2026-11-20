@@ -1,7 +1,7 @@
 // Breadcrumb (World → Continent) and the comparison list, shown on every level.
 
 import { CONTINENT_COLORS, COUNTRY_COMPARE_COLORS } from "./scales.js";
-import { comparisonLimit, comparedSlot, comparisonType, setState, toggleCompared } from "./state.js";
+import { exploreGreenGrowth, comparisonLimit, comparedSlot, comparisonType, setState, toggleCompared } from "./state.js";
 
 export function createNavigation(selector, { nameOf }) {
   const root = d3.select(selector);
@@ -22,6 +22,7 @@ export function createNavigation(selector, { nameOf }) {
     update(s) {
       const type = s.compared.length ? comparisonType(s.compared[0]) : null;
       label.text(type ? `Comparing ${type} (${s.compared.length}/${comparisonLimit(type ?? (s.level === "world" ? "continents" : "countries"))})` : `Compare (up to ${comparisonLimit(type ?? (s.level === "world" ? "continents" : "countries"))})`);
+      compare.attr("hidden", s.greenGrowthCountry ? true : null);
       compare.attr("aria-label", type ? `Comparing ${type}` : "Comparison list");
       const steps = [{ label: "World", patch: { level: "world", continent: null } }];
       if (s.level === "continent") steps.push({ label: s.continent });
@@ -43,6 +44,12 @@ export function createNavigation(selector, { nameOf }) {
         const li = enter.append("li").attr("class", "chip");
         li.append("span").attr("class", "swatch");
         li.append("span").text((k) => nameOf.get(k) ?? k);
+        li.filter((k) => comparisonType(k) === "countries")
+          .append("button").attr("type", "button").attr("class", "link")
+          .text("Green growth →")
+          .attr("aria-label", (k) => `Explore green growth for ${nameOf.get(k) ?? k}; clears comparison`)
+          .attr("title", "Explore this country and clear the comparison")
+          .on("click", (_, k) => exploreGreenGrowth(k));
         li.append("button").attr("type", "button").attr("class", "chip-remove")
           .attr("aria-label", (k) => `Remove ${nameOf.get(k) ?? k} from the comparison`)
           .text("×")

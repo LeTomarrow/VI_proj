@@ -2,7 +2,7 @@
 // drilling down and comparing never depend on a hidden gesture.
 
 import { COUNTRY_LEVEL } from "./data/constants.js";
-import { comparisonLimit, comparisonType, setState, state, toggleCompared } from "./state.js";
+import { exploreGreenGrowth, comparisonLimit, comparisonType, setState, state, toggleCompared } from "./state.js";
 import { hideTooltip } from "./tooltip.js";
 
 const menu = d3.select("body").append("div")
@@ -42,6 +42,22 @@ export function openEntityMenu(event, key, name = key) {
     .text(compared ? "✓ In comparison · Remove" : "+ Compare")
     .attr("disabled", full ? true : null)
     .on("click", () => { closeEntityMenu(); toggleCompared(key); });
+  if (comparisonType(key) === "countries") {
+    const exploring = state.greenGrowthCountry === key;
+    menu.append("button").attr("type", "button")
+      .text(exploring ? "Leave green growth" : "Explore green growth →")
+      .attr("title", exploring ? "Return to the country charts"
+        : state.compared.length ? "Explore this country and clear the comparison" : "Explore this country's green growth")
+      .on("click", () => {
+        closeEntityMenu();
+        if (exploring) {
+          setState({ greenGrowthCountry: null, hovered: null });
+          const tab = document.querySelector("#tab-scatter");
+          tab?.click();
+          tab?.focus();
+        } else exploreGreenGrowth(key);
+      });
+  }
   if (full) menu.append("p").attr("class", "entity-menu-note").text(`The comparison holds ${comparisonLimit(comparisonType(key))} at most`);
   if (state.compared.length && !sameType.length) {
     menu.append("p").attr("class", "entity-menu-note")

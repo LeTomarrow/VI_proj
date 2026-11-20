@@ -9,6 +9,7 @@ import { createNavigation } from "./navigation.js";
 import { createComparisonTabs } from "./comparisonTabs.js";
 import { brushedKeys, createBubbleScatter } from "./charts/bubbleScatter.js";
 import { createChangeBars } from "./charts/changeBars.js";
+import { createGreenGrowth } from "./charts/greenGrowth.js";
 import { createCountryProfiles } from "./charts/countryProfiles.js";
 import { createMap } from "./charts/map.js";
 import { createMarimekko } from "./charts/marimekko.js";
@@ -46,6 +47,9 @@ async function init() {
   const scatter = createBubbleScatter("#chart-scatter", { ...data, countriesOf });
   const bars = createChangeBars("#chart-bars", { ...data, countriesOf });
   const profiles = createCountryProfiles("#chart-profiles", data);
+  const greenGrowth = createGreenGrowth("#chart-green-growth", data);
+
+  let exploredCountry = null;
 
   function render(current) {
     // The scatter brush, as the keys inside it, for every chart of View B.
@@ -94,10 +98,12 @@ async function init() {
         : `Top ${s.mekkoTop ?? 10} by ${rank.name}, ${s.continent}, ${s.year}`);
     const dashed = rank.groups.length && ranking?.columns.records.every((r) => r.continent === s.continent)
       ? ` (dashed = ${s.continent})` : "";
-    const extraNote = ranking?.columns.extra.length ? " Compared countries outside it on the right." : "";
+    const extraNote = ranking?.columns.extra.length
+      ? s.greenGrowthCountry ? " The explored country is included on the right when outside the ranking."
+        : " Compared countries outside it on the right." : "";
     d3.select("#marimekko-how-to-read").text(!atCountries
       ? "Width = total generation, height = share of each source."
-      : `Bars = TWh; columns = share of each source${atBase}${dashed}.${onlyCompared ? "" : extraNote}`);
+      : `Bars = TWh; columns = share of each source${atBase}${dashed}.${onlyCompared ? "" : extraNote}${s.greenGrowthCountry ? " Outlined = country explored in green growth." : ""}`);
     const compared = comparedContinents(s);
     d3.select("#emissions-title").text(`CO₂ from electricity, 2000–2024${compared.length ? `: ${compared.join(" vs ")}` : ""}`);
     d3.select("#emissions-how-to-read").text(compared.length
@@ -109,6 +115,8 @@ async function init() {
     // The map and the Marimekko stay; only the third panel changes with the level.
     d3.select("#panel-emissions").attr("hidden", atCountries ? true : null);
     d3.select("#panel-continent").attr("hidden", atCountries ? null : true);
+    d3.select("#country-overview").attr("hidden", s.greenGrowthCountry ? true : null);
+    d3.select("#green-growth").attr("hidden", s.greenGrowthCountry ? null : true);
     d3.select("#continent-title").text(s.continent ? `${s.continent}: countries` : "");
     // The bottom row gets more room at the country level: the scatter and the radar need height.
     d3.select(".views").classed("is-continent", atCountries);
@@ -127,6 +135,11 @@ async function init() {
     scatter.update(s);
     bars.update(s);
     profiles.update(s);
+    greenGrowth.update(s);
+    if (s.greenGrowthCountry && s.greenGrowthCountry !== exploredCountry) {
+      document.querySelector("#close-green-growth")?.focus({ preventScroll: true });
+    }
+    exploredCountry = s.greenGrowthCountry;
   }
 
   onStateChange(render);

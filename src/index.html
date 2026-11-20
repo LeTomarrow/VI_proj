@@ -49,7 +49,8 @@
 
       <!-- View B (M3): the continent's countries. The radar tab stays here until View C (M4) exists. -->
       <figure class="panel panel-wide" id="panel-continent" hidden>
-        <figcaption>
+        <div id="country-overview" class="country-overview">
+        <div class="country-heading">
           <div class="compare-heading">
             <h2 id="continent-title"></h2>
             <div class="segmented compare-tabs" role="tablist" aria-label="Country charts">
@@ -57,7 +58,7 @@
               <button type="button" id="tab-profiles" role="tab" aria-selected="false" aria-controls="compare-profiles" tabindex="-1">Country profiles</button>
             </div>
           </div>
-        </figcaption>
+        </div>
         <!-- The scatter and the sorted bars side by side, so the brush shows in both. -->
         <div class="tab-panel tab-split" id="compare-scatter" role="tabpanel" aria-labelledby="tab-scatter" tabindex="0">
           <div class="tab-part tab-part-main">
@@ -81,6 +82,18 @@
             <p class="how-to-read" id="profiles-description"></p>
           </div>
           <div class="chart" id="chart-profiles"></div>
+        </div>
+        </div>
+        <div id="green-growth" class="green-growth" hidden>
+          <div class="compare-heading">
+            <h2 id="green-growth-title"></h2>
+            <button type="button" id="close-green-growth" class="link">← Back to countries</button>
+          </div>
+          <div class="green-growth-tools">
+            <label>Start year <input id="green-growth-start" type="number" min="1985" max="2025" step="1" /></label>
+            <span class="how-to-read">End year follows the year slider. All changes are relative to the start year.</span>
+          </div>
+          <div id="chart-green-growth" class="chart"></div>
         </div>
       </figure>
     </section>

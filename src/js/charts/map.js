@@ -248,12 +248,13 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
 
     // Brushed (dashed) first, then compared, the hovered country last, so its outline is never
     // covered. The map is not faded for the brush: a lighter colour would mean a lower value.
-    const order = (d) => (d.key === s.hovered ? 2 : s.compared.includes(d.key) ? 1 : 0);
+    const isMarked = (d) => s.compared.includes(d.key) || d.key === s.greenGrowthCountry;
+    const order = (d) => (d.key === s.hovered ? 2 : isMarked(d) ? 1 : 0);
     const marked = countryShapes
       .filter((d) => d.continent === continent
-        && (s.compared.includes(d.key) || d.key === s.hovered || s.brushed?.has(d.key)))
+        && (isMarked(d) || d.key === s.hovered || s.brushed?.has(d.key)))
       .sort((a, b) => order(a) - order(b));
-    const outlineClass = (d) => (s.compared.includes(d.key) ? " is-compared"
+    const outlineClass = (d) => (d.key === s.greenGrowthCountry ? " is-focused" : s.compared.includes(d.key) ? " is-compared"
       : d.key === s.hovered ? "" : " is-brushed");
     outlines.selectAll("path").data(marked, (d) => d.shape.id ?? d.key).join("path")
       .attr("class", (d) => `map-outline${outlineClass(d)}`)
@@ -261,12 +262,12 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
       .order();
 
     // Compared countries are named on the map (one label per country, on its largest shape).
-    const named = d3.groups(marked.filter((d) => s.compared.includes(d.key)), (d) => d.key)
+    const named = d3.groups(marked.filter(isMarked), (d) => d.key)
       .map(([, list]) => d3.greatest(list, (d) => d3.geoArea(d.shape)));
     countryLabels.selectAll("text").data(named, (d) => d.key).join("text")
       .attr("class", "map-label map-label-name")
       .attr("transform", (d) => `translate(${path.centroid(d.shape)})`)
-      .text((d) => `✓ ${name(d.key)}`);
+      .text((d) => d.key === s.greenGrowthCountry ? name(d.key) : `✓ ${name(d.key)}`);
   }
 
   return {

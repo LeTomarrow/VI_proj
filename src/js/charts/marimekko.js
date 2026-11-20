@@ -357,6 +357,7 @@ export function createMarimekko(selector) {
     groups
       .attr("transform", (d) => `translate(${d.x0}, 0)`)
       .classed("is-compared", (d) => !onlyCompared && s.compared.includes(d.record.key))
+      .classed("is-focused", (d) => d.record.key === s.greenGrowthCountry)
       .classed("is-dimmed", (d) => (!onlyCompared && isDimmed(d.record.key, s, shown)) || isOutsideBrush([d.record.key], s))
       .classed("is-hovered", (d) => d.record.key === s.hovered);
     groups.select(".rank-bar")
