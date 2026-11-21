@@ -45,7 +45,7 @@ dropped, because they end in 2022.
 | Electricity mix | `coal_electricity`, `oil_electricity`, `gas_electricity`, `nuclear_electricity`, `hydro_electricity`, `solar_electricity`, `wind_electricity`, `biofuel_electricity`, `other_renewable_exc_biofuel_electricity` | TWh |
 | Total | `electricity_generation` | TWh |
 | Emissions | `greenhouse_gas_emissions` (from electricity generation) | MtCO₂e |
-| Emissions | `carbon_intensity_elec` | gCO₂/kWh |
+| Emissions | `carbon_intensity_elec` | gCO₂e/kWh |
 
 The other renewables are taken from `other_renewable_exc_biofuel_electricity`. The
 `other_renewable_electricity` column already includes bioenergy, so using it would count
@@ -156,7 +156,7 @@ growth is keeping up with demand.
 
 - **Who she is.** Environmental engineer at a public energy agency. She writes the agency's
   briefings on the electricity transition. She reads charts and uses spreadsheets every day and
-  knows the units (TWh, gCO₂/kWh). She does not program.
+  knows the units (TWh, gCO₂e/kWh). She does not program.
 - **Current assignment.** A briefing for the agency board comparing Europe and Asia: *"Has the
   growth of renewables actually reduced emissions from electricity? Where has it, where has it
   not, and why?"*
@@ -177,12 +177,12 @@ understands them):
 
 | # | Task | Need | Where in the UI |
 |---|---|---|---|
-| T1 | Which continent emits the most CO₂ from electricity in 2024, and which one cut the CO₂ per unit of electricity the most since 2000? | N1 | World: emissions area, map (*Change*) |
+| T1 | Which continent emits the most CO₂e from electricity in 2024, and which one cut the CO₂e per unit of electricity the most since 2000? | N1 | World: emissions area, map (*Change*) |
 | T2 | What does Asia make most of its electricity from in 2024? And Europe? | N1 | World: Marimekko |
-| T3 | In Asia, among the countries that gained the most renewables since 2014, find one whose CO₂ still went up. | N2 | Continent: sorted bars + CO₂ column |
+| T3 | In Asia, among the countries that gained the most renewables since 2014, find one whose CO₂e still went up. | N2 | Continent: sorted bars + CO₂e column |
 | T4 | In Europe, select the countries with dirty electricity that use a lot of it per person. Name two. | N2 | Continent: bubble scatter + brush |
-| T5 | Put two European countries and one Asian country side by side. Which has the cleanest electricity? | N3 | Search + comparison list, Compare: radar |
-| T6 | For one of them: did its CO₂ change mostly because it made more electricity, or because it changed how it makes it? | N4 | Compare: "Why emissions changed" |
+| T5 | In Europe, put three countries side by side. Which has the cleanest electricity, and is it cleaner than Europe as a whole? | N3 | Comparison list, Compare: radar with the Europe reference |
+| T6 | For one of them: did its CO₂e change mostly because it made more electricity, or because it changed how it makes it? | N4 | Compare: "Why emissions changed" |
 
 ## 4. Objective
 
@@ -218,6 +218,6 @@ Each question is answered by one group of linked charts. The design is detailed 
    whether emissions fell, + bubble scatter + map)* (T3, T4)
 4. **Is clean generation keeping up with total generation, and why did emissions change?**
    *(View C: difference chart + decomposition into "more electricity" vs "changed how it is made")* (T6)
-5. **How do the chosen countries compare, even across continents?** *(Country search +
-   comparison list + View C, in per-person values so that large and small countries are
-   comparable)* (T5, T6)
+5. **How do the chosen countries (or continents) compare, and how do they stand against their
+   continent or the World?** *(Comparison list + View C: radars with a reference shape and
+   per-person values, so that large and small countries are comparable)* (T5, T6)

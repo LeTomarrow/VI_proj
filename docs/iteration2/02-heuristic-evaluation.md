@@ -29,12 +29,12 @@
 |---|---|---|
 | H1 | **B5 Information coding** — data are mapped to visual elements in a way that is perceived correctly | Colour scales (blue ↔ red change, sequential shares), Marimekko widths, bubble areas, legends and units |
 | H2 | **E7 Minimal actions** — few actions to reach a goal | Clicks to drill down, to compare, to open View C, to reach a country of another continent |
-| H3 | **E11 Flexibility** — more than one way to reach a goal; adaptable to the user | Pop-up vs search vs chips; Year / Range average / Change; Rank by; Top 5/10 |
+| H3 | **E11 Flexibility** — more than one way to reach a goal; adaptable to the user | Pop-up vs chips vs breadcrumb; sort ↓/↑; Year / Range average / Change; Rank by; Top 5/10 |
 | H4 | **B7 Orientation and help** — control of detail, undo, extra information | Breadcrumb, tooltips, reading lines, undo of brush / comparison, "no data" states |
 | H5 | **B3 Spatial organisation** — layout, legibility, use of space, no distortion | Three-panel grid, label overlap, thin bands and slivers, map projections, small screens |
 | H6 | **E16 Consistency** — same choices in similar contexts | Same colours for sources/continents/compared countries everywhere, same terms, same scales |
 | H7 | **C6 Recognition rather than recall** — no need to remember information between screens | Selected year/range always visible, compared list visible, View C labels |
-| H8 | **E1 Prompting** — the user knows which actions are possible | Is clicking, brushing, *Compare →*, *+ Add country* discoverable? Disabled states explained? |
+| H8 | **E1 Prompting** — the user knows which actions are possible | Is clicking, brushing, *Compare →*, *Reference* discoverable? Disabled states explained? |
 | H9 | **D10 Remove the extraneous** — nothing distracts from the essential | Amount of text, gridlines, decoration, repeated legends |
 | H10 | **B9 Data set reduction** — filtering and reducing the data is easy and efficient | Continent drill-down, Top N, brush, comparison list, year range |
 

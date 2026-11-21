@@ -1,10 +1,10 @@
 # Serves the static app with nginx. No build step: src/ and data/ are mounted read-only.
-#   docker compose up -d   →   http://localhost:8000
+#   docker compose up -d   →   http://localhost:8002
 services:
   web:
     image: nginxinc/nginx-unprivileged:1.27-alpine   # runs as non-root, listens on 8080
     ports:
-      - "127.0.0.1:8000:8080"
+      - "127.0.0.1:8002:8080"
     volumes:
       # The app loads its data from ../data relative to src/index.html.
       - ./src:/usr/share/nginx/html/src:ro

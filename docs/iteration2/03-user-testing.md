@@ -56,7 +56,7 @@ app version under test before the session.
 | T2 | What does Asia make most of its electricity from in 2024? And Europe? | Composition | Marimekko (World) | Asia: coal (about half). Europe: a mix, gas ≈ 24%, nuclear ≈ 20%, hydro ≈ 17%, no source above a quarter |
 | T3 | In Asia, among the countries that gained the most renewables since 2014, find one whose CO₂ still went up. | Find exception | Sorted bars + CO₂ column | e.g. Turkey (+24.7 pp, CO₂ +12%), Jordan, China (+11.4 pp, CO₂ +39%) |
 | T4 | In Europe, select the countries with dirty electricity that use a lot of it per person. Name two. | Group (brush) | Bubble scatter + brush | Upper-right corner (more polluting than the World): Kosovo, Serbia, Bosnia and Herzegovina, Poland, Cyprus, Malta |
-| T5 | Put two European countries and one Asian country side by side. Which has the cleanest electricity? | Compare | Search, comparison list, Compare: radar | Depends on the choice |
+| T5 | In Europe, put three countries side by side. Which has the cleanest electricity, and is it cleaner than Europe as a whole? | Compare | Comparison list, Compare: radar, *Reference: Europe* | Depends on the choice: the largest low-carbon shape (hydro, wind, solar, nuclear); cleaner than Europe if it reaches beyond the dashed shape on those axes |
 | T6 | For one of them: did its CO₂ change mostly because it made more electricity, or because it changed how it makes it? | Explain (details on demand) | Compare: "Why emissions changed" | Depends on the choice |
 
 Measures per task: success (✓ completed / ~ with help / ✗ failed), time (s), number of errors

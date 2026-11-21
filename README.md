@@ -34,6 +34,8 @@ data/                   Raw dataset(s) used by the application
   owid-energy-data.csv          OWID Energy dataset
   owid-continents.csv           OWID country → continent mapping
   iso-numeric.json              Map polygon ids → OWID country codes (generated)
+  summary.json                  Small summary for the landing page (generated, npm run build:summary)
+  sus-results.json              Anonymous evaluation results shown on the findings page (filled by hand)
 docs/
   guidelines            Assignment brief (PDF, as provided by the instructor)
   iteration1/           1st iteration deliverables (due 26/10)
@@ -52,15 +54,21 @@ prototype/
   paper-sketches/         Scans/photos of paper prototypes (if not using Balsamiq)
 scripts/                  Dev-only data preparation (Node), not needed to run the app
   build-iso-map.mjs             Builds data/iso-numeric.json (map ids → OWID codes)
+  build-summary.mjs             Builds data/summary.json (World and continents, 2000–2024) for the landing
 compose.yaml, nginx.conf   Docker Compose setup to serve the app locally
 src/                      The d3.js application (2nd iteration)
-  index.html
-  css/style.css
-  js/main.js
+  index.html                    Landing page: concept, data, how to explore, authors
+  app.html                      The application (Views A, B, C)
+  findings.html                 Conclusions and evaluation results (Forsell, SUS)
+  css/style.css, css/site.css   App styles; landing and findings layout
+  js/main.js                    App entry point
+  js/landing.js, findings.js    Landing and findings pages
   js/state.js, controls.js   Shared state of the views and the filters that change it
   js/scales.js, tooltip.js   Metrics, colours and the shared tooltip
   js/charts/              One module per chart
-  js/data/                 Data-loading/preprocessing helpers
+  js/data/                 Data loading, preprocessing and the pure helpers of each view
+                            (countryColumns, change, scatter, compare, greenGrowth, sus)
+tests/                    Unit tests (node:test), one file per view, with the task answers on the real data
 ```
 
 ## Running the application
@@ -69,23 +77,33 @@ The app is plain HTML/CSS/JS with D3 loaded from a CDN — no build step or inst
 The simplest way is Docker Compose (nginx serving `src/` and `data/` read-only):
 
 ```bash
-docker compose up -d      # then open http://localhost:8000
+docker compose up -d      # then open http://localhost:8002/src/
 docker compose down       # stop
 ```
 
 Without Docker, serve the **repository root** with any static file server (the app loads the
-data from `../data/...` relative to `src/index.html`), e.g.:
+data from `../data/...` relative to `src/`), e.g.:
 
 ```bash
 python3 -m http.server 8000
-# then open http://localhost:8000/src/
+# then open http://localhost:8000/src/ (landing page; the app is /src/app.html)
 ```
 
-To rebuild `data/iso-numeric.json` (only needed if the map or the data changes):
+To rebuild `data/iso-numeric.json` or `data/summary.json` (only needed if the map or the data
+changes), and to run the tests:
 
 ```bash
-npm install && npm run build:iso
+npm install
+npm run build:iso        # map ids → OWID codes
+npm run build:summary    # small summary for the landing page
+npm test                 # node --test tests/
 ```
+
+The tests cover the logic behind each view without a browser, one file per view, each with the
+expected answers of its tasks on the real data: View A (`viewA.test.mjs`: map, Marimekko,
+emissions, T1–T2, plus motion and the landing and findings numbers), View B (`viewB.test.mjs`:
+ranked and sorted bars, scatter, brush, T3–T4) and View C (`viewC.test.mjs`: comparison list,
+radars, rows, decomposition, T6). `helpers.mjs` loads d3 and the real data once per file.
 
 ## Use of AI
 

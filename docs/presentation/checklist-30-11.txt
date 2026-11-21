@@ -3,10 +3,13 @@ Presentation in class: 10 min + 5 min questions. Delivery on e-learning: slides,
 Mark [x] when done.
 
 1. APPLICATION
-[ ] View C (Compare) as its own screen: radar + one row per compared entity
-[ ] Global country search ("+ Add country...")
-[ ] Animations: year change, reorder, map zoom, View C entrance (reduced motion respected)
-[ ] Website context: intro (question, persona, key numbers), "Data & method", "Findings", credits
+[ ] View C (Compare): radars with reference (World / continent) + one row per entity; continents too
+[ ] Comparison per level (World clears countries, Explore clears continents); limit 5 / 5
+[ ] Map metrics: renewable share, carbon intensity, electricity per person; metric in the map card
+[ ] Rank by + sort ↓/↑ in both Marimekkos and in the sorted bars
+[ ] Scatter: visible pale bubbles, 8 px minimum, Show All / >= 1 Mt / >= 10 Mt
+[ ] Animations checked at real speed in a normal window (year, reorder, map zoom, View C, landing)
+[ ] Site: landing (index.html), app (app.html), findings (findings.html) with SUS results
 [ ] No console errors; tested in Chrome and Firefox at 1366x768 and 1920x1080
 [ ] Runs from a clean clone with the README instructions (docker compose / python http.server)
 
@@ -16,7 +19,7 @@ Mark [x] when done.
 [ ] Severity 3-4 problems fixed (decision log updated)
 [ ] User tests with 3-5 classmates: tasks T1-T6 + SUS
       -> docs/iteration2/03-user-testing.md
-[ ] SUS scores computed (per participant, mean, per item)
+[ ] SUS scores computed (per participant, mean, per item) and raw answers in data/sus-results.json
 [ ] Comparison with iteration-1 results (U1-U7)
 
 3. SLIDES (sober; succinct)
