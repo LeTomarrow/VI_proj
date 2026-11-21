@@ -4,9 +4,12 @@
   "type": "module",
   "description": "Dev-only tooling. The app itself has no build step (see README).",
   "scripts": {
-    "build:iso": "node scripts/build-iso-map.mjs"
+    "build:iso": "node scripts/build-iso-map.mjs",
+    "build:summary": "node scripts/build-summary.mjs",
+    "test": "node --test tests/"
   },
   "devDependencies": {
+    "d3": "^7.9.0",
     "i18n-iso-countries": "7.14.0"
   }
 }
