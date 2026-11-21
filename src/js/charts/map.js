@@ -3,14 +3,18 @@
 //   orthographic globe that rotates by dragging (experiment, see the decision log).
 // - Continent: an equal-area projection centred on the continent, one shape per country; the
 //   countries of other continents stay grey for context.
-// Base examples: d3 World choropleth (https://observablehq.com/@d3/world-choropleth).
+// Base examples: d3 World choropleth (https://observablehq.com/@d3/world-choropleth) and, for the
+// globe, Versor dragging (https://observablehq.com/@d3/versor-dragging).
 
 import { CONTINENTS } from "../data/constants.js";
 import { openEntityMenu } from "../entityMenu.js";
 import { NO_DATA, METRICS, formatMetric, metricColor, metricDomain } from "../scales.js";
 import { setState } from "../state.js";
+import { DURATION, moves, tween } from "../motion.js";
 import { coverageLine, hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
+
+const LABEL_GAP = 13; // px between the baselines of two compared names
 
 const LEGEND_WIDTH = 220;
 const LEGEND_SPACE = 44; // below the map
@@ -47,7 +51,7 @@ function boxPoints([[x0, y0], [x1, y1]]) {
 }
 
 function periodLabel({ mode, year, rangeStart }) {
-  return mode === "year" ? `${year}` : `${rangeStart}–${year}`;
+  return mode === "year" ? `${year}` : `${rangeStart}-${year}`;
 }
 
 function tooltipHtml(name, stat, s) {
@@ -140,6 +144,25 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
   const outlines = countryLayer.append("g").attr("class", "map-outlines");
   const countryLabels = countryLayer.append("g");
 
+  // Compared names at their country's centroid (of the visible, clipped part). Top to bottom, a
+  // name that would cover one already placed moves down below it.
+  function placeCountryLabels() {
+    const boxes = [];
+    countryLabels.selectAll("text")
+      .each(function (d) { d.at = path.centroid(d.shape); d.width = this.getComputedTextLength(); })
+      .sort((a, b) => a.at[1] - b.at[1])
+      .each((d) => {
+        const [x] = d.at;
+        let y = d.at[1];
+        for (const b of boxes) {
+          if (Math.abs(x - b.x) < (d.width + b.width) / 2 + 4 && Math.abs(y - b.y) < LABEL_GAP) y = b.y + LABEL_GAP;
+        }
+        boxes.push({ x, y, width: d.width });
+        d.y = y;
+      })
+      .attr("transform", (d) => `translate(${d.at[0]},${d.y})`);
+  }
+
   const legend = svg.append("g");
   legend.append("rect").attr("width", LEGEND_WIDTH).attr("height", 10).attr("fill", "url(#map-legend-gradient)");
   const legendAxis = legend.append("g").attr("class", "axis").attr("transform", "translate(0, 10)");
@@ -174,7 +197,7 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
       countries.selectAll("path").attr("d", (d) => path(d.shape));
       outlines.selectAll("path").attr("d", (d) => path(d.shape));
       // On the visible part of the country (the path is clipped), so Russia's name stays in Europe.
-      countryLabels.selectAll("text").attr("transform", (d) => `translate(${path.centroid(d.shape)})`);
+      placeCountryLabels();
     } else {
       const [lambda, phi] = p.rotate();
       others.attr("d", path);
@@ -214,8 +237,38 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
 
   fitToSize(svg, resize);
 
+  // The transform that zooms the flat world map onto a continent's box.
+  function zoomTo(key) {
+    const points = boxPoints(VIEWPORTS[key].box).coordinates.map(projections.map);
+    const [x0, x1] = d3.extent(points, (pt) => pt[0]);
+    const [y0, y1] = d3.extent(points, (pt) => pt[1]);
+    const h = size[1] - LEGEND_SPACE;
+    const k = Math.min(size[0] / (x1 - x0), h / (y1 - y0));
+    return `translate(${size[0] / 2 - (k * (x0 + x1)) / 2}, ${h / 2 - (k * (y0 + y1)) / 2}) scale(${k})`;
+  }
+
+  // Drill-down and back (overview → zoom): the world zooms into the continent's box and fades
+  // while the country map fades in; going back, the world zooms out from that box. A copy of the
+  // layer that leaves is animated, so the real layers are already in their final state.
+  function animateLevel(fromLevel, fromContinent, s) {
+    if (!moves(s) || !size || view !== "map") return;
+    const ease = d3.easeCubicInOut;
+    const ZOOM = DURATION * 1.4; // a change of level is a larger move than a change of value
+    const ghost = (layer) => d3.select(svg.node().insertBefore(layer.node().cloneNode(true), legend.node()))
+      .attr("display", null).attr("pointer-events", "none");
+    if (atCountries() && fromLevel !== "continent") {
+      ghost(worldLayer).transition().duration(ZOOM).ease(ease)
+        .attr("transform", zoomTo(continent)).style("opacity", 0).remove();
+      countryLayer.style("opacity", 0).transition().delay(ZOOM * 0.45).duration(ZOOM * 0.55).style("opacity", 1);
+    } else if (!atCountries() && fromLevel === "continent" && VIEWPORTS[fromContinent]) {
+      ghost(countryLayer).transition().duration(ZOOM * 0.35).style("opacity", 0).remove();
+      worldLayer.attr("transform", zoomTo(fromContinent))
+        .transition().duration(ZOOM).ease(ease).attr("transform", "translate(0, 0) scale(1)");
+    }
+  }
+
   function updateWorld(stats, s, fillOf) {
-    fills.attr("fill", fillOf);
+    tween(fills, s).attr("fill", fillOf);
     hatches.attr("display", (d) => (stats.get(d.key).partial ? null : "none"));
     const isCompared = (d) => s.compared.includes(d.key);
     labelNames.text((d) => (isCompared(d) ? `✓ ${d.key}` : d.key));
@@ -243,18 +296,18 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
         .on("click", (event, d) => openEntityMenu(event, d.key, name(d.key)))
         .on("mouseenter", (_, d) => setState({ hovered: d.key }))
         .on("mouseleave", () => { setState({ hovered: null }); hideTooltip(); }))
-      .attr("fill", fillOf)
+      .call((sel) => tween(sel, s).attr("fill", fillOf))
       .on("mousemove", (event, d) => showTooltip(event, tooltipHtml(name(d.key), stats.get(d.key), s)));
 
     // Brushed (dashed) first, then compared, the hovered country last, so its outline is never
     // covered. The map is not faded for the brush: a lighter colour would mean a lower value.
-    const isMarked = (d) => s.compared.includes(d.key) || d.key === s.greenGrowthCountry;
+    const isMarked = (d) => s.compared.includes(d.key);
     const order = (d) => (d.key === s.hovered ? 2 : isMarked(d) ? 1 : 0);
     const marked = countryShapes
       .filter((d) => d.continent === continent
         && (isMarked(d) || d.key === s.hovered || s.brushed?.has(d.key)))
       .sort((a, b) => order(a) - order(b));
-    const outlineClass = (d) => (d.key === s.greenGrowthCountry ? " is-focused" : s.compared.includes(d.key) ? " is-compared"
+    const outlineClass = (d) => (s.compared.includes(d.key) ? " is-compared"
       : d.key === s.hovered ? "" : " is-brushed");
     outlines.selectAll("path").data(marked, (d) => d.shape.id ?? d.key).join("path")
       .attr("class", (d) => `map-outline${outlineClass(d)}`)
@@ -266,14 +319,15 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
       .map(([, list]) => d3.greatest(list, (d) => d3.geoArea(d.shape)));
     countryLabels.selectAll("text").data(named, (d) => d.key).join("text")
       .attr("class", "map-label map-label-name")
-      .attr("transform", (d) => `translate(${path.centroid(d.shape)})`)
-      .text((d) => d.key === s.greenGrowthCountry ? name(d.key) : `✓ ${name(d.key)}`);
+      .text((d) => `✓ ${name(d.key)}`);
+    placeCountryLabels();
   }
 
   return {
     // stats: key → metric value of every entity shown (continents or the countries of s.continent).
     update(stats, s) {
       const moved = s.level !== level || s.continent !== continent;
+      const [fromLevel, fromContinent] = [level, continent];
       if (moved) {
         level = s.level;
         continent = s.continent;
@@ -293,16 +347,19 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
       svg.attr("aria-label", atCountries()
         ? `Map of ${continent}, one colour per country`
         : "World map with one colour per continent");
-      if (moved) draw(); // the countries entered above
+      if (moved) {
+        draw(); // the countries entered above
+        animateLevel(fromLevel, fromContinent, s);
+      }
 
       gradient.selectAll("stop").data(d3.range(0, 1.0001, 0.1)).join("stop")
         .attr("offset", (t) => `${t * 100}%`)
         .attr("stop-color", (t) => color(lo + t * (hi - lo)));
       legendAxis.call(d3.axisBottom(d3.scaleLinear().domain([lo, hi]).range([0, LEGEND_WIDTH])).ticks(5).tickSize(4));
       legendAxis.select(".domain").remove();
-      const { unit, changeUnit } = METRICS[s.metric];
+      const { unit, changeUnit, cleanerIs } = METRICS[s.metric];
       legendTitle.text(s.mode === "change"
-        ? `${changeUnit.trim()}, blue = cleaner`
+        ? `${changeUnit.trim()}, ${cleanerIs ? "blue = cleaner" : "purple = more"}`
         : unit.trim());
     },
   };

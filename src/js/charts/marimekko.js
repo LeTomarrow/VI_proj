@@ -7,6 +7,8 @@
 import { openEntityMenu } from "../entityMenu.js";
 import { RANKS, SOURCE_GROUPS, SOURCE_LABELS, sourceOrder } from "../scales.js";
 import { comparisonType, isDimmed, isOutsideBrush, setState } from "../state.js";
+import { tween } from "../motion.js";
+import { orderByRank } from "../data/countryColumns.js";
 import { coverageLine, hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
 import { hitZones } from "./hitZones.js";
@@ -75,8 +77,9 @@ export function createMarimekko(selector) {
   let current = null;
 
   const root = d3.select(selector);
-  // Country level only: what to rank the countries by, and which countries to show.
-  const tools = root.append("div").attr("class", "mekko-tools").attr("hidden", true);
+  // What to rank the columns by and in which direction (both levels); at the country level,
+  // which countries to show.
+  const tools = root.append("div").attr("class", "mekko-tools");
   const rankControl = tools.append("label");
   rankControl.append("span").text("Rank by");
   const rankSelect = rankControl.append("select")
@@ -84,7 +87,10 @@ export function createMarimekko(selector) {
   rankSelect.selectAll("option").data(RANKS).join("option")
     .attr("value", (d) => d.key)
     .text((d) => d.label);
-  const viewButtons = tools.append("div").attr("class", "segmented").attr("role", "group")
+  const sortButton = tools.append("button").attr("type", "button").attr("class", "sort-toggle")
+    .on("click", () => setState({ mekkoSort: current?.[0].mekkoSort === "asc" ? "desc" : "asc" }));
+  const viewGroup = tools.append("div");
+  const viewButtons = viewGroup.attr("class", "segmented").attr("role", "group")
     .attr("aria-label", "Countries shown")
     .selectAll("button").data(VIEWS).join("button")
     .attr("type", "button")
@@ -107,7 +113,7 @@ export function createMarimekko(selector) {
       .classed("is-clickable", clickable)
       .attr("role", clickable ? "button" : null)
       .attr("tabindex", clickable ? 0 : null)
-      .attr("title", (d) => (clickable ? `Rank the countries by ${d.label.toLowerCase()}` : null))
+      .attr("title", (d) => (clickable ? `Rank by ${d.label.toLowerCase()} (its share moves to the base)` : null))
       .on("click", clickable ? (_, d) => pick(d) : null)
       .on("keydown", clickable ? (event, d) => {
         if (event.key === "Enter" || event.key === " ") { event.preventDefault(); pick(d); }
@@ -167,24 +173,27 @@ export function createMarimekko(selector) {
   // continentRecord }, view "compared" (the compared countries only) or "top" (the ranked top N).
   function render(s, options) {
     const { rank = RANKS[0], ranking = null } = options;
-    tools.attr("hidden", ranking ? null : true);
+    const asc = s.mekkoSort === "asc";
+    rankSelect.property("value", rank.key);
+    sortButton.text(asc ? "↑ Smallest first" : "↓ Largest first")
+      .attr("aria-label", asc ? "Sorted from the smallest; sort from the largest" : "Sorted from the largest; sort from the smallest");
+    viewGroup.attr("hidden", ranking ? null : true);
+    const order = sourceOrder(rank);
+    renderLegend(order, rank, true);
     if (!ranking) {
-      renderLegend(SOURCE_GROUPS, RANKS[0], false);
-      renderContinents(s, options);
+      renderContinents(s, { ...options, rank, order });
       return;
     }
-    rankSelect.property("value", rank.key);
     const comparedCountries = s.compared.filter((k) => comparisonType(k) === "countries").length;
     const view = ranking.view === "compared" ? "compared" : s.mekkoTop;
     viewButtons.attr("aria-pressed", ([n]) => n === view)
       .property("disabled", ([n]) => n === "compared" && comparedCountries < 2)
       .text(([n, label]) => (n === "compared" && comparedCountries >= 2 ? `${label} (${comparedCountries})` : label));
-    const order = sourceOrder(rank);
-    renderLegend(order, rank, true);
     renderRanked(s, rank, order, ranking);
   }
 
-  function renderContinents(s, { records, stats, maxTotal }) {
+  function renderContinents(s, { records: unsorted, stats, maxTotal, rank, order }) {
+    const records = orderByRank(unsorted, rank, s.mekkoSort);
     plot.attr("display", null);
     ranked.attr("display", "none");
     x.domain([0, maxTotal]);
@@ -196,7 +205,7 @@ export function createMarimekko(selector) {
     let lastLabel = -Infinity;
     const layout = records.map((record) => {
       let top = 0;
-      const segments = SOURCE_GROUPS.map((g) => {
+      const segments = order.map((g) => {
         const share = d3.sum(g.parts, (k) => record.shares[k]);
         const segment = { group: g, y0: top, y1: top + share };
         top += share;
@@ -222,10 +231,10 @@ export function createMarimekko(selector) {
 
     const shown = layout.map((d) => d.record.key);
     groups
-      .attr("transform", (d) => `translate(${d.x0}, 0)`)
       .classed("is-compared", (d) => s.compared.includes(d.record.key))
       .classed("is-dimmed", (d) => isDimmed(d.record.key, s, shown))
       .classed("is-hovered", (d) => d.record.key === s.hovered);
+    tween(groups, s).attr("transform", (d) => `translate(${d.x0}, 0)`);
 
     const columnWidth = (d) => Math.max(1, d.width - GAP);
     groups.select(".column-label")
@@ -234,21 +243,23 @@ export function createMarimekko(selector) {
       .attr("transform", (d) => (d.width >= WIDE_COLUMN
         ? "translate(0, -6)"
         : `translate(${d.width / 2 + d.labelShift}, -6) rotate(-65)`));
-    groups.select(".column-hatch")
+    tween(groups.select(".column-hatch"), s)
       .attr("width", columnWidth)
       .attr("height", innerH)
       .attr("display", (d) => (stats.get(d.record.key).partial ? null : "none"));
 
     groups.selectAll("rect.segment")
       .data((d) => d.segments.map((segment) => ({ ...segment, column: d })), (d) => d.group.key)
-      .join("rect")
+      .join((enter) => enter.append("rect").attr("y", innerH).attr("height", 0)) // new columns grow up
       .attr("class", "segment")
-      .attr("y", (d) => y(d.y1))
-      .attr("width", (d) => columnWidth(d.column))
-      .attr("height", (d) => Math.max(0, y(d.y0) - y(d.y1) - (d.y1 - d.y0 > 1 ? GAP : 0)))
-      .attr("fill", (d) => d.group.color);
+      .attr("fill", (d) => d.group.color)
+      .call((sel) => tween(sel, s)
+        .attr("y", (d) => y(d.y1))
+        .attr("width", (d) => columnWidth(d.column))
+        .attr("height", (d) => Math.max(0, y(d.y0) - y(d.y1) - (d.y1 - d.y0 > 1 ? GAP : 0))));
     groups.select(".column-hatch").raise();
-    groups.select(".column-outline").attr("width", columnWidth).attr("height", innerH).raise();
+    groups.select(".column-outline").raise();
+    tween(groups.select(".column-outline"), s).attr("width", columnWidth).attr("height", innerH);
 
     // Direct labels only on the widest column; the legend covers the rest.
     groups.selectAll("text.segment-label")
@@ -289,7 +300,9 @@ export function createMarimekko(selector) {
   function renderRanked(s, rank, order, { view, columns: shownColumns, max, continentRecord }) {
     plot.attr("display", "none");
     ranked.attr("display", null);
-    const { records, extra, stats, position } = shownColumns;
+    const { extra, stats, position } = shownColumns;
+    // The top N is always the highest N; the direction only changes the order shown.
+    const records = s.mekkoSort === "asc" ? [...shownColumns.records].reverse() : shownColumns.records;
     const onlyCompared = view === "compared";
     const all = [...records, ...extra];
     const w = fullW - RANK_MARGIN.left - RANK_MARGIN.right;
@@ -343,9 +356,10 @@ export function createMarimekko(selector) {
       .attr("y", yMix(share ?? 0) + 4)
       .text(share === null ? "" : `${s.continent} ${format(0)(share)}%`);
 
+    // New columns appear in place with an empty bar; kept columns slide to their new rank.
     const groups = rColumns.selectAll("g.column").data(layout, (d) => d.id).join((enter) => {
-      const g = enter.append("g").attr("class", "column");
-      g.append("rect").attr("class", "rank-bar");
+      const g = enter.append("g").attr("class", "column").attr("transform", (d) => `translate(${d.x0}, 0)`);
+      g.append("rect").attr("class", "rank-bar").attr("y", barsH).attr("height", 0);
       g.append("text").attr("class", "rank-value");
       g.append("rect").attr("class", "column-hatch").attr("fill", "url(#mekko-hatch)");
       g.append("rect").attr("class", "column-outline");
@@ -354,13 +368,12 @@ export function createMarimekko(selector) {
     });
     const shown = layout.map((d) => d.record.key);
     const columnWidth = Math.max(1, band - GAP);
+    tween(groups, s).attr("transform", (d) => `translate(${d.x0}, 0)`);
     groups
-      .attr("transform", (d) => `translate(${d.x0}, 0)`)
       .classed("is-compared", (d) => !onlyCompared && s.compared.includes(d.record.key))
-      .classed("is-focused", (d) => d.record.key === s.greenGrowthCountry)
       .classed("is-dimmed", (d) => (!onlyCompared && isDimmed(d.record.key, s, shown)) || isOutsideBrush([d.record.key], s))
       .classed("is-hovered", (d) => d.record.key === s.hovered);
-    groups.select(".rank-bar")
+    tween(groups.select(".rank-bar"), s)
       .attr("width", columnWidth)
       .attr("y", (d) => yBar(d.value))
       .attr("height", (d) => Math.max(0, barsH - yBar(d.value)))
@@ -384,10 +397,11 @@ export function createMarimekko(selector) {
       .data((d) => d.segments.map((segment) => ({ ...segment, column: d })), (d) => d.group.key)
       .join("rect")
       .attr("class", "segment")
-      .attr("y", (d) => yMix(d.y1))
-      .attr("width", columnWidth)
-      .attr("height", (d) => Math.max(0, yMix(d.y0) - yMix(d.y1) - (d.y1 - d.y0 > 1 ? GAP : 0)))
-      .attr("fill", (d) => d.group.color);
+      .attr("fill", (d) => d.group.color)
+      .call((sel) => tween(sel, s)
+        .attr("y", (d) => yMix(d.y1))
+        .attr("width", columnWidth)
+        .attr("height", (d) => Math.max(0, yMix(d.y0) - yMix(d.y1) - (d.y1 - d.y0 > 1 ? GAP : 0))));
     groups.select(".column-hatch")
       .attr("y", mixTop)
       .attr("width", columnWidth)

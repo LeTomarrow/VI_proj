@@ -1,4 +1,4 @@
-// Emissions from electricity by continent, absolute MtCO₂e, on a fixed 2000–2024 axis (before
+// Emissions from electricity by continent, absolute MtCO₂e, on a fixed 2000-2024 axis (before
 // 2000 continent sums jump when countries enter the data).
 // - Comparison list empty: stacked area; the top edge is the world total (T1).
 // - Continents in the comparison list: one line per compared continent from zero, y axis fitted
@@ -7,15 +7,11 @@
 
 import { COMPLETE_YEARS } from "../data/constants.js";
 import { openEntityMenu } from "../entityMenu.js";
-import { CONTINENT_COLORS } from "../scales.js";
-import { isDimmed, setState } from "../state.js";
+import { CONTINENT_COLORS, EMISSIONS_STACK } from "../scales.js";
+import { comparedContinents, isDimmed, setState } from "../state.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
 import { hitZones, zoneAt } from "./hitZones.js";
-
-// Stack order (largest emitters at the bottom); colours in scales.js are validated for it.
-// Colour follows the continent and never changes.
-const EMISSIONS_STACK = ["Asia", "North America", "Europe", "Africa", "South America", "Oceania"];
 
 const MARGIN = { top: 10, right: 130, bottom: 24, left: 56 };
 const LABEL_GAP = 14;   // between the names on the right, which are moved apart when needed
@@ -24,10 +20,6 @@ const YEAR_TICK = 44;   // room for one year label
 
 const mt = d3.format(",.0f");
 
-// Continents of the comparison list, in stack order.
-export function comparedContinents(s) {
-  return EMISSIONS_STACK.filter((k) => s.compared.includes(k));
-}
 
 // Names at the right edge, top to bottom, at least LABEL_GAP apart and inside the plot.
 function dodge(ends, height) {
@@ -169,8 +161,8 @@ export function createEmissionsArea(selector, { continents }) {
       .attr("width", MARGIN.right - 4).attr("height", LABEL_GAP);
 
     svg.attr("aria-label", shown.length
-      ? `Lines of CO₂ from electricity, 2000 to 2024: ${shown.join(", ")}`
-      : "Stacked area of CO₂ from electricity by continent, 2000 to 2024");
+      ? `Lines of CO₂e from electricity, 2000 to 2024: ${shown.join(", ")}`
+      : "Stacked area of CO₂e from electricity by continent, 2000 to 2024");
   }
 
   function render(s) {
