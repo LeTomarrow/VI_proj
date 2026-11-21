@@ -1,0 +1,6 @@
+{
+  "about": "Anonymous results of the iteration-2 evaluation. sus: one entry per participant, the 10 SUS answers (1-5) in item order; the page computes the score. heuristics: merged Forsell problems per heuristic. Fill after the tests (docs/iteration2/02- and 03-).",
+  "testsDate": null,
+  "sus": [],
+  "heuristics": []
+}

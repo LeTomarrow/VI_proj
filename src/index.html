@@ -3,99 +3,106 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Greener, but not cleaner? The global electricity transition</title>
+  <title>Green Paradox</title>
+  <meta name="description" content="Greener, but not cleaner? An interactive look at the global electricity transition, 2000-2024." />
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/site.css" />
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 </head>
-<body>
+<body class="site">
   <header>
-    <h1>Greener, but not cleaner?</h1>
-    <p class="subtitle">The global electricity transition, 1985–2025</p>
+    <h1><a class="home-link" href="index.html">Green Paradox</a></h1>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html" aria-current="page">Home</a>
+      <a href="app.html">Explore</a>
+      <a href="findings.html">Findings</a>
+    </nav>
   </header>
 
-  <nav id="global-filters" aria-label="Filters"></nav>
-
-  <main>
-    <nav id="navigation" class="navigation" aria-label="Level and comparison"></nav>
-
-    <!-- Views A (World) and B (Continent) share the map and the Marimekko; only the third
-         panel changes with the level. -->
-    <section class="views">
-      <figure class="panel panel-map">
-        <figcaption>
-          <h2 id="map-title"></h2>
-          <p class="how-to-read" id="map-how-to-read"></p>
-        </figcaption>
-        <div class="chart" id="chart-map"></div>
+  <main class="site-main">
+    <!-- Hero: the question and the paradox in one chart, drawn in on load. -->
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-text">
+        <h2 id="hero-title">Greener, but not cleaner?</h2>
+        <p class="lead">The world's electricity became more renewable every year. Its CO₂e still
+          went up. Green Paradox lets you find out <strong>where clean growth cut emissions,
+          where it did not, and why</strong>.</p>
+        <ul class="hero-stats" id="hero-stats" aria-live="polite"></ul>
+        <div class="cta">
+          <a class="button button-primary" href="app.html">Explore the data →</a>
+          <a class="button" href="findings.html">Read the findings</a>
+        </div>
+      </div>
+      <figure class="hero-chart">
+        <figcaption class="tab-title">World electricity, indexed to 2000 = 100</figcaption>
+        <div class="chart" id="chart-paradox"></div>
       </figure>
+    </section>
 
-      <figure class="panel panel-marimekko">
-        <figcaption>
-          <h2 id="marimekko-title"></h2>
-          <p class="how-to-read" id="marimekko-how-to-read"></p>
-        </figcaption>
-        <div class="chart" id="chart-marimekko"></div>
-      </figure>
+    <section class="site-section reveal" aria-labelledby="paradox-title">
+      <h2 id="paradox-title">The paradox</h2>
+      <p class="section-lead">Clean electricity cuts CO₂e only if it grows faster than the demand
+        for electricity. Worldwide, it grew fast, but demand grew almost as fast.</p>
+      <div class="cards" id="paradox-cards"></div>
+    </section>
 
-      <figure class="panel panel-wide" id="panel-emissions">
-        <figcaption>
-          <h2 id="emissions-title"></h2>
-          <p class="how-to-read" id="emissions-how-to-read"></p>
-        </figcaption>
-        <div class="chart" id="chart-emissions"></div>
-      </figure>
+    <section class="site-section reveal" aria-labelledby="stories-title">
+      <h2 id="stories-title">Two continents, two stories</h2>
+      <p class="section-lead">CO₂e from electricity, indexed to 2000 = 100. Europe generated a
+        little more electricity and cut its emissions; Asia's demand grew so fast that its
+        emissions more than tripled, despite record renewables.</p>
+      <div class="chart story-chart" id="chart-stories"></div>
+    </section>
 
-      <!-- View B (M3): the continent's countries. The radar tab stays here until View C (M4) exists. -->
-      <figure class="panel panel-wide" id="panel-continent" hidden>
-        <div id="country-overview" class="country-overview">
-        <div class="country-heading">
-          <div class="compare-heading">
-            <h2 id="continent-title"></h2>
-            <div class="segmented compare-tabs" role="tablist" aria-label="Country charts">
-              <button type="button" id="tab-scatter" role="tab" aria-selected="true" aria-controls="compare-scatter" tabindex="0">Emissions &amp; change</button>
-              <button type="button" id="tab-profiles" role="tab" aria-selected="false" aria-controls="compare-profiles" tabindex="-1">Country profiles</button>
-            </div>
-          </div>
-        </div>
-        <!-- The scatter and the sorted bars side by side, so the brush shows in both. -->
-        <div class="tab-panel tab-split" id="compare-scatter" role="tabpanel" aria-labelledby="tab-scatter" tabindex="0">
-          <div class="tab-part tab-part-main">
-            <div class="tab-heading">
-              <h3 class="tab-title" id="scatter-title"></h3>
-              <p class="how-to-read" id="scatter-how-to-read"></p>
-            </div>
-            <div class="chart" id="chart-scatter"></div>
-          </div>
-          <div class="tab-part">
-            <div class="tab-heading">
-              <h3 class="tab-title" id="bars-title"></h3>
-              <p class="how-to-read" id="bars-how-to-read"></p>
-            </div>
-            <div class="chart" id="chart-bars"></div>
-          </div>
-        </div>
-        <div class="tab-panel" id="compare-profiles" role="tabpanel" aria-labelledby="tab-profiles" tabindex="0" hidden>
-          <div class="tab-heading">
-            <h3 class="tab-title" id="profiles-title"></h3>
-            <p class="how-to-read" id="profiles-description"></p>
-          </div>
-          <div class="chart" id="chart-profiles"></div>
-        </div>
-        </div>
-        <div id="green-growth" class="green-growth" hidden>
-          <div class="compare-heading">
-            <h2 id="green-growth-title"></h2>
-            <button type="button" id="close-green-growth" class="link">← Back to countries</button>
-          </div>
-          <div class="green-growth-tools">
-            <label>Start year <input id="green-growth-start" type="number" min="1985" max="2025" step="1" /></label>
-            <span class="how-to-read">End year follows the year slider. All changes are relative to the start year.</span>
-          </div>
-          <div id="chart-green-growth" class="chart"></div>
-        </div>
-      </figure>
+    <section class="site-section reveal" aria-labelledby="data-title">
+      <h2 id="data-title">The data</h2>
+      <dl class="facts">
+        <div><dt>Source</dt><dd><a href="https://github.com/owid/energy-data" target="_blank" rel="noopener">Our World in Data, Energy</a>, compiled from Ember and the Energy Institute. CC BY 4.0.</dd></div>
+        <div><dt>Coverage</dt><dd><span id="fact-countries">215</span> countries, 1985-2025. 2000-2024 is complete; other years are partial and marked.</dd></div>
+        <div><dt>What is measured</dt><dd>Electricity only: generation by source (TWh), CO₂e from electricity (MtCO₂e), population.</dd></div>
+        <div><dt>Choices</dt><dd>Continents are the sum of their countries (Russia counts as Europe). Generation stands in for demand.</dd></div>
+      </dl>
+    </section>
+
+    <section class="site-section reveal" aria-labelledby="how-title">
+      <h2 id="how-title">How to explore</h2>
+      <ol class="cards steps">
+        <li class="card"><span class="step">A</span><h3>World</h3><p>Six continents on a map, their electricity mix and their emissions. Overview first.</p>
+          <ul class="chart-list" aria-label="Charts in World">
+            <li>Choropleth map <span class="source">after <a href="https://observablehq.com/@d3/world-choropleth" target="_blank" rel="noopener">World choropleth</a></span></li>
+            <li>Marimekko of the electricity mix <span class="source">after <a href="https://observablehq.com/@d3/marimekko-chart" target="_blank" rel="noopener">Marimekko chart</a></span></li>
+            <li>Stacked area of emissions <span class="source">after <a href="https://observablehq.com/@d3/stacked-area-chart" target="_blank" rel="noopener">Stacked area chart</a></span></li>
+            <li>Globe view (Map / Globe switch), rotates by dragging <span class="source">after <a href="https://observablehq.com/@d3/versor-dragging" target="_blank" rel="noopener">Versor dragging</a></span></li>
+          </ul>
+        </li>
+        <li class="card"><span class="step">B</span><h3>Continent</h3><p>Europe or Asia, country by country: who grew renewables, who still emits more. Zoom and filter.</p>
+          <ul class="chart-list" aria-label="Charts in Continent">
+            <li>Choropleth map, zoomed to the continent <span class="source">after <a href="https://observablehq.com/@d3/world-choropleth" target="_blank" rel="noopener">World choropleth</a></span></li>
+            <li>Ranked bars with mix columns <span class="source">after <a href="https://observablehq.com/@d3/bar-chart" target="_blank" rel="noopener">Bar chart</a></span></li>
+            <li>Bubble scatter with a 2D brush <span class="source">after <a href="https://observablehq.com/@mbostock/the-wealth-health-of-nations" target="_blank" rel="noopener">Wealth &amp; Health of Nations</a> + <a href="https://observablehq.com/@d3/brushable-scatterplot" target="_blank" rel="noopener">Brushable scatterplot</a></span></li>
+            <li>Sorted bars of change <span class="source">after <a href="https://observablehq.com/@d3/diverging-bar-chart" target="_blank" rel="noopener">Diverging bar chart</a></span></li>
+          </ul>
+        </li>
+        <li class="card"><span class="step">C</span><h3>Compare</h3><p>Up to five countries or continents side by side, and why their CO₂e changed. Details on demand.</p>
+          <ul class="chart-list" aria-label="Charts in Compare">
+            <li>Radar per entity <span class="source">after <a href="https://github.com/kevinschaul/d3-star-plot" target="_blank" rel="noopener">d3-star-plot</a> + <a href="https://observablehq.com/@palewire/radar-chart" target="_blank" rel="noopener">Radar chart</a></span></li>
+            <li>Mix over time (stacked area) <span class="source">after <a href="https://observablehq.com/@d3/stacked-area-chart" target="_blank" rel="noopener">Stacked area chart</a></span></li>
+            <li>Clean vs total generation <span class="source">after <a href="https://observablehq.com/@d3/difference-chart" target="_blank" rel="noopener">Difference chart</a></span></li>
+            <li>Why CO₂e changed (decomposition bars and total line) <span class="source">after <a href="https://observablehq.com/@recifs/plot-bars-and-line" target="_blank" rel="noopener">Bars and line</a></span></li>
+          </ul>
+        </li>
+      </ol>
+      <p class="section-note">Chart types and the D3 examples they started from (most from the
+        <a href="https://observablehq.com/@d3/gallery" target="_blank" rel="noopener">D3 gallery</a>),
+        adapted to the data and the tasks.</p>
+    </section>
+
+    <section class="site-section reveal" aria-labelledby="who-title">
+      <h2 id="who-title">Who made it</h2>
+      <p class="section-lead">Paulo Cunha (118741) and Tomás Gameiro (119586), Information
+        Visualisation, Universidade de Aveiro, 2026/27. Built with D3.js.</p>
+      <a class="button button-primary" href="app.html">Start exploring →</a>
     </section>
   </main>
 
@@ -104,6 +111,6 @@
       (Ember, Energy Institute), CC BY 4.0 · Built with <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js</a></p>
   </footer>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/landing.js"></script>
 </body>
 </html>

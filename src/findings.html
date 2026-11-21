@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Green Paradox Findings</title>
+  <meta name="description" content="What the Green Paradox visualisations show, and how the app was evaluated." />
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/site.css" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+</head>
+<body class="site">
+  <header>
+    <h1><a class="home-link" href="index.html">Green Paradox</a></h1>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="app.html">Explore</a>
+      <a href="findings.html" aria-current="page">Findings</a>
+    </nav>
+  </header>
+
+  <main class="site-main">
+    <section class="site-section" aria-labelledby="findings-title">
+      <h2 id="findings-title">What the data shows</h2>
+      <ol class="findings">
+        <li><strong>Greener is not cleaner by itself.</strong> From 2000 to 2024 the world's
+          renewable share rose from 19% to 32%, but generation doubled and CO₂e from electricity
+          rose by 81%.</li>
+        <li><strong>Europe and Asia went opposite ways.</strong> Europe cut its CO₂e from
+          electricity by about a third while generating a little more. Asia's more than
+          tripled.</li>
+        <li><strong>Large renewable gains can still mean more CO₂e.</strong> Since 2014, Turkey
+          (+25 pp), Jordan (+24 pp) and China (+11 pp) gained a lot of renewable share and still
+          emit more: clean growth did not keep up with demand.</li>
+        <li><strong>Why CO₂e changed differs by country.</strong> From 2000 to 2024, Portugal's
+          CO₂e from electricity fell by about 80% because it changed how it makes electricity;
+          China's rose fivefold because it made far more electricity, which outweighed its
+          cleaner mix (<em>Compare</em> view).</li>
+      </ol>
+      <p class="section-lead">Explore these yourself in the <a href="app.html">app</a>. Data:
+        Our World in Data, electricity only, 2000-2024; generation stands in for demand.</p>
+    </section>
+
+    <section class="site-section" aria-labelledby="eval-title">
+      <h2 id="eval-title">How the app was tested</h2>
+      <div class="eval-grid">
+        <article class="card">
+          <h3>Heuristic evaluation</h3>
+          <p>Both authors reviewed the app separately with Forsell &amp; Johansson's ten
+            heuristics for information visualisation, then merged the problems (severity 0-4).</p>
+          <div id="heuristics"></div>
+        </article>
+        <article class="card">
+          <h3>User tests and SUS</h3>
+          <p>Classmates did six tasks (T1–T6) and answered the System Usability Scale (0-100;
+            68 is the average). Answers are anonymous.</p>
+          <div class="chart sus-chart" id="chart-sus"></div>
+          <div id="sus-table"></div>
+        </article>
+      </div>
+    </section>
+
+    <section class="site-section" aria-labelledby="credits-title">
+      <h2 id="credits-title">About</h2>
+      <p class="section-lead">Paulo Cunha (118741) and Tomás Gameiro (119586), Information
+        Visualisation, Universidade de Aveiro, 2026/27. Built with D3.js; base map from
+        world-atlas (Natural Earth). Source code, credits and the use of AI are described in the
+        repository's README.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Data: <a href="https://github.com/owid/energy-data" target="_blank" rel="noopener">Our World in Data</a>
+      (Ember, Energy Institute), CC BY 4.0 · Built with <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js</a></p>
+  </footer>
+
+  <script type="module" src="js/findings.js"></script>
+</body>
+</html>

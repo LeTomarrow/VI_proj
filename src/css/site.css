@@ -1,0 +1,313 @@
+/* Landing and findings pages. Builds on style.css (tokens, header, axes, tooltip); only the
+   page layout and the scroll reveal are here. */
+
+.site {
+  background: var(--color-bg);
+}
+
+.site-main {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 calc(var(--spacing) * 2) 2rem;
+}
+
+/* Hero */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 2rem;
+  align-items: center;
+  min-height: min(78vh, 640px);
+  padding: 2.5rem 0 2rem;
+}
+
+.hero h2 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 4.5vw, 3.2rem);
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+}
+
+.lead {
+  max-width: 46ch;
+  margin: 0 0 1.25rem;
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+}
+
+.hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.75rem;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-stats li {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+/* The notes wrap under their number, so the three stats stay on one row. */
+.hero-stats li > span {
+  max-width: 20ch;
+}
+
+.hero-stats strong {
+  white-space: nowrap;
+}
+
+.hero-stats strong {
+  font-size: 1.6rem;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-chart {
+  display: flex;
+  flex-direction: column;
+  height: 320px;
+  margin: 0;
+}
+
+.hero-chart .chart,
+.story-chart {
+  flex: 1;
+  min-height: 0;
+}
+
+.story-chart {
+  height: 260px;
+}
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  padding: 0 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-decoration: none;
+  background: #fff;
+  border: 1px solid var(--color-axis);
+  border-radius: 6px;
+  transition: background 150ms, border-color 150ms;
+}
+
+.button:hover {
+  border-color: var(--color-text-secondary);
+}
+
+.button-primary {
+  color: #fff;
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.button-primary:hover {
+  background: #154a8c;
+}
+
+/* Sections */
+.site-section {
+  padding: 2.25rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.site-section h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+}
+
+.section-lead {
+  max-width: 68ch;
+  margin: 0 0 1.25rem;
+  color: var(--color-text-secondary);
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  padding: 1rem 1.1rem;
+  background: var(--color-plane);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.card h3 {
+  margin: 0.2rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.card-value {
+  font-size: 1.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.step {
+  display: inline-grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  font-weight: 700;
+  color: #fff;
+  background: var(--color-accent);
+  border-radius: 50%;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 2rem;
+  margin: 0;
+}
+
+.facts dt {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.facts dd {
+  margin: 0.15rem 0 0;
+}
+
+/* Findings page */
+.findings {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 75ch;
+  margin: 0.5rem 0 1.25rem;
+  padding-left: 1.25rem;
+}
+
+.eval-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.eval-grid .card p {
+  margin-bottom: 0.75rem;
+}
+
+.sus-chart {
+  height: 110px;
+}
+
+.sus-dot {
+  fill: var(--color-accent);
+  fill-opacity: 0.85;
+  stroke: var(--color-bg);
+  stroke-width: 2;
+}
+
+.sus-mean {
+  stroke: var(--color-text);
+  stroke-width: 2.5;
+}
+
+.results-table {
+  width: 100%;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  border-collapse: collapse;
+}
+
+.results-table th,
+.results-table td {
+  padding: 0.3rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pending {
+  font-style: italic;
+  color: var(--color-muted);
+}
+
+/* Scroll reveal (landing.js adds .is-visible); without motion the sections are shown as they are. */
+.reveal {
+  transition: opacity 700ms var(--motion-ease), transform 700ms var(--motion-ease);
+}
+
+.reveal.is-pending {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .site-main {
+    padding: 0 16px 2rem;
+  }
+
+  .hero,
+  .cards,
+  .facts,
+  .eval-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    min-height: 0;
+  }
+}
+
+/* How to explore: the charts of each view and the D3 example each one started from. */
+.chart-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.8rem 0 0;
+  padding: 0.75rem 0 0;
+  list-style: none;
+  font-size: 0.85rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.chart-list .source {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
+}
+
+.section-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
