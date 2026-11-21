@@ -3,6 +3,9 @@
 > Covers: "Usability testing of the prototype with users (can be done in class with
 > classmates). Do not forget to define the most important tasks that should be tested with
 > users." Presented in class on **26/10** (second half of class).
+>
+> **Iteration-1 record, kept as it was.** The five views were regrouped into three after the
+> feedback; the current design is in [../iteration2/01-integration-plan.md](../iteration2/01-integration-plan.md).
 
 ## Prototype
 

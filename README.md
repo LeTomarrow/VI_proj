@@ -1,4 +1,4 @@
-# VI_proj — [App name TBD]
+# Green Paradox
 
 Information Visualisation (UA, 2026/2027, 1st semester) — Practical Assignment.
 An application for the visual exploration of a data set, built with [D3.js](https://d3js.org/).
@@ -18,6 +18,9 @@ generation, and whether each change was driven by demand or by the electricity m
 tasks and scope are in [`docs/iteration1/01-data-analysis.md`](docs/iteration1/01-data-analysis.md).
 
 Current plan, status and decisions: [`docs/iteration2/01-integration-plan.md`](docs/iteration2/01-integration-plan.md).
+Checklist for the final delivery (30/11): [`docs/presentation/checklist-30-11.txt`](docs/presentation/checklist-30-11.txt).
+
+Delivery file name (e-learning): `TP?-GreenParadox-118741+119586` (replace `?` with the class number).
 
 ## Group
 
@@ -86,17 +89,25 @@ npm install && npm run build:iso
 
 ## Use of AI
 
-> TODO: disclose any AI tools used, for what purpose, and how they contributed — required by
-> the assignment (see `docs/guidelines`).
+AI tools were used as assistants; the students chose the theme, persona, tasks and designs and
+remain responsible for the content, analysis and conclusions.
+
+| Tool | Used for | Contribution |
+|---|---|---|
+| Claude Code (Anthropic) | Reviewing the docs against the brief, drafting and editing documentation, implementing and refactoring chart code, checking colour palettes for colour blindness | Code and text were reviewed, tested in the browser and changed by the students; design decisions are recorded in the decision log |
+
+> TODO before delivery: add any other tool used (e.g. ChatGPT, Copilot) and for what.
 
 ## Non-original code / libraries
-
-> TODO: list any reused code, templates, or libraries beyond D3.js itself, with references.
 
 - Data: Our World in Data, *Energy* and *Continents according to Our World in Data*
   (CC BY 4.0).
 - Base map: [world-atlas](https://github.com/topojson/world-atlas) 2.0.2 (`countries-50m.json`,
   derived from Natural Earth), read with [topojson-client](https://github.com/topojson/topojson-client).
+- Libraries: [D3.js](https://d3js.org/) v7 and topojson-client v3, loaded from the jsDelivr CDN;
+  [i18n-iso-countries](https://github.com/michaelwittig/node-i18n-iso-countries) (dev only, to build
+  `data/iso-numeric.json`).
+- Methods: LMDI decomposition of emissions (Ang, 2005) in `src/js/data/greenGrowth.js`.
 - Chart bases: D3 examples [World choropleth](https://observablehq.com/@d3/world-choropleth),
   [Marimekko chart](https://observablehq.com/@d3/marimekko-chart) and
   [Stacked area chart](https://observablehq.com/@d3/stacked-area-chart).

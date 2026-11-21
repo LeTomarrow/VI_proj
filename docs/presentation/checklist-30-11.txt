@@ -1,0 +1,51 @@
+GREEN PARADOX — CHECKLIST FOR THE FINAL DELIVERY (30/11/2026)
+Presentation in class: 10 min + 5 min questions. Delivery on e-learning: slides, video, code.
+Mark [x] when done.
+
+1. APPLICATION
+[ ] View C (Compare) as its own screen: radar + one row per compared entity
+[ ] Global country search ("+ Add country...")
+[ ] Animations: year change, reorder, map zoom, View C entrance (reduced motion respected)
+[ ] Website context: intro (question, persona, key numbers), "Data & method", "Findings", credits
+[ ] No console errors; tested in Chrome and Firefox at 1366x768 and 1920x1080
+[ ] Runs from a clean clone with the README instructions (docker compose / python http.server)
+
+2. EVALUATION (2nd iteration requires both)
+[ ] Heuristic evaluation, Forsell & Johansson (Paulo + Tomas, separate passes, merged)
+      -> docs/iteration2/02-heuristic-evaluation.md
+[ ] Severity 3-4 problems fixed (decision log updated)
+[ ] User tests with 3-5 classmates: tasks T1-T6 + SUS
+      -> docs/iteration2/03-user-testing.md
+[ ] SUS scores computed (per participant, mean, per item)
+[ ] Comparison with iteration-1 results (U1-U7)
+
+3. SLIDES (sober; succinct)
+[ ] Title: Green Paradox, group, class
+[ ] Data used and its source (OWID Energy, Ember, Energy Institute; CC BY 4.0), preprocessing in one slide
+[ ] Target user: persona Carla, context of use
+[ ] Objectives and the questions the visualisations answer (T1-T6)
+[ ] Iteration 1 -> 2: instructor feedback F1-F4 and test findings U1-U7, what changed
+[ ] The three views and how they are linked (mantra: overview, zoom/filter, details)
+[ ] Live demo or video (one walkthrough of T1-T6)
+[ ] Heuristic evaluation: main problems and fixes
+[ ] User tests: task success, SUS score, main problems
+[ ] Conclusions about the data (the "green paradox": share of renewables up, emissions up)
+[ ] Limitations and future work (other continents, generation as demand proxy)
+[ ] Use of AI: which tools, for what, how they contributed
+[ ] Non-original code and libraries referenced
+[ ] Percentage of work of each student
+[ ] Rehearsed: under 10 minutes, both members speak
+
+4. VIDEO
+[ ] Short demo (2-3 min), screen capture with voice or captions
+[ ] Follows T1-T6 in order; readable resolution (1080p)
+
+5. CODE AND REPOSITORY
+[ ] README: run instructions, structure, AI use, non-original code (no TODO left)
+[ ] Docs consistent (tasks identical in 01-data-analysis.md and 03-user-testing.md)
+[ ] Repository accessible to the teachers (or zip)
+
+6. DELIVERY
+[ ] Class number confirmed: TP__
+[ ] Files named TP__-GreenParadox-118741+119586 (slides, video, code zip)
+[ ] Uploaded to e-learning before the deadline

@@ -6,3 +6,5 @@
 - `video/` — short demo video of the final application, required for delivery.
 
 Remember to disclose AI tool usage in the final presentation (see root `README.md`).
+
+Checklist for 30/11: [`checklist-30-11.txt`](checklist-30-11.txt).

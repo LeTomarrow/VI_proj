@@ -2,6 +2,9 @@
 
 > Covers: "Justified choice of the visualisation techniques selected (for representation,
 > presentation, and interaction)."
+>
+> **Iteration-1 record, kept as it was.** The five views were regrouped into three after the
+> feedback; the current design is in [../iteration2/01-integration-plan.md](../iteration2/01-integration-plan.md).
 
 The application has five linked views. They share the selected **year**, **year range**,
 **metric** and **country**. When no country is selected, Views 2 and 4 show the World.

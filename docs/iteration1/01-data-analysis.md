@@ -4,7 +4,7 @@
 > they represent, of users, context of use and main questions that the application should help
 > to answer."
 
-**Theme:** *Greener, but not cleaner? The global electricity transition, 1985–2025.*
+**App:** Green Paradox. **Theme:** *Greener, but not cleaner? The global electricity transition, 1985–2025.*
 
 ## 1. The data
 
@@ -172,21 +172,24 @@ growth is keeping up with demand.
   - **N4.** Know whether a change in emissions came from more demand or from a cleaner mix,
     with exact values she can quote.
 
-**Tasks** (these are also the usability-test tasks):
+**Tasks** (these are also the usability-test tasks; worded so a tester with no energy background
+understands them):
 
 | # | Task | Need | Where in the UI |
 |---|---|---|---|
-| T1 | Which continent's electricity became greener the most between 2000 and 2024, and which continent emits the most? | N1 | World screen |
-| T2 | In Europe, which countries had the largest rise in renewable share between 2014 and 2024, and did their emissions also fall? | N2 | Continent screen |
-| T3 | Add two of those countries and one Asian country to the comparison list. | N3 | Comparison list (any screen) |
-| T4 | For each compared country, did new low-carbon generation cover the growth in demand, and was the change in emissions driven by demand or by the mix? | N4 | Compare screen |
+| T1 | Which continent emits the most CO₂ from electricity in 2024, and which one made its electricity cleaner the most since 2000? | N1 | World: emissions area, map (*Change*) |
+| T2 | What does Asia make most of its electricity from in 2024? And Europe? | N1 | World: Marimekko |
+| T3 | In Asia, among the countries that gained the most renewables since 2014, find one whose CO₂ still went up. | N2 | Continent: sorted bars + CO₂ column |
+| T4 | In Europe, select the countries with dirty electricity that use a lot of it per person. Name two. | N2 | Continent: bubble scatter + brush |
+| T5 | Put two European countries and one Asian country side by side. Which has the cleanest electricity? | N3 | Search + comparison list, Compare: radar |
+| T6 | For one of them: did its CO₂ change mostly because it made more electricity, or because it changed how it makes it? | N4 | Compare: "Why emissions changed" |
 
 ## 4. Objective
 
-Help an energy and environment analyst answer, in one breef session and without exporting data, **whether the growth of low-carbon electricity has reduced emissions from
+Help an energy and environment analyst answer, in one brief session and without exporting data, **whether the growth of low-carbon electricity has reduced emissions from
 electricity generation, first by continent and then by country, and whether each change was driven by demand or by the electricity mix.**
 
-The objective is met when participants in the usability tests complete T1–T4.
+The objective is met when participants in the usability tests complete T1–T6.
 
 **Scope.** The World screen shows all six continents. The Continent screen is built first
 for **Europe** and **Asia**: Europe is where the transition is most advanced, and Asia produces
@@ -196,7 +199,7 @@ continents are future work if time runs out.
 ## 5. Context of use
 
 - A desktop browser at work, in sessions of about 10 to 15 minutes, while preparing a briefing.
-- The session starts from a concrete question (T1–T4), followed by some open exploration.
+- The session starts from a concrete question (T1–T6), followed by some open exploration.
 - Values must be exact and quotable: tooltips give the value with its unit and year.
 - No prior knowledge of the dataset is assumed. Units are explained in tooltips.
 
@@ -209,12 +212,12 @@ Each question is answered by one group of linked charts. The design is detailed 
    *(View A: map by continent + Marimekko by continent + stacked area of emissions by
    continent)* (T1)
 2. **What is a continent's or country's electricity made of?** *(Marimekko in Views A and B;
-   mix over time, in kWh per person, in View C)*
+   mix over time, in kWh per person, in View C)* (T2)
 3. **Which countries in a continent go against the trend?** Which had the largest rise in
    renewable share, and did their emissions fall? *(View B: sorted bars of the change in renewable share, with
-   whether emissions fell, + bubble scatter + map)* (T2)
+   whether emissions fell, + bubble scatter + map)* (T3, T4)
 4. **Is clean generation keeping up with total generation, and why did emissions change?**
-   *(View C: difference chart + demand/mix decomposition)* (T4)
+   *(View C: difference chart + decomposition into "more electricity" vs "changed how it is made")* (T6)
 5. **How do the chosen countries compare, even across continents?** *(Country search +
    comparison list + View C, in per-person values so that large and small countries are
-   comparable)* (T3, T4)
+   comparable)* (T5, T6)
