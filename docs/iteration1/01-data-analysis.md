@@ -177,7 +177,7 @@ understands them):
 
 | # | Task | Need | Where in the UI |
 |---|---|---|---|
-| T1 | Which continent emits the most CO₂ from electricity in 2024, and which one made its electricity cleaner the most since 2000? | N1 | World: emissions area, map (*Change*) |
+| T1 | Which continent emits the most CO₂ from electricity in 2024, and which one cut the CO₂ per unit of electricity the most since 2000? | N1 | World: emissions area, map (*Change*) |
 | T2 | What does Asia make most of its electricity from in 2024? And Europe? | N1 | World: Marimekko |
 | T3 | In Asia, among the countries that gained the most renewables since 2014, find one whose CO₂ still went up. | N2 | Continent: sorted bars + CO₂ column |
 | T4 | In Europe, select the countries with dirty electricity that use a lot of it per person. Name two. | N2 | Continent: bubble scatter + brush |
