@@ -5,33 +5,23 @@
 
 import { COMPLETE_YEARS } from "../data/constants.js";
 import { openEntityMenu } from "../entityMenu.js";
-import { NO_DATA, metricColor } from "../scales.js";
-import { setState } from "../state.js";
+import { NO_DATA } from "../scales.js";
+import { inRegion, MIN_EMISSIONS, shownAt, validBubble } from "../data/scatter.js";
+import { addCompared, MAX_COMPARED, setState } from "../state.js";
+import { tween } from "../motion.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
 
 const MARGIN = { top: 14, right: 28, bottom: 40, left: 58 };
-const TOP_LABELS = 5;   // largest emitters named; compared and hovered countries always are
+const TOP_LABELS = 5;   // largest emitters named even over a neighbouring bubble (never over a name)
 const HOVER_PAD = 10;   // hover zone beyond a bubble's edge
-const MIN_R = 3;        // smallest bubble, so small emitters stay visible
+const MIN_R = 4;        // smallest bubble (8 px), so small emitters stay visible
 const LABEL_H = 12;
 const CHAR_W = 6.2;     // estimated label width per character, to skip overlapping names
 
-const colorOf = metricColor("renewableShare", "year");
-const valid = (r) => r && r.emissionsPerCapita > 0 && r.carbonIntensity !== null && r.emissions > 0;
-const inRegion = (r, { x, y }) => r.emissionsPerCapita >= x[0] && r.emissionsPerCapita <= x[1]
-  && r.carbonIntensity >= y[0] && r.carbonIntensity <= y[1];
-
-// Keys of the countries inside the brush in the selected year, or null without a brush. The
-// brush is a region in data units, so a country enters or leaves it when the year changes.
-export function brushedKeys(keys, byCountry, s) {
-  const b = s.brush;
-  if (!b || s.level !== "continent" || b.continent !== s.continent) return null;
-  return new Set(keys.filter((k) => {
-    const r = byCountry.get(k)?.get(s.year);
-    return valid(r) && inRegion(r, b);
-  }));
-}
+// Starts further up the ramp than the map, so a low share is still a visible green on white.
+const colorOf = (share) => d3.interpolateGreens(0.3 + 0.7 * Math.max(0, Math.min(100, share)) / 100);
+const fillOf = (r) => (r.renewableShare === null ? NO_DATA : colorOf(r.renewableShare));
 const fmt = (digits) => d3.format(`,.${digits}f`);
 
 // The World's lines split the plot in four. Emissions per person = carbon intensity × electricity
@@ -44,7 +34,7 @@ const QUADRANTS = [
 ];
 
 function versusWorld(r, w) {
-  if (!valid(w)) return "";
+  if (!validBubble(w)) return "";
   const perPerson = r.emissionsPerCapita < w.emissionsPerCapita ? "lower" : "higher";
   const intensity = r.carbonIntensity < w.carbonIntensity ? "lower" : "higher";
   return `<div class="tooltip-note">vs World: ${perPerson} per person, ${intensity} per kWh</div>`;
@@ -54,7 +44,7 @@ function tooltipHtml(r, w) {
   const row = (label, value) => `<div class="tooltip-row"><span>${label}</span><span>${value}</span></div>`;
   return `<strong>${r.name}, ${r.year}</strong>`
     + row("Emissions per person", `${fmt(2)(r.emissionsPerCapita)} t CO₂e`)
-    + row("Carbon intensity", `${fmt(0)(r.carbonIntensity)} gCO₂/kWh`)
+    + row("Carbon intensity", `${fmt(0)(r.carbonIntensity)} gCO₂e/kWh`)
     + row("Total emissions", `${fmt(1)(r.emissions)} Mt CO₂e`)
     + row("Renewable share", r.renewableShare === null ? "no data" : `${fmt(1)(r.renewableShare)}%`)
     + versusWorld(r, w)
@@ -67,9 +57,24 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
   const x = d3.scaleLog();
   const y = d3.scaleLinear();
   const radius = d3.scaleSqrt();
-  const domains = new Map(); // continent → fixed domains over 2000–2024, so movement means change
+  const domains = new Map(); // continent → fixed domains over 2000-2024, so movement means change
 
   const root = d3.select(selector);
+  const tools = root.append("div").attr("class", "mekko-tools");
+  const filter = tools.append("label");
+  filter.append("span").text("Show");
+  const filterButtons = tools.append("div").attr("class", "segmented").attr("role", "group")
+    .attr("aria-label", "Countries shown, by total emissions")
+    .selectAll("button").data(MIN_EMISSIONS).join("button")
+    .attr("type", "button")
+    .text(([, label]) => label)
+    .attr("title", ([n]) => (n ? `Only countries emitting at least ${n} Mt CO₂e from electricity` : "Every country with data"))
+    .on("click", (_, [n]) => setState({ scatterMin: n }));
+  // Adds the brushed group to the comparison list, largest emitters first, up to the limit.
+  let toCompare = [];
+  const compareButton = tools.append("button").attr("type", "button").attr("class", "sort-toggle compare-brushed")
+    .attr("hidden", true)
+    .on("click", () => addCompared(toCompare));
   const note = root.append("p").attr("class", "how-to-read scatter-note").attr("role", "status");
   const legend = root.append("ul").attr("class", "legend");
   const ramp = legend.append("li");
@@ -77,6 +82,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
   ramp.append("span").attr("class", "ramp")
     .style("background", `linear-gradient(to right, ${d3.range(0, 1.01, 0.1).map((t) => colorOf(100 * t)).join(", ")})`);
   ramp.append("span").text("100%");
+  legend.append("li").html(`<span class="swatch" style="background:${NO_DATA}"></span>No data`);
   legend.append("li").html(`<span class="swatch swatch-ring"></span>Area = total emissions`);
   legend.append("li").html(`<span class="swatch swatch-dash"></span>World`);
 
@@ -87,7 +93,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
   const xTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle")
     .text("Emissions per person (t CO₂e, log scale)");
   const yTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle")
-    .text("Carbon intensity (gCO₂/kWh)");
+    .text("Carbon intensity (gCO₂e/kWh)");
   const worldX = plot.append("line").attr("class", "reference-line");
   const worldY = plot.append("line").attr("class", "reference-line");
   const worldLabel = plot.append("text").attr("class", "axis-title").attr("text-anchor", "end").text("World");
@@ -134,7 +140,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
   function domainsOf(continent) {
     if (!domains.has(continent)) {
       const records = (countriesOf.get(continent) ?? []).flatMap((k) => [...(byCountry.get(k)?.values() ?? [])])
-        .filter((r) => valid(r) && r.year >= COMPLETE_YEARS[0] && r.year <= COMPLETE_YEARS[1]);
+        .filter((r) => validBubble(r) && r.year >= COMPLETE_YEARS[0] && r.year <= COMPLETE_YEARS[1]);
       domains.set(continent, {
         x: d3.extent(records, (r) => r.emissionsPerCapita),
         y: [0, d3.max(records, (r) => r.carbonIntensity)],
@@ -163,14 +169,19 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     y.domain(d.y).nice();
     radius.domain(d.r);
     const keys = countriesOf.get(s.continent) ?? [];
-    points = keys.map((k) => byCountry.get(k)?.get(s.year)).filter(valid)
+    filterButtons.attr("aria-pressed", ([n]) => String(n === (s.scatterMin ?? 0)));
+    const ofYear = keys.map((k) => byCountry.get(k)?.get(s.year)).filter(validBubble);
+    const shown = ofYear.filter((r) => shownAt(r, s));
+    const hidden = ofYear.length - shown.length;
+    points = shown
       .sort((a, b) => b.emissions - a.emissions)
       .map((r) => ({ r, cx: x(r.emissionsPerCapita), cy: y(r.carbonIntensity), rr: Math.max(MIN_R, radius(r.emissions)) }));
     const withGeneration = keys.filter((k) => byCountry.get(k)?.get(s.year)?.generation > 0).length;
 
     note.text(s.year < COMPLETE_YEARS[0]
       ? `No emissions data before ${COMPLETE_YEARS[0]}. Move the year slider to ${COMPLETE_YEARS[0]} or later.`
-      : withGeneration > points.length ? `${withGeneration - points.length} of ${withGeneration} countries have no emissions data in ${s.year}.` : "");
+      : [withGeneration > ofYear.length ? `${withGeneration - ofYear.length} of ${withGeneration} countries have no emissions data in ${s.year}.` : "",
+        hidden ? `${hidden} smaller emitters hidden (Show).` : ""].filter(Boolean).join(" "));
     svg.attr("aria-label", `Bubble scatter of ${points.length} countries of ${s.continent} in ${s.year}: emissions per person, carbon intensity and total emissions.`);
 
     xAxis.attr("transform", `translate(0, ${innerH})`)
@@ -179,7 +190,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
       .call((g) => g.select(".domain").remove());
 
     const w = byWorld.get(s.year);
-    const showWorld = valid(w);
+    const showWorld = validBubble(w);
     worldX.attr("display", showWorld ? null : "none");
     worldY.attr("display", showWorld ? null : "none");
     worldLabel.attr("display", showWorld ? null : "none");
@@ -200,7 +211,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     const comparedHere = s.mode === "year" ? [] : s.compared.filter((k) => keys.includes(k));
     const trailData = comparedHere.map((key) => ({
       key,
-      path: d3.range(s.rangeStart, s.year + 1).map((yr) => byCountry.get(key)?.get(yr)).filter(valid),
+      path: d3.range(s.rangeStart, s.year + 1).map((yr) => byCountry.get(key)?.get(yr)).filter(validBubble),
     })).filter((t) => t.path.length > 1);
     const trail = trails.selectAll("g.trail").data(trailData, (t) => t.key).join((enter) => {
       const g = enter.append("g").attr("class", "trail");
@@ -211,44 +222,79 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     trail.select("path").attr("d", (t) => d3.line((r) => x(r.emissionsPerCapita), (r) => y(r.carbonIntensity))(t.path));
     trail.select("circle").attr("cx", (t) => x(t.path[0].emissionsPerCapita)).attr("cy", (t) => y(t.path[0].carbonIntensity));
 
-    bubbles.selectAll("circle").data(points, (p) => p.r.key).join("circle")
+    bubbles.selectAll("circle").data(points, (p) => p.r.key).join(
+      (enter) => enter.append("circle").attr("cx", (p) => p.cx).attr("cy", (p) => p.cy).attr("r", 0),
+    )
+      .call((sel) => tween(sel, s)
+        .attr("cx", (p) => p.cx).attr("cy", (p) => p.cy).attr("r", (p) => p.rr)
+        .attr("fill", (p) => fillOf(p.r)))
+      .style("--ring", (p) => d3.color(fillOf(p.r)).darker(1).formatHex())
       .attr("class", "bubble")
-      .attr("cx", (p) => p.cx).attr("cy", (p) => p.cy).attr("r", (p) => p.rr)
-      .attr("fill", (p) => (p.r.renewableShare === null ? NO_DATA : colorOf(p.r.renewableShare)))
       .classed("is-compared", (p) => s.compared.includes(p.r.key))
       .classed("is-hovered", (p) => p.r.key === s.hovered)
       .classed("is-outside", (p) => !!s.brushed && !s.brushed.has(p.r.key) && p.r.key !== s.hovered);
     // Marked bubbles on top, so their outline is never covered.
     bubbles.selectAll("circle.is-compared, circle.is-hovered").raise();
 
-    // Names: hovered, compared, then the largest emitters (of the brushed group, if any),
-    // skipping any that would overlap.
+    // The brushed countries not yet compared, largest emitters first (points are sorted).
+    const compared = s.compared.filter((k) => keys.includes(k));
+    const free = MAX_COMPARED - compared.length;
+    const brushedNew = s.brushed ? points.filter((p) => s.brushed.has(p.r.key) && !s.compared.includes(p.r.key)) : [];
+    toCompare = brushedNew.map((p) => p.r.key);
+    compareButton.attr("hidden", s.brushed ? null : true)
+      .property("disabled", !brushedNew.length || free <= 0)
+      .text(!brushedNew.length ? "+ Compare: all selected are compared"
+        : free <= 0 ? `+ Compare: list full (${compared.length})`
+        : brushedNew.length <= free ? `+ Compare these ${brushedNew.length}`
+        : `+ Compare the ${free} largest of ${brushedNew.length}`)
+      .attr("title", `Add the selected countries to the comparison, largest emitters first (up to ${MAX_COMPARED})`);
+
+    // Names: hovered, compared, then every other bubble from the largest emitter down (only the
+    // brushed group, if any), each placed right, left, above or below its bubble where it covers
+    // no other name or bubble. Hovered and compared names are always shown; the TOP_LABELS
+    // largest may cover a neighbouring bubble, but not another name.
     const marked = (p) => s.compared.includes(p.r.key) || p.r.key === s.hovered;
-    const others = s.brushed ? points.filter((p) => s.brushed.has(p.r.key)) : points.slice(0, TOP_LABELS);
+    const others = s.brushed ? points.filter((p) => s.brushed.has(p.r.key)) : points;
     const ranked = [
       ...points.filter((p) => p.r.key === s.hovered),
       ...points.filter((p) => s.compared.includes(p.r.key) && p.r.key !== s.hovered),
       ...others.filter((p) => !marked(p)),
     ];
     const boxes = [];
-    const named = ranked.filter((p, i) => {
+    const hitsLabel = (box) => boxes.some((b) => b.x0 < box.x1 && box.x0 < b.x1 && b.y0 < box.y1 && box.y0 < b.y1);
+    const hitsBubble = (box, self) => points.some((q) => q !== self
+      && Math.hypot(q.cx - Math.max(box.x0, Math.min(q.cx, box.x1)), q.cy - Math.max(box.y0, Math.min(q.cy, box.y1))) < q.rr);
+    const inside = (box) => box.x0 >= 0 && box.x1 <= innerW && box.y0 >= 0 && box.y1 <= innerH;
+    const candidates = (p, text) => {
+      const w = text.length * CHAR_W * (s.compared.includes(p.r.key) ? 1.15 : 1); // compared names are bold
+      const h = LABEL_H / 2;
+      return [
+        { x0: p.cx + p.rr + 3, x1: p.cx + p.rr + 3 + w, y0: p.cy - h, y1: p.cy + h, ty: p.cy, anchor: "start" },
+        { x0: p.cx - p.rr - 3 - w, x1: p.cx - p.rr - 3, y0: p.cy - h, y1: p.cy + h, ty: p.cy, anchor: "end" },
+        { x0: p.cx - w / 2, x1: p.cx + w / 2, y0: p.cy - p.rr - 2 - 2 * h, y1: p.cy - p.rr - 2, ty: p.cy - p.rr - 2 - h, anchor: "middle" },
+        { x0: p.cx - w / 2, x1: p.cx + w / 2, y0: p.cy + p.rr + 2, y1: p.cy + p.rr + 2 + 2 * h, ty: p.cy + p.rr + 2 + h, anchor: "middle" },
+      ].map((b) => ({ ...b, text }));
+    };
+    const top = new Set(others.slice(0, TOP_LABELS));
+    const named = ranked.filter((p) => {
       const text = s.compared.includes(p.r.key) ? `✓ ${p.r.name}` : p.r.name;
-      const bx = p.cx + p.rr + 3;
-      const box = { x0: bx, x1: bx + text.length * CHAR_W, y0: p.cy - LABEL_H / 2, y1: p.cy + LABEL_H / 2, text };
-      if (box.x1 > innerW) { box.x1 = p.cx - p.rr - 3; box.x0 = box.x1 - text.length * CHAR_W; box.end = true; }
-      const free = !boxes.some((b) => b.x0 < box.x1 && box.x0 < b.x1 && b.y0 < box.y1 && box.y0 < b.y1);
+      const options = candidates(p, text).filter(inside);
       const forced = p.r.key === s.hovered || s.compared.includes(p.r.key);
-      if (!free && !forced) return false;
+      const box = options.find((b) => !hitsLabel(b) && !hitsBubble(b, p))
+        ?? (forced || top.has(p) ? options.find((b) => !hitsLabel(b)) : null)
+        ?? (forced ? options[0] ?? candidates(p, text)[0] : null);
+      if (!box) return false;
       boxes.push(box);
       p.box = box;
       return true;
     });
     labels.selectAll("text").data(named, (p) => p.r.key).join("text")
       .attr("class", (p) => `bubble-label${s.compared.includes(p.r.key) ? " is-compared" : ""}`)
-      .attr("x", (p) => (p.box.end ? p.box.x1 : p.box.x0))
-      .attr("y", (p) => p.cy)
+      .call((sel) => tween(sel, s)
+        .attr("x", (p) => (p.box.anchor === "start" ? p.box.x0 : p.box.anchor === "end" ? p.box.x1 : (p.box.x0 + p.box.x1) / 2))
+        .attr("y", (p) => p.box.ty))
       .attr("dy", "0.32em")
-      .attr("text-anchor", (p) => (p.box.end ? "end" : "start"))
+      .attr("text-anchor", (p) => p.box.anchor)
       .text((p) => p.box.text);
 
     // One hover layer: the nearest bubble within its radius + HOVER_PAD, so small bubbles under
