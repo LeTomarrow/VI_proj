@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Green Paradox</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1><a class="home-link" href="index.html">Green Paradox</a></h1>
+    <p class="subtitle">Greener, but not cleaner? The global electricity transition</p>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html">Home</a>
+      <a href="app.html" aria-current="page">Explore</a>
+      <a href="findings.html">Findings</a>
+    </nav>
+  </header>
+
+  <nav id="global-filters" aria-label="Filters"></nav>
+
+  <main>
+    <nav id="navigation" class="navigation" aria-label="Level and comparison"></nav>
+
+    <!-- Views A (World) and B (Continent) share the map and the Marimekko; only the third
+         panel changes with the level. View C (Compare) replaces them all. -->
+    <section class="views">
+      <figure class="panel panel-map">
+        <figcaption class="figcaption-tools">
+          <div>
+            <h2 id="map-title"></h2>
+            <p class="how-to-read" id="map-how-to-read"></p>
+          </div>
+          <div id="map-metric"></div>
+        </figcaption>
+        <div class="chart" id="chart-map"></div>
+      </figure>
+
+      <figure class="panel panel-marimekko">
+        <figcaption>
+          <h2 id="marimekko-title"></h2>
+          <p class="how-to-read" id="marimekko-how-to-read"></p>
+        </figcaption>
+        <div class="chart" id="chart-marimekko"></div>
+      </figure>
+
+      <figure class="panel panel-wide" id="panel-emissions">
+        <figcaption>
+          <h2 id="emissions-title"></h2>
+          <p class="how-to-read" id="emissions-how-to-read"></p>
+        </figcaption>
+        <div class="chart" id="chart-emissions"></div>
+      </figure>
+
+      <!-- View B: the continent's countries. The scatter and the sorted bars side by side, so the
+           brush shows in both. -->
+      <figure class="panel panel-wide" id="panel-continent" hidden>
+        <figcaption>
+          <h2 id="continent-title"></h2>
+        </figcaption>
+        <div class="tab-panel tab-split">
+          <div class="tab-part tab-part-main">
+            <div class="tab-heading">
+              <h3 class="tab-title" id="scatter-title"></h3>
+              <p class="how-to-read" id="scatter-how-to-read"></p>
+            </div>
+            <div class="chart" id="chart-scatter"></div>
+          </div>
+          <div class="tab-part">
+            <div class="tab-heading">
+              <h3 class="tab-title" id="bars-title"></h3>
+              <p class="how-to-read" id="bars-how-to-read"></p>
+            </div>
+            <div class="chart" id="chart-bars"></div>
+          </div>
+        </div>
+      </figure>
+
+      <!-- View C: the compared entities. Radars on top, then one row per entity. -->
+      <figure class="panel panel-wide panel-compare" id="panel-compare" hidden>
+        <figcaption class="compare-heading">
+          <h2 id="compare-title"></h2>
+          <button type="button" id="close-compare" class="link"></button>
+        </figcaption>
+        <section class="compare-profiles" aria-labelledby="profiles-title">
+          <div class="tab-heading">
+            <h3 class="tab-title" id="profiles-title"></h3>
+            <p class="how-to-read" id="profiles-description"></p>
+          </div>
+          <div class="chart" id="chart-profiles"></div>
+        </section>
+        <section class="compare-table" aria-label="Change over time">
+          <p class="how-to-read">Hover a row to read all its values for one year: the other rows show
+            their key number at the same year and the radars redraw for it. Click a chart (or Tab to it)
+            to pin the year, ← → to step, Esc to release.</p>
+          <div id="chart-compare-rows"></div>
+        </section>
+      </figure>
+    </section>
+  </main>
+
+  <footer>
+    <p>Data: <a href="https://github.com/owid/energy-data" target="_blank" rel="noopener">Our World in Data</a>
+      (Ember, Energy Institute), CC BY 4.0 · Built with <a href="https://d3js.org/" target="_blank" rel="noopener">D3.js</a>
+      · <a href="findings.html">Findings and evaluation →</a></p>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

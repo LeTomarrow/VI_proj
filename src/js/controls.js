@@ -1,4 +1,5 @@
-// Shared controls: metric, mode, year slider (second handle in the range modes), play, coverage.
+// Shared controls: mode, year slider (second handle in the range modes), play, coverage. The
+// metric is the map's own control, so it sits in the map card (metricSelector).
 
 import { COMPLETE_YEARS, YEARS } from "./data/constants.js";
 import { METRICS, MODES } from "./scales.js";
@@ -7,11 +8,11 @@ import { setState } from "./state.js";
 const pct = (year) => (100 * (year - YEARS[0])) / (YEARS[1] - YEARS[0]);
 const PLAY_STEP = 1000; // ms per year
 
-export function createControls(selector, { coverage }) {
+export function createControls(selector, { coverage, metricSelector }) {
   const root = d3.select(selector);
 
-  const metric = root.append("label").attr("class", "control");
-  metric.append("span").attr("class", "control-label").text("Metric");
+  const metric = d3.select(metricSelector).append("label").attr("class", "map-metric");
+  metric.append("span").attr("class", "control-label").text("Colour by");
   const metricSelect = metric.append("select").on("change", (event) => setState({ metric: event.target.value }));
   metricSelect.selectAll("option").data(Object.entries(METRICS)).join("option")
     .attr("value", ([key]) => key)
@@ -75,7 +76,8 @@ export function createControls(selector, { coverage }) {
   const yearHandle = handle("Selected year", (event) => {
     stop();
     const year = +event.target.value;
-    setState(current.mode === "year" ? { year } : { year: Math.max(year, current.rangeStart + 1) });
+    const ranged = current.mode !== "year" || current.level === "compare";
+    setState(ranged ? { year: Math.max(year, current.rangeStart + 1) } : { year });
   });
 
   const ticks = years.append("div").attr("class", "slider-ticks");
@@ -89,10 +91,14 @@ export function createControls(selector, { coverage }) {
   return {
     update(s) {
       current = s;
-      const ranged = s.mode !== "year";
+      // View C always reads a range (its rows are "since rangeStart"), so both handles show and
+      // the mode switch, which changes nothing there, is hidden.
+      const compare = s.level === "compare";
+      const ranged = s.mode !== "year" || compare;
+      mode.attr("hidden", compare ? true : null);
       metricSelect.property("value", s.metric);
       modeButtons.attr("aria-pressed", ([key]) => key === s.mode);
-      yearsLabel.text(ranged ? `Years ${s.rangeStart}–${s.year}` : `Year ${s.year}`);
+      yearsLabel.text(compare ? `Since ${s.rangeStart}, up to ${s.year}` : ranged ? `Years ${s.rangeStart}-${s.year}` : `Year ${s.year}`);
       startHandle.property("value", s.rangeStart).attr("hidden", ranged ? null : true);
       playButton.attr("hidden", ranged ? true : null);
       yearHandle.property("value", s.year);
@@ -103,6 +109,8 @@ export function createControls(selector, { coverage }) {
 
       const partialYear = s.year < COMPLETE_YEARS[0] || s.year > COMPLETE_YEARS[1]
         || (ranged && s.rangeStart < COMPLETE_YEARS[0]);
+      // In View C the entities are chosen, so the coverage of the map says nothing there.
+      note.attr("hidden", compare ? true : null);
       const { available, total } = coverage(s);
       note.selectAll("*").remove();
       note.append("span").text(`${available} of ${total} countries with data`);

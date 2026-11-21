@@ -17,7 +17,7 @@ function byRank(byCountry, keys, rank, s) {
 export function rankedColumns({ byCountry, keys, compared, rank }, s, n) {
   const ofYear = byRank(byCountry, keys, rank, s);
   const top = ofYear.filter((r) => rank.value(r) > 0).slice(0, n);
-  const extra = ofYear.filter((r) => (compared.includes(r.key) || r.key === s.greenGrowthCountry) && !top.includes(r));
+  const extra = ofYear.filter((r) => compared.includes(r.key) && !top.includes(r));
   const shown = [...top, ...extra];
   return {
     records: top,
@@ -43,6 +43,13 @@ export function comparedColumns({ byCountry, countriesOf, compared, rank }, s) {
     position,
     total: records.length,
   };
+}
+
+// Columns of the continents' Marimekko (View A) in the order of the ranking: "desc" from the
+// largest ranked value, "asc" from the smallest; ties by total generation.
+export function orderByRank(records, rank, sort = "desc") {
+  const dir = sort === "asc" ? 1 : -1;
+  return [...records].sort((a, b) => dir * (rank.value(a) - rank.value(b)) || dir * (a.generation - b.generation));
 }
 
 // Largest ranked value of any of the countries in any year: the bars keep one scale over the

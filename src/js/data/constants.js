@@ -1,5 +1,5 @@
 // Shared definitions for the data layer. Rules and their justification are in
-// docs/iteration1/01-data-analysis.md (§1.2–1.4).
+// docs/iteration1/01-data-analysis.md (§1.2-1.4).
 
 export const YEARS = [1985, 2025];          // slider range
 export const COMPLETE_YEARS = [2000, 2024]; // emissions available, near-complete coverage

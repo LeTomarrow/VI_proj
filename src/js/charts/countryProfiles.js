@@ -1,10 +1,14 @@
-// Country profiles (View C): one radar per compared country, with shared source-share scales.
+// Profiles (View C, top): one radar per compared country or continent, with shared source-share
+// scales, and an optional reference polygon (World, or the countries' continent) on every radar.
+// Base examples: d3-star-plot (https://github.com/kevinschaul/d3-star-plot) and Radar chart
+// (https://observablehq.com/@palewire/radar-chart).
 
 import { SOURCE_GROUPS, COUNTRY_COMPARE_COLORS, CONTINENT_COLORS } from "../scales.js";
 import { comparedSlot, comparisonType, setState } from "../state.js";
+import { referenceFor, sourceProfile } from "../data/compare.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
 
-const LABEL_ROOM_X = 88; // beside the radar, for the axis names
+const LABEL_ROOM_X = 66; // beside the radar, for the axis names
 const LABEL_ROOM_Y = 24;
 const MIN_RADIUS = 40;
 const AXIS_LABEL_OFFSET = 16;
@@ -12,19 +16,6 @@ const RING_STEP = 20; // % between rings
 const MIN_MAX_SHARE = 40;
 const POINT_R = 4;  // 8 px markers
 const HIT_R = 10;   // hover zone around each marker
-
-// Source shares use a shared scale across countries; polygon area is not a total.
-export function sourceProfile(record) {
-  if (!record || !(record.generation > 0)) return null;
-  return SOURCE_GROUPS.map((group) => {
-    const generation = d3.sum(group.parts, (key) => record.sources[key]);
-    return {
-      ...group,
-      generation,
-      share: 100 * generation / record.generation,
-    };
-  });
-}
 
 // Axes run clockwise, starting at the top of the radar.
 function axisPoint(index, distance) {
@@ -64,7 +55,8 @@ function drawAxes(plot, radial, line) {
       .attr("x", labelX)
       .attr("y", labelY)
       .attr("text-anchor", labelAnchor(labelX));
-    const lines = source.key === "bioOther" ? ["Bioenergy", "& other (%)"] : [`${source.label} (%)`];
+    // The rings carry the % unit, so the names stay short and fit narrow cards.
+    const lines = source.key === "bioOther" ? ["Bioenergy", "& other"] : [source.label];
     label.selectAll("tspan").data(lines).join("tspan")
       .attr("x", labelX)
       .attr("dy", (_, i) => i === 0 ? (lines.length > 1 ? "-0.25em" : "0.35em") : "1.15em")
@@ -72,48 +64,54 @@ function drawAxes(plot, radial, line) {
   });
 }
 
-export function createCountryProfiles(selector, { countries, continents }) {
+export function createCountryProfiles(selector, { countries, continents, world }) {
   const root = d3.select(selector);
   const byCountry = d3.index(countries, (r) => r.key, (r) => r.year);
   const byContinent = d3.index(continents, (r) => r.key, (r) => r.year);
+  const byWorld = d3.index(world, (r) => r.year);
   const names = new Map(countries.map((r) => [r.key, r.name]));
+  const continentOf = new Map(countries.map((r) => [r.key, r.continent]));
+  const tools = root.append("div").attr("class", "mekko-tools");
+  tools.append("label").append("span").text("Reference");
+  const refGroup = tools.append("div").attr("class", "segmented").attr("role", "group").attr("aria-label", "Reference shape");
   const note = root.append("p").attr("class", "how-to-read").attr("role", "status");
   const body = root.append("div").attr("class", "profile-body");
   const cards = new Map();
   const radial = d3.scaleLinear().domain([0, 100]);
   const line = d3.line().curve(d3.curveLinearClosed);
   let current = null;
+  let currentReference = null;
 
   function comparisonData(state) {
-    const selected = state.compared.filter((key) => comparisonType(key) === "countries");
     const missing = [];
-    const series = selected.flatMap((key) => {
-      const record = byCountry.get(key)?.get(state.year);
+    const series = state.compared.flatMap((key) => {
+      const continent = comparisonType(key) === "continents";
+      const record = (continent ? byContinent : byCountry).get(key)?.get(state.year);
       const values = sourceProfile(record);
       if (!values) {
         missing.push(names.get(key) ?? key);
         return [];
       }
-      return [{ key, name: record.name, color: COUNTRY_COMPARE_COLORS[comparedSlot(key)], values }];
+      const color = continent ? CONTINENT_COLORS[key] : COUNTRY_COMPARE_COLORS[comparedSlot(key)];
+      return [{ key, name: record.name ?? key, color, values }];
     });
-    if (!selected.length && state.continent) {
-      const record = byContinent.get(state.continent)?.get(state.year);
-      const values = sourceProfile(record);
-      if (values) series.push({ key: state.continent, name: state.continent, color: CONTINENT_COLORS[state.continent], values });
-      else missing.push(state.continent);
-    }
-    return { selected, missing, series };
+    return { missing, series };
   }
 
-  function updateDescription(state, { selected, missing }) {
-    d3.select("#profiles-title").text(selected.length
-      ? `Electricity mix of the compared countries, ${state.year}`
-      : `Electricity mix of ${state.continent ?? "the continent"}, ${state.year}`);
-    d3.select("#profiles-description").text(`${selected.length ? "One chart per country." : "Continent energy profile."} Each axis shows a source's share of generation; every chart uses the same 0–${radial.domain()[1]}% scale.`);
-    const messages = [];
-    if (!selected.length) messages.push("Select countries with + Compare to view their energy profiles (up to four).");
-    if (missing.length) messages.push(`No generation data for ${missing.join(", ")} in ${state.year}.`);
-    note.text(messages.join(" "));
+  // The reference: the World, or the continent of the compared countries (they share one).
+  function referenceOf(state) {
+    const { options, pick, continent } = referenceFor(state.compared, state.profileRef, (k) => continentOf.get(k));
+    const record = pick === "world" ? byWorld.get(state.year)
+      : pick === "continent" ? byContinent.get(continent)?.get(state.year) : null;
+    const values = sourceProfile(record);
+    return { options, pick, profile: values ? { name: pick === "world" ? "World" : continent, values } : null };
+  }
+
+  function updateDescription(state, { missing }, reference) {
+    d3.select("#profiles-title").text(`Share of each source, ${state.year}`);
+    d3.select("#profiles-description").text(`Same 0-${radial.domain()[1]}% scale on every radar.`
+      + (reference.profile ? ` Dashed grey = ${reference.profile.name}.` : ""));
+    note.text(missing.length ? `No generation data for ${missing.join(", ")} in ${state.year}.` : "");
   }
 
   function pointTooltip(profile, v, year) {
@@ -122,9 +120,13 @@ export function createCountryProfiles(selector, { countries, continents }) {
       + `<div class="tooltip-row"><span>Generation</span><span>${d3.format(",.1f")(v.generation)} TWh</span></div>`;
   }
 
-  function updateShapes(shapes, series, s, scale) {
+  function updateShapes(shapes, series, s, scale, reference) {
     const year = s.year;
     const point = (v, i) => axisPoint(i, scale(v.share));
+    shapes.selectAll("path.profile-reference").data(reference ? [reference] : []).join("path")
+      .attr("class", "profile-reference")
+      .attr("d", (ref) => line(ref.values.map(point)))
+      .lower();
     const groups = shapes.selectAll("g.profile-shape").data(series, (d) => d.key).join("g")
       .attr("class", "profile-shape")
       .order();
@@ -140,7 +142,13 @@ export function createCountryProfiles(selector, { countries, continents }) {
         .attr("class", "profile-point")
         .attr("cx", (v, i) => point(v, i)[0]).attr("cy", (v, i) => point(v, i)[1])
         .attr("r", POINT_R).attr("fill", profile.color).attr("tabindex", 0)
-        .attr("aria-label", (v) => `${profile.name}, ${year}, ${v.label}: ${v.share.toFixed(1)}%, ${v.generation.toFixed(1)} TWh`);
+        .attr("aria-label", (v) => `${profile.name}, ${year}, ${v.label}: ${v.share.toFixed(1)}%, ${v.generation.toFixed(1)} TWh`)
+        // Keyboard focus shows the same values as hover, next to the point.
+        .on("focus", function (event, v) {
+          const box = this.getBoundingClientRect();
+          showTooltip({ clientX: box.right, clientY: box.top }, pointTooltip(profile, v, year));
+        })
+        .on("blur", hideTooltip);
       group.selectAll("circle.hit-area").data(profile.values).join("circle")
         .attr("class", "hit-area")
         .attr("cx", (v, i) => point(v, i)[0]).attr("cy", (v, i) => point(v, i)[1])
@@ -157,7 +165,7 @@ export function createCountryProfiles(selector, { countries, continents }) {
     const scale = radial.copy().range([0, radius]);
     card.plot.attr("transform", `translate(${card.width / 2},${card.height / 2})`);
     drawAxes(card.axes, scale, line);
-    updateShapes(card.shapes, [card.profile], current, scale);
+    updateShapes(card.shapes, [card.profile], current, scale, currentReference);
   }
 
   function updateCards(series, state) {
@@ -201,14 +209,21 @@ export function createCountryProfiles(selector, { countries, continents }) {
     update(state) {
       current = state;
       const data = comparisonData(state);
+      const reference = referenceOf(state);
+      currentReference = reference.profile;
+      refGroup.selectAll("button").data(reference.options, ([k]) => k).join("button")
+        .attr("type", "button")
+        .text(([, label]) => label)
+        .attr("aria-pressed", ([k]) => String(k === reference.pick))
+        .on("click", (_, [k]) => setState({ profileRef: k }));
       // The outer ring is the largest share shown, rounded up, so small shares are not squeezed
       // into the centre. Every axis keeps the same scale, so shapes stay comparable.
-      const top = d3.max(data.series, (p) => d3.max(p.values, (v) => v.share)) ?? 0;
+      const top = d3.max([...data.series, ...(reference.profile ? [reference.profile] : [])], (p) => d3.max(p.values, (v) => v.share)) ?? 0;
       const maxShare = Math.min(100, Math.max(MIN_MAX_SHARE, Math.ceil(top / RING_STEP) * RING_STEP));
       if (maxShare !== radial.domain()[1]) {
         radial.domain([0, maxShare]);
       }
-      updateDescription(state, data);
+      updateDescription(state, data, reference);
       updateCards(data.series, state);
     },
   };

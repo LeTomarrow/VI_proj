@@ -1,5 +1,5 @@
 // Loads the data files and returns everything the views need. Paths are relative to
-// src/index.html (serve the repository root, see README).
+// src/app.html (serve the repository root, see README).
 
 import { parseEnergyCsv, preprocess } from "./preprocess.js";
 import { aggregateContinents, checkAgainstOwid } from "./aggregate.js";

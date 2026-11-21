@@ -1,4 +1,6 @@
-// Metric definitions and colours shared by the charts. Colour rules are in
+// Metric definitions and colours shared by the charts. Map metrics: the three sides of the
+// paradox, clean share (renewable), outcome (CO₂e per kWh) and size (electricity per person).
+// Fossil share was dropped: it is 100 − low-carbon share and r = 0.93 with carbon intensity. Colour rules are in
 // docs/iteration2/01-integration-plan.md (decision log).
 
 export const NO_DATA = "#d9d8d2";
@@ -12,15 +14,17 @@ export const METRICS = {
     darker: "more of the electricity is renewable",
     domain: [0, 100], changeMax: 30, cleanerIs: 1, ramp: d3.interpolateGreens,
   },
-  fossilShare: {
-    label: "Fossil share", unit: "%", changeUnit: " pp", digits: 1,
-    darker: "more of the electricity comes from fossil fuels",
-    domain: [0, 100], changeMax: 30, cleanerIs: -1, ramp: d3.interpolateOranges,
-  },
   carbonIntensity: {
-    label: "Carbon intensity", unit: " gCO₂/kWh", changeUnit: " gCO₂/kWh", digits: 0,
-    darker: "more CO₂ per kWh generated",
+    label: "Carbon intensity", unit: " gCO₂e/kWh", changeUnit: " gCO₂e/kWh", digits: 0,
+    darker: "more CO₂e per kWh generated",
     domain: [0, 800], changeMax: 250, cleanerIs: -1, ramp: d3.interpolateOranges,
+  },
+  // The third side of the paradox: how much electricity. Neither cleaner nor dirtier, so its
+  // Change scale is a neutral diverging pair (orange = less, purple = more), not blue/red.
+  generationPerCapita: {
+    label: "Electricity per person", unit: " kWh", changeUnit: " kWh", digits: 0,
+    darker: "more electricity generated per person",
+    domain: [0, 12000], changeMax: 3000, cleanerIs: 0, ramp: d3.interpolatePurples,
   },
 };
 
@@ -37,14 +41,15 @@ export function metricColor(metric, mode) {
   const { ramp, cleanerIs } = METRICS[metric];
   const [lo, hi] = metricDomain(metric, mode);
   const t = d3.scaleLinear().domain([lo, hi]).range([0, 1]).clamp(true);
+  if (mode === "change" && !cleanerIs) return (v) => d3.interpolatePuOr(t(v));
   if (mode === "change") return (v) => d3.interpolateRdBu(cleanerIs > 0 ? t(v) : 1 - t(v));
   return (v) => ramp(0.15 + 0.85 * t(v));
 }
 
 export function formatMetric(metric, mode, value) {
   const { unit, changeUnit, digits } = METRICS[metric];
-  if (mode === "change") return `${d3.format(`+.${digits}f`)(value)}${changeUnit}`;
-  return `${d3.format(`.${digits}f`)(value)}${unit}`;
+  if (mode === "change") return `${d3.format(`+,.${digits}f`)(value)}${changeUnit}`;
+  return `${d3.format(`,.${digits}f`)(value)}${unit}`;
 }
 
 // Bottom to top in the Marimekko, fossil first. Bioenergy and other renewables are one colour
@@ -71,6 +76,10 @@ export const CONTINENT_COLORS = {
   "South America": "#e87ba4",
   Oceania: "#008300",
 };
+
+// Stack order of the emissions area (largest emitters at the bottom); the continent colours are
+// validated for it. Colour follows the continent and never changes.
+export const EMISSIONS_STACK = ["Asia", "North America", "Europe", "Africa", "South America", "Oceania"];
 
 // What View B's Marimekko ranks the countries by. groups: the source groups that move to the
 // base of each column; name: for titles. The ranked value is in TWh.

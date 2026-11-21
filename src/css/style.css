@@ -10,6 +10,8 @@
   --color-partial: #c3c2b7;
   --color-complete: #6f8fb8;
   --spacing: 1rem;
+  --motion-duration: 500ms;
+  --motion-ease: cubic-bezier(0.215, 0.61, 0.355, 1);
 }
 
 * {
@@ -31,6 +33,25 @@ body {
   color: var(--color-text);
   background: var(--color-plane);
   line-height: 1.4;
+}
+
+/* Browser surfaces in the palette: selection, focus ring, wrapping. */
+::selection {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+h1, h2, h3, h4 {
+  text-wrap: balance;
+}
+
+p, li, figcaption, dd {
+  text-wrap: pretty;
 }
 
 header {
@@ -298,6 +319,12 @@ main {
   gap: 0.5rem;
 }
 
+/* In the sticky filter bar: right-aligned, level with the slider. */
+#global-filters .compare-list {
+  align-self: center;
+  margin-left: auto;
+}
+
 .compare-clear {
   font-size: 0.8rem;
 }
@@ -393,7 +420,7 @@ main {
   font-size: 1rem;
 }
 
-/* Tabs of the View B panel: each fills the panel, and its chart takes the room left. */
+/* View B panel body: fills the panel, and its charts take the room left. */
 .tab-panel {
   display: flex;
   flex: 1;
@@ -471,9 +498,11 @@ main {
   stroke-width: 1;
 }
 
+/* Ring in a darker step of the bubble's own fill (--ring, set per bubble), so pale bubbles
+   (low renewable share) still have an edge on the light surface. */
 .bubble {
   fill-opacity: 0.85;
-  stroke: var(--color-bg);
+  stroke: var(--ring, var(--color-bg));
   stroke-width: 1;
 }
 
@@ -520,7 +549,7 @@ main {
   stroke-width: 1.5;
 }
 
-/* Sorted bars: column titles, and the CO₂ column (▼ fell / ▲ rose; the arrow carries the colour). */
+/* Sorted bars: column titles, and the CO₂e column (▼ fell / ▲ rose; the arrow carries the colour). */
 .column-title {
   font-size: 11px;
   font-weight: 600;
@@ -620,7 +649,9 @@ main {
 }
 
 .profile-point:focus-visible {
-  outline: 2px solid var(--color-text);
+  outline: none;
+  stroke: var(--color-text);
+  stroke-width: 2.5;
 }
 
 .profile-shape {
@@ -638,17 +669,6 @@ main {
   justify-content: space-between;
   gap: 0.5rem 1rem;
   margin-bottom: 0.6rem;
-}
-
-.compare-tabs button[aria-selected="true"] {
-  color: #fff;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.compare-tabs button:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 3px;
 }
 
 .tab-title {
@@ -790,8 +810,7 @@ svg.is-globe:active {
   stroke-width: 1.25;
 }
 
-.map-outline.is-compared,
-.map-outline.is-focused {
+.map-outline.is-compared {
   stroke-width: 2.5;
 }
 
@@ -826,13 +845,11 @@ svg.is-globe:active {
 }
 
 .column.is-hovered .column-outline,
-.column.is-compared .column-outline,
-.column.is-focused .column-outline {
+.column.is-compared .column-outline {
   display: inline;
 }
 
-.column.is-compared .column-outline,
-.column.is-focused .column-outline {
+.column.is-compared .column-outline {
   stroke-width: 2.5;
 }
 
@@ -979,6 +996,34 @@ svg.is-globe:active {
   fill: transparent;
 }
 
+/* View C: the year being read (hover or pin), set apart from the data lines. */
+.compare-cursor {
+  pointer-events: none;
+  stroke: var(--color-accent);
+  stroke-width: 1.25;
+  stroke-dasharray: 3 2;
+}
+
+.cursor-value {
+  pointer-events: none;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  fill: var(--color-text);
+  paint-order: stroke;
+  stroke: var(--color-bg);
+  stroke-width: 3px;
+}
+
+.cursor-value.is-year {
+  fill: var(--color-accent);
+}
+
+/* While a year is read, the end labels step back so the cursor values stay legible. */
+.is-reading .end-label {
+  opacity: 0.2;
+}
+
 /* Tooltip */
 
 .tooltip {
@@ -1007,6 +1052,47 @@ svg.is-globe:active {
 
 .tooltip-row.is-current,
 .tooltip-row.is-total {
+  font-weight: 600;
+}
+
+.tooltip-section {
+  margin-top: 0.35rem;
+  padding-top: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
+}
+
+.tooltip-swatch {
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin-right: 0.35rem;
+  border-radius: 2px;
+}
+
+/* Header links between the three pages (landing, app, findings). */
+.site-nav {
+  display: flex;
+  gap: 1rem;
+  margin-left: auto;
+  font-size: 0.9rem;
+}
+
+.site-nav a {
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.site-nav a:hover,
+.site-nav a[aria-current="page"] {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.paradox-label {
+  font-size: 11px;
   font-weight: 600;
 }
 
@@ -1108,40 +1194,271 @@ footer p {
   pointer-events: none;
 }
 
-/* Green growth replaces the country tabs inside their existing bottom panel. */
-.country-overview,
-.green-growth {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
+/* View C: radars on top, then one row per compared entity (label + three cells). */
+.views.is-compare {
+  grid-template-rows: auto;
+}
+
+.panel-compare {
+  gap: 0.75rem;
+}
+
+.compare-heading h2 {
+  margin: 0;
+}
+
+.compare-profiles .chart {
+  flex: none;
+}
+
+/* Up to five radars in a row; on narrow windows they wrap instead of cutting the axis names. */
+.compare-profiles .profile-body {
+  flex-wrap: wrap;
+}
+
+.compare-profiles .profile-card {
+  flex: 1 1 0;
+  min-width: 220px;
+  min-height: 0;
+  padding: 0.5rem;
+}
+
+.chart .compare-profiles .profile-card svg,
+.compare-profiles .profile-card svg {
+  flex: none;
+  height: 220px;
   min-height: 0;
 }
 
-.green-growth-tools {
+.compare-row {
+  display: grid;
+  grid-template-columns: 8.5rem repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: 0 1rem;
+  align-items: stretch;
+}
+
+.compare-head {
+  align-items: start;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.compare-col-head .legend {
+  gap: 0.1rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.compare-unit {
+  margin: 0.1rem 0 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+/* Legend swatches drawn like their marks: a filled area or a light tint. */
+.compare-col-head .swatch-area { background: var(--swatch); opacity: 0.85; }
+/* The clean ahead / behind shading is a light tint in the chart; the swatch matches it. */
+.compare-col-head .swatch-tint {
+  background: color-mix(in srgb, var(--swatch) 30%, var(--color-bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--swatch) 45%, transparent);
+}
+
+.end-label {
+  font-size: 10px;
+  font-weight: 600;
+  paint-order: stroke;
+  stroke: var(--color-bg);
+  stroke-width: 3px;
+}
+
+.compare-rows .compare-row {
+  height: 150px;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--color-border);
+  transition: opacity var(--motion-duration) var(--motion-ease) var(--stagger, 0ms),
+    transform var(--motion-duration) var(--motion-ease) var(--stagger, 0ms);
+}
+
+.compare-rows .compare-row.is-entering {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.compare-rows .compare-row.is-hovered {
+  background: var(--color-plane);
+}
+
+.compare-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--color-text);
+  background: none;
+  border: none;
+}
+
+.compare-label:hover .compare-name {
+  text-decoration: underline;
+}
+
+.compare-cell {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+.compare-cell svg:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.compare-cell svg {
+  display: block;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+}
+
+.how-to-read-svg {
+  font-size: 11px;
+  fill: var(--color-text-secondary);
+}
+
+.compare-open {
+  height: 1.75rem;
+  padding: 0 0.7rem;
+  font: inherit;
+  font-size: 0.85rem;
+  color: #fff;
+  cursor: pointer;
+  background: var(--color-accent);
+  border: 1px solid var(--color-accent);
+  border-radius: 6px;
+}
+
+.compare-open[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-duration: 0ms;
+  }
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+  }
+}
+
+/* Map card: the metric is the map's own control, next to its title. */
+.figcaption-tools {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 0.5rem 1rem;
-  margin-bottom: 0.5rem;
-  font-size: 0.8rem;
 }
 
-.green-growth-tools input {
-  width: 5rem;
+.figcaption-tools > div:first-child {
+  flex: 1 1 14rem;
 }
 
-.green-growth-charts {
-  overflow-y: auto;
-  gap: 1rem;
+.map-metric .control-label {
+  white-space: nowrap;
 }
 
-.green-growth-panel {
+.map-metric {
   display: flex;
-  flex: 1 0 280px;
-  flex-direction: column;
-  min-width: 0;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.4rem;
 }
 
-.green-growth-panel svg {
-  min-height: 210px;
+.map-metric select {
+  height: 1.75rem;
+  font-size: 0.85rem;
+}
+
+/* One button that flips the sort direction of a ranked chart. */
+.sort-toggle {
+  height: 1.75rem;
+  padding: 0 0.6rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--color-text);
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid var(--color-axis);
+  border-radius: 6px;
+}
+
+/* View C radars: reference shape (World or continent) behind the entity's own shape. */
+.profile-reference {
+  fill: #52514e;
+  fill-opacity: 0.06;
+  stroke: #52514e;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  pointer-events: none;
+}
+
+.home-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* View B scatter: adds the brushed group to the comparison list. */
+.compare-brushed[hidden] {
+  display: none;
+}
+
+.compare-brushed:disabled {
+  color: var(--color-text-secondary);
+  cursor: default;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Narrow screens: one column, the header subtitle gives way to the title and the links. */
+@media (max-width: 900px) {
+  .views,
+  .views.is-continent {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-auto-rows: minmax(420px, auto);
+  }
+
+  /* Wrapped onto three lines the bar would hide a third of the screen; it scrolls away here. */
+  #global-filters {
+    position: static;
+  }
+}
+
+@media (max-width: 700px) {
+  header {
+    flex-wrap: wrap;
+    padding: 0.75rem 16px;
+  }
+
+  .subtitle {
+    display: none;
+  }
+
+  #global-filters {
+    padding: 0.6rem 16px 0.5rem;
+  }
 }
