@@ -1237,10 +1237,29 @@ footer p {
   align-items: stretch;
 }
 
+/* Shared rows keep explanations and legends aligned when a heading wraps. */
 .compare-head {
-  align-items: start;
+  grid-template-rows: auto auto auto;
+  row-gap: 0.25rem;
+  align-items: stretch;
   padding-bottom: 0.4rem;
   border-bottom: 1px solid var(--color-border);
+}
+
+.compare-col-head {
+  display: grid;
+  grid-row: 1 / span 3;
+  grid-template-rows: subgrid;
+  min-width: 0;
+}
+
+/* Match each SVG's plotting margins, including its Y-axis label gutter. */
+.compare-plot-head {
+  padding-inline: var(--compare-plot-left) var(--compare-plot-right);
+}
+
+.compare-col-head .tab-title {
+  line-height: 1.35;
 }
 
 .compare-col-head .legend {
@@ -1249,8 +1268,9 @@ footer p {
 }
 
 .compare-unit {
-  margin: 0.1rem 0 0.25rem;
+  margin: 0;
   font-size: 0.75rem;
+  line-height: 1.4;
   color: var(--color-text-secondary);
 }
 

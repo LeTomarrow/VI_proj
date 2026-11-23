@@ -52,7 +52,9 @@ export function createCompareRows(selector, { countries, continents, onPreview =
     ...d3.index(countries, (r) => r.key, (r) => r.year),
     ...d3.index(continents, (r) => r.key, (r) => r.year),
   ]);
-  const root = d3.select(selector);
+  const root = d3.select(selector)
+    .style("--compare-plot-left", `${MARGIN.left}px`)
+    .style("--compare-plot-right", `${MARGIN.right}px`);
   const head = root.append("div").attr("class", "compare-row compare-head");
   const status = root.append("p").attr("class", "how-to-read").attr("role", "status");
   const body = root.append("div").attr("class", "compare-rows");
@@ -67,7 +69,8 @@ export function createCompareRows(selector, { countries, continents, onPreview =
   function renderHead(columns, s) {
     root.style("--cols", columns.length);
     const items = head.selectAll("div.compare-col-head").data(["label", ...columns], (c) => c.key ?? c).join((enter) => {
-      const cell = enter.append("div").attr("class", "compare-col-head");
+      const cell = enter.append("div").attr("class", "compare-col-head")
+        .classed("compare-plot-head", (c) => c !== "label");
       cell.filter((c) => c !== "label").each(function (c) {
         const el = d3.select(this);
         el.append("h3").attr("class", "tab-title").text(c.title);
