@@ -231,3 +231,45 @@ test('T6 and findings: Portugal cut CO₂e by changing how it makes electricity;
   assert.ok(chn.demand > 0 && chn.demand > Math.abs(chn.mix));
   assert.ok(at(byCountry, 'CHN', 2024).emissions / at(byCountry, 'CHN', 2000).emissions > 5, 'fivefold');
 });
+
+
+// Cards follow the active chart, including keyboard-pinned readings.
+test('comparison cards contain only the active chart data', async () => {
+  const { comparisonTooltip } = await import('../src/js/charts/compareTooltip.js');
+  const entity = {
+    name: 'Portugal',
+    mix: [{ year: 2024, gas: 100, wind: 200, hydro: 300, total: 600 }],
+    growth: [{ year: 2024, generation: 10, lowCarbon: 15, effects: { demand: 2, mix: -7, net: -5 } }],
+  };
+  const mix = comparisonTooltip(entity, 'mix', 2024, 2000);
+  assert.match(mix, /Portugal, 2024/);
+  assert.match(mix, /Made of \(kWh per person\)/);
+  assert.match(mix, /Hydro/);
+  assert.doesNotMatch(mix, /Clean vs total|Why CO₂e changed|TWh|MtCO₂e/);
+
+  const race = comparisonTooltip(entity, 'race', 2024, 2000);
+  assert.match(race, /Clean vs total, since 2000/);
+  assert.match(race, /Total generation/);
+  assert.match(race, /Clean ahead by/);
+  assert.match(race, /5.0 TWh/);
+  assert.doesNotMatch(race, /Made of|Hydro|Why CO₂e changed|MtCO₂e/);
+
+  const effects = comparisonTooltip(entity, 'effects', 2024, 2000, true);
+  assert.match(effects, /Why CO₂e changed, since 2000/);
+  assert.match(effects, /Total change/);
+  assert.ok(effects.includes("−5.0 MtCO₂e"));
+  assert.match(effects, /Pinned/);
+  assert.doesNotMatch(effects, /Made of|Clean vs total|Total generation|TWh/);
+  assert.doesNotMatch(race, /Pinned/);
+});
+
+test('chart-specific cards preserve missing data and negative gaps', async () => {
+  const { comparisonTooltip } = await import('../src/js/charts/compareTooltip.js');
+  const entity = { name: 'Europe', mix: [], growth: [{ year: 2024, generation: 15, lowCarbon: 10, effects: null }] };
+  const race = comparisonTooltip(entity, 'race', 2024, 2000);
+  assert.match(race, /Clean behind by/);
+  assert.match(race, /5.0 TWh/);
+  assert.match(comparisonTooltip(entity, 'effects', 2024, 2000), /No data/);
+  assert.doesNotMatch(comparisonTooltip(entity, 'effects', 2024, 2000), /Clean behind by/);
+  assert.match(comparisonTooltip(entity, 'mix', 2001, 2000), /No data/);
+});

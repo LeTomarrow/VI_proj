@@ -1,7 +1,7 @@
 // View C rows: one row per compared entity (countries or continents), three cells on one shared
 // time axis (the range rangeStart-year): mix over time (Q2, countries only), clean vs total
 // generation and why emissions changed (T6).
-// Reading a year: the hovered row gets one card with the values of its three cells; every other
+// Reading a year: the hovered chart gets its own card; every other
 // row shows its key number at the cursor; the radars above redraw for that year (onPreview).
 // Click a cell (or focus it) to pin the year: ← → step, Home/End jump, Esc releases.
 
@@ -12,6 +12,7 @@ import { openEntityMenu } from "../entityMenu.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
 import { drawEffects, drawRace, EFFECT_COLORS, EFFECT_LABELS, RACE_COLORS } from "./greenGrowth.js";
 import { drawMix, mixRows } from "./mixOverTime.js";
+import { comparisonTooltip } from "./compareTooltip.js";
 import { compareColumnKeys } from "../data/compare.js";
 
 const MARGIN = { left: 48, right: 18, top: 8, bottom: 20 };
@@ -61,8 +62,8 @@ export function createCompareRows(selector, { countries, continents, onPreview =
   const live = root.append("p").attr("class", "sr-only").attr("aria-live", "polite");
   const cells = new Map(); // `${key}|${column}` → { svg, width, height, key, column }
   let view = null; // derived data of the current state
-  let hover = null;  // { key, year } under the mouse
-  let pinned = null; // { key, year } fixed by a click or the keyboard
+  let hover = null;  // { key, column, year } under the mouse
+  let pinned = null; // { key, column, year } fixed by a click or the keyboard
   let previewed = null;
   let pointerDown = false; // a click focuses the cell too; the click pins its own year
 
@@ -164,58 +165,48 @@ export function createCompareRows(selector, { countries, continents, onPreview =
       .attr("width", right - left).attr("height", bottom - top)
       .on("mousemove", (event) => {
         const year = yearAt(event);
-        if (hover?.year !== year || hover?.key !== entityData.key) { hover = { key: entityData.key, year }; markHover(); }
-        showTooltip(event, card(entityData.key, year));
+        if (hover?.year !== year || hover?.key !== entityData.key || hover?.column !== column) {
+          hover = { key: entityData.key, column, year }; markHover();
+        }
+        showTooltip(event, card(entityData.key, column, year));
       })
       .on("mouseleave", () => { hover = null; markHover(); if (pinned) showPinned(); else hideTooltip(); })
-      .on("click", (event) => pin({ key: entityData.key, year: yearAt(event) }, false));
+      .on("click", (event) => pin({ key: entityData.key, column, year: yearAt(event) }));
     markHover();
   }
 
-  // One card for the whole row at a year: the values of its three cells.
-  function card(key, year) {
+  // Card content follows the active chart; cursor synchronization remains row-wide.
+  function card(key, column, year) {
     const e = view?.entities.find((d) => d.key === key);
-    if (!e) return "";
-    const { s } = view;
-    const row = e.growth.find((r) => r.year === year);
-    const line = (label, v, unit, total = false) => `<div class="tooltip-row${total ? " is-total" : ""}"><span>${label}</span>`
-      + `<span>${signed(v)}${has(v) ? ` ${unit}` : ""}</span></div>`;
-    const section = (title) => `<div class="tooltip-section">${title}</div>`;
-    let html = `<strong>${e.name}, ${year}</strong>`;
-    if (view.columns.some((c) => c.key === "mix")) {
-      const mix = e.mix.find((r) => r.year === year);
-      const top3 = SOURCE_GROUPS.filter((src) => mix?.[src.key] > 0).sort((a, b) => mix[b.key] - mix[a.key]).slice(0, 3);
-      html += section("Made of (kWh per person)")
-        + top3.map((src) => `<div class="tooltip-row"><span><i class="tooltip-swatch" style="background:${src.color}"></i>${src.label}</span><span>${num(0)(mix[src.key])}</span></div>`).join("")
-        + `<div class="tooltip-row is-total"><span>Total</span><span>${num(0)(mix?.total)}</span></div>`;
-    }
-    const gap = has(row?.lowCarbon) && has(row?.generation) ? row.lowCarbon - row.generation : null;
-    html += section(`Clean vs total, since ${s.rangeStart}`)
-      + line("Total generation", row?.generation, "TWh") + line("Low-carbon", row?.lowCarbon, "TWh")
-      + line(gap === null ? "Gap" : gap >= 0 ? "Clean ahead by" : "Clean behind by", gap === null ? null : Math.abs(gap), "TWh", true)
-      + section(`Why CO₂e changed, since ${s.rangeStart}`)
-      + line(EFFECT_LABELS.demand, row?.effects?.demand, "MtCO₂e") + line(EFFECT_LABELS.mix, row?.effects?.mix, "MtCO₂e")
-      + line(EFFECT_LABELS.net, row?.effects?.net, "MtCO₂e", true);
-    if (pinned) html += `<div class="tooltip-note">Pinned · ← → year · Esc to release</div>`;
-    return html;
+    const isPinned = pinned?.key === key && pinned?.column === column && pinned?.year === year;
+    return comparisonTooltip(e, column, year, view?.s.rangeStart, isPinned);
   }
 
   // The same values as one sentence, for screen readers.
-  function spoken(key, year) {
+  function spoken(key, column, year) {
     const e = view?.entities.find((d) => d.key === key);
     const row = e?.growth.find((r) => r.year === year);
     if (!e) return "";
+    if (column === "mix") {
+      const mix = e.mix.find((r) => r.year === year);
+      return `${e.name}, ${year}. Electricity mix in kWh per person: `
+        + SOURCE_GROUPS.map((src) => `${src.label} ${num(0)(mix?.[src.key])}`).join(", ")
+        + `. Total ${num(0)(mix?.total)}.`;
+    }
+    if (column === "race") {
+      return `${e.name}, ${year}. Since ${view.s.rangeStart}: total generation ${signed(row?.generation)} TWh, low-carbon ${signed(row?.lowCarbon)} TWh.`;
+    }
     const fx = row?.effects;
-    return `${e.name}, ${year}. Since ${view.s.rangeStart}: total generation ${signed(row?.generation)} TWh, low-carbon ${signed(row?.lowCarbon)} TWh.`
-      + (fx ? ` CO₂e ${signed(fx.net)} Mt: ${signed(fx.demand)} from how much electricity, ${signed(fx.mix)} from how it is made.` : "");
+    return `${e.name}, ${year}. Since ${view.s.rangeStart}: CO₂e ${signed(fx?.net)} Mt: `
+      + `${signed(fx?.demand)} from how much electricity, ${signed(fx?.mix)} from how it is made.`;
   }
 
-  // The tooltip of a pinned year, placed at the cursor of the pinned row's last cell.
+  // A pinned card stays attached to the chart that was clicked or focused.
   function showPinned() {
-    const cell = view?.columns.map((c) => cells.get(`${pinned.key}|${c.key}`)).filter((c) => c?.x).at(-1);
-    if (!cell) return hideTooltip();
+    const cell = cells.get(`${pinned.key}|${pinned.column}`);
+    if (!cell?.x) return hideTooltip();
     const box = cell.svg.node().getBoundingClientRect();
-    showTooltip({ clientX: box.left + cell.x(pinned.year), clientY: box.top + cell.top }, card(pinned.key, pinned.year));
+    showTooltip({ clientX: box.left + cell.x(pinned.year), clientY: box.top + cell.top }, card(pinned.key, pinned.column, pinned.year));
   }
 
   function pin(next, announce = true) {
@@ -223,7 +214,7 @@ export function createCompareRows(selector, { countries, continents, onPreview =
     markHover();
     if (!pinned) { hideTooltip(); live.text(""); return; }
     if (announce) showPinned();
-    live.text(spoken(pinned.key, pinned.year));
+    live.text(spoken(pinned.key, pinned.column, pinned.year));
   }
 
   // The active year (hovered, else pinned) is marked in every cell: a dashed cursor, the year in
@@ -255,13 +246,13 @@ export function createCompareRows(selector, { countries, continents, onPreview =
     }
   }
 
-  function onKey(event, key) {
+  function onKey(event, key, column) {
     const [lo, hi] = domainOf(view.s);
-    const year = pinned?.key === key ? pinned.year : hi;
+    const year = pinned?.key === key && pinned?.column === column ? pinned.year : hi;
     const step = { ArrowLeft: -1, ArrowRight: 1 }[event.key];
-    if (step) pin({ key, year: Math.max(lo, Math.min(hi, year + step)) });
-    else if (event.key === "Home") pin({ key, year: lo });
-    else if (event.key === "End") pin({ key, year: hi });
+    if (step) pin({ key, column, year: Math.max(lo, Math.min(hi, year + step)) });
+    else if (event.key === "Home") pin({ key, column, year: lo });
+    else if (event.key === "End") pin({ key, column, year: hi });
     else if (event.key === "Escape") { pin(null); event.target.blur(); }
     else return;
     event.preventDefault();
@@ -289,8 +280,8 @@ export function createCompareRows(selector, { countries, continents, onPreview =
       const signature = columns.map((c) => c.key).join();
       if (view && view.signature !== signature) body.selectAll("div.compare-row").each((e) => dropRow(e.key)).remove();
       view = { s, entities, mixMax, columns, signature };
-      if (pinned && !s.compared.includes(pinned.key)) pinned = null;
-      if (hover && !s.compared.includes(hover.key)) hover = null;
+      if (pinned && (!s.compared.includes(pinned.key) || !columns.some((c) => c.key === pinned.column))) pinned = null;
+      if (hover && (!s.compared.includes(hover.key) || !columns.some((c) => c.key === hover.column))) hover = null;
       const [lo, hi] = domainOf(s);
       if (pinned) pinned.year = Math.max(lo, Math.min(hi, pinned.year));
       previewed = null;
@@ -310,11 +301,13 @@ export function createCompareRows(selector, { countries, continents, onPreview =
             const svg = row.append("div").attr("class", "compare-cell").append("svg").attr("role", "img")
               .attr("tabindex", 0)
               .on("focus", () => {
-                if (pinned?.key !== e.key && !pointerDown) pin({ key: e.key, year: domainOf(view.s)[1] });
+                if (!pointerDown && (pinned?.key !== e.key || pinned?.column !== column.key)) {
+                  pin({ key: e.key, column: column.key, year: pinned?.year ?? domainOf(view.s)[1] });
+                }
                 pointerDown = false;
               })
               .on("blur", () => pin(null))
-              .on("keydown", (event) => onKey(event, e.key))
+              .on("keydown", (event) => onKey(event, e.key, column.key))
               .on("pointerdown", () => { pointerDown = true; });
             const cell = { svg, width: 0, height: 0, key: e.key, column: column.key };
             cells.set(`${e.key}|${column.key}`, cell);
