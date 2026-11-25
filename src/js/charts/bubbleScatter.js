@@ -6,7 +6,7 @@
 import { COMPLETE_YEARS } from "../data/constants.js";
 import { openEntityMenu } from "../entityMenu.js";
 import { NO_DATA } from "../scales.js";
-import { inRegion, MIN_EMISSIONS, shownAt, validBubble } from "../data/scatter.js";
+import { inRegion, MIN_EMISSIONS, scatterComparedCountries, shownAt, validBubble } from "../data/scatter.js";
 import { addCompared, MAX_COMPARED, setState } from "../state.js";
 import { tween } from "../motion.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
@@ -168,8 +168,13 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     x.domain(d.x).nice();
     y.domain(d.y).nice();
     radius.domain(d.r);
-    const keys = countriesOf.get(s.continent) ?? [];
-    filterButtons.attr("aria-pressed", ([n]) => String(n === (s.scatterMin ?? 0)));
+    const comparedCountries = scatterComparedCountries(s);
+    const comparing = comparedCountries.length > 0;
+    const keys = (countriesOf.get(s.continent) ?? []).filter((key) => !comparing || comparedCountries.includes(key));
+    filterButtons.attr("aria-pressed", ([n]) => String(n === (comparing ? 0 : (s.scatterMin ?? 0))))
+      .property("disabled", comparing)
+      .attr("title", ([n]) => comparing ? "All compared countries with data are shown. Clear the comparison to filter all countries."
+        : n ? `Only countries emitting at least ${n} Mt CO₂e from electricity` : "Every country with data");
     const ofYear = keys.map((k) => byCountry.get(k)?.get(s.year)).filter(validBubble);
     const shown = ofYear.filter((r) => shownAt(r, s));
     const hidden = ofYear.length - shown.length;
@@ -180,7 +185,8 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
 
     note.text(s.year < COMPLETE_YEARS[0]
       ? `No emissions data before ${COMPLETE_YEARS[0]}. Move the year slider to ${COMPLETE_YEARS[0]} or later.`
-      : [withGeneration > ofYear.length ? `${withGeneration - ofYear.length} of ${withGeneration} countries have no emissions data in ${s.year}.` : "",
+      : [comparing ? "Showing compared countries only. Clear the comparison to show all countries again." : "",
+        withGeneration > ofYear.length ? `${withGeneration - ofYear.length} of ${withGeneration} countries have no emissions data in ${s.year}.` : "",
         hidden ? `${hidden} smaller emitters hidden (Show).` : ""].filter(Boolean).join(" "));
     svg.attr("aria-label", `Bubble scatter of ${points.length} countries of ${s.continent} in ${s.year}: emissions per person, carbon intensity and total emissions.`);
 
@@ -241,7 +247,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     const free = MAX_COMPARED - compared.length;
     const brushedNew = s.brushed ? points.filter((p) => s.brushed.has(p.r.key) && !s.compared.includes(p.r.key)) : [];
     toCompare = brushedNew.map((p) => p.r.key);
-    compareButton.attr("hidden", s.brushed ? null : true)
+    compareButton.attr("hidden", s.brushed && !comparing ? null : true)
       .property("disabled", !brushedNew.length || free <= 0)
       .text(!brushedNew.length ? "+ Compare: all selected are compared"
         : free <= 0 ? `+ Compare: list full (${compared.length})`

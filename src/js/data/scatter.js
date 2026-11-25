@@ -1,11 +1,20 @@
 // Pure helpers of View B's bubble scatter (no DOM), so they can be tested in Node.
 
+import { CONTINENTS } from "./constants.js";
+
+export const scatterComparedCountries = (s) => (s.compared ?? []).filter((key) => !CONTINENTS.includes(key));
+
 // A country can be drawn: positive emissions per person and total emissions, and an intensity.
 export const validBubble = (r) => !!r && r.emissionsPerCapita > 0 && r.carbonIntensity !== null && r.emissions > 0;
 
 // Filter "Show": smallest total emissions (Mt), so microstates do not pile up in a corner.
 export const MIN_EMISSIONS = [[0, "All"], [1, "≥ 1 Mt"], [10, "≥ 10 Mt"]];
-export const shownAt = (r, s) => validBubble(r) && r.emissions >= (s.scatterMin ?? 0);
+export function shownAt(r, s) {
+  if (!validBubble(r)) return false;
+  const compared = scatterComparedCountries(s);
+  // Selected countries remain visible even below the normal emissions threshold.
+  return compared.length ? compared.includes(r.key) : r.emissions >= (s.scatterMin ?? 0);
+}
 
 // region: { x: [lo, hi] emissions per person, y: [lo, hi] carbon intensity }, in data units.
 export const inRegion = (r, { x, y }) => r.emissionsPerCapita >= x[0] && r.emissionsPerCapita <= x[1]

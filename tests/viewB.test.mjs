@@ -77,6 +77,27 @@ test('scatter: only countries with emissions are drawn; Show hides small emitter
   assert.equal(shownAt(tiny, { scatterMin: 1 }), false);
 });
 
+test('scatter: country comparisons filter bubbles; clearing restores the saved emissions filter', () => {
+  const tiny = record({ key: 'MLT', gas: 2, emissions: 0.9 });
+  const portugal = record({ key: 'PRT', gas: 20, emissions: 12 });
+  const germany = record({ key: 'DEU', coal: 100, emissions: 80 });
+  const records = [tiny, portugal, germany];
+  const s = { scatterMin: 10, compared: ['MLT', 'PRT'] };
+  assert.deepEqual(records.filter((r) => shownAt(r, s)).map((r) => r.key), ['MLT', 'PRT']);
+  assert.deepEqual(records.filter((r) => shownAt(r, { ...s, compared: ['PRT'] })).map((r) => r.key), ['PRT']);
+  assert.deepEqual(records.filter((r) => shownAt(r, { ...s, compared: [] })).map((r) => r.key), ['PRT', 'DEU']);
+  assert.deepEqual(records.filter((r) => shownAt(r, { scatterMin: 0, compared: [] })).map((r) => r.key), ['MLT', 'PRT', 'DEU']);
+  assert.equal(shownAt(portugal, { scatterMin: 0, compared: ['Europe'] }), true, 'continent comparisons do not filter countries');
+  assert.equal(shownAt({ ...portugal, emissions: null }, s), false, 'missing emissions remain unavailable');
+});
+
+test('brush: unselected countries cannot be brushed while comparing countries', () => {
+  const records = [record({ key: 'PRT', gas: 10, emissions: 5 }), record({ key: 'DEU', coal: 100, emissions: 80 })];
+  const s = { level: 'continent', continent: 'Europe', year: 2024, compared: ['PRT'],
+    brush: { continent: 'Europe', x: [0, 1000], y: [0, 2000] } };
+  assert.deepEqual([...brushedKeys(['PRT', 'DEU'], indexByKey(records), s)], ['PRT']);
+});
+
 test('brush: a region in data units; follows the year; ignored on another continent', () => {
   const recs = [
     record({ key: 'POL', population: 1e6, coal: 10, emissions: 8 }),   // 8 t/person, 800 g/kWh

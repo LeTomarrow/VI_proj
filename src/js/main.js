@@ -146,7 +146,8 @@ async function init() {
     d3.select("#scatter-title").text(`Emissions from electricity by country, ${s.continent}, ${s.year}`);
     d3.select("#scatter-how-to-read").text("x = emissions per person, y = CO₂e per kWh, area = total emissions. "
       + (s.mode === "year" ? "Compared countries are outlined." : `Lines = path of compared countries since ${s.rangeStart}.`)
-      + (s.brushed ? ` ${s.brushed.size} countries selected (dashed on the map); + Compare adds them; click outside the box or Clear all to clear.` : " Drag to select a group in every chart."));
+      + (s.brushed ? ` ${s.brushed.size} countries selected (dashed on the map); ${comparedCountries.length ? "click outside the box to clear the selection." : "+ Compare adds them; click outside the box or Clear all to clear."}`
+        : comparedCountries.length ? " Drag to select among the compared countries." : " Drag to select a group in every chart."));
     d3.select("#bars-title").text(`Change by country, ${s.continent}, ${s.rangeStart}-${s.year}`);
     d3.select("#bars-how-to-read").text(`Sorted from the ${s.barsSort === "asc" ? "smallest" : "largest"} renewable gain; dashed line = World. CO₂e: ▼ fell, ▲ rose.`);
 
