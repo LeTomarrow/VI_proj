@@ -123,16 +123,19 @@ test('View C keeps the list, opens only with entities and returns to the level i
   assert.equal(state.level, 'world', 'an empty list does not open View C');
 });
 
-test('removing countries leaves View C at one remaining country and preserves the origin', () => {
+test('comparison stays open with one country and returns to its origin only after the last removal', () => {
   reset({ level: 'continent', continent: 'Europe', compared: ['PRT', 'ESP', 'DEU'], year: 2024, rangeStart: 2000 });
   st.openCompare();
   st.toggleCompared('DEU');
   assert.equal(state.level, 'compare', 'two countries still have a comparison');
   st.setState({ hovered: 'ESP' });
   st.toggleCompared('ESP');
+  assert.equal(state.level, 'compare', 'one country still has its charts');
+  assert.deepEqual(state.compared, ['PRT']);
+  st.toggleCompared('PRT');
   assert.equal(state.level, 'continent');
   assert.equal(state.continent, 'Europe');
-  assert.deepEqual(state.compared, ['PRT']);
+  assert.deepEqual(state.compared, []);
   assert.equal(state.hovered, null);
   assert.deepEqual([state.year, state.rangeStart], [2024, 2000]);
 });
@@ -160,7 +163,9 @@ test('removing a country outside View C and removing a continent keep their exis
   st.toggleCompared('Asia');
   assert.equal(state.level, 'compare');
   assert.deepEqual(state.compared, ['Europe']);
-  st.closeCompare();
+  st.toggleCompared('Europe');
+  assert.equal(state.level, 'world', 'removing the last continent also avoids an empty view');
+  assert.deepEqual(state.compared, []);
 });
 
 test('View C needs a year after the range start: opening it moves the start back', () => {

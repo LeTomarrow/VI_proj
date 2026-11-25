@@ -31,11 +31,10 @@ export const state = {
 };
 
 export function setState(patch) {
-  // Removing countries (including Clear all) leaves View C when fewer than two remain.
-  // Keep the remaining selection and the original continent; continent comparisons are separate.
+  // Removing the last entry (including Clear all) returns to the original main view.
+  // A single country or continent can still be explored in View C.
   if (state.level === "compare" && patch.level === undefined && patch.compared
-    && patch.compared.length < state.compared.length && patch.compared.length < 2
-    && state.compared.some((key) => comparisonType(key) === "countries")) {
+    && state.compared.length > 0 && patch.compared.length === 0) {
     patch = { ...patch, level: state.compareFrom, hovered: null };
   }
   Object.assign(state, patch);
