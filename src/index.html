@@ -35,24 +35,55 @@
         </div>
       </div>
       <figure class="hero-chart">
-        <figcaption class="tab-title">World electricity, indexed to 2000 = 100</figcaption>
+        <figcaption class="tab-title">World electricity, % change since 2000</figcaption>
         <div class="chart" id="chart-paradox"></div>
       </figure>
     </section>
 
-    <section class="site-section reveal" aria-labelledby="paradox-title">
-      <h2 id="paradox-title">The paradox</h2>
-      <p class="section-lead">Clean electricity cuts CO₂e only if it grows faster than the demand
-        for electricity. Worldwide, it grew fast, but demand grew almost as fast.</p>
-      <div class="cards" id="paradox-cards"></div>
-    </section>
-
     <section class="site-section reveal" aria-labelledby="stories-title">
       <h2 id="stories-title">Two continents, two stories</h2>
-      <p class="section-lead">CO₂e from electricity, indexed to 2000 = 100. Europe generated a
-        little more electricity and cut its emissions; Asia's demand grew so fast that its
-        emissions more than tripled, despite record renewables.</p>
+      <p class="section-lead">Clean electricity cuts CO₂e only if it grows faster than demand.
+        In Europe it did, and emissions fell. In Asia demand grew faster, and emissions more than
+        tripled despite record renewables.</p>
+      <p class="tab-title">CO₂e from electricity, % change since 2000</p>
       <div class="chart story-chart" id="chart-stories"></div>
+    </section>
+
+    <section class="site-section reveal" aria-labelledby="how-title">
+      <h2 id="how-title">How to explore</h2>
+      <ol class="cards steps">
+        <li class="card"><span class="step">A</span><h3>World</h3><p>Six continents on a map, their electricity mix and their emissions. Overview first.</p></li>
+        <li class="card"><span class="step">B</span><h3>Continent</h3><p>Europe or Asia, country by country: who grew renewables, who still emits more. Zoom and filter.</p></li>
+        <li class="card"><span class="step">C</span><h3>Compare</h3><p>Up to five countries or continents side by side, and why their CO₂e changed. Details on demand.</p></li>
+      </ol>
+      <details class="sources">
+        <summary>Charts and the D3 examples they started from</summary>
+        <div class="sources-grid">
+          <div><h3>A. World</h3>
+          <ul class="chart-list" aria-label="Charts in World">
+            <li>Choropleth map <span class="source">after <a href="https://observablehq.com/@d3/world-choropleth" target="_blank" rel="noopener">World choropleth</a></span></li>
+            <li>Marimekko of the electricity mix <span class="source">after <a href="https://observablehq.com/@d3/marimekko-chart" target="_blank" rel="noopener">Marimekko chart</a></span></li>
+            <li>Stacked area of emissions <span class="source">after <a href="https://observablehq.com/@d3/stacked-area-chart" target="_blank" rel="noopener">Stacked area chart</a></span></li>
+            <li>Globe view (Map / Globe switch), rotates by dragging <span class="source">after <a href="https://observablehq.com/@d3/versor-dragging" target="_blank" rel="noopener">Versor dragging</a></span></li>
+          </ul></div>
+          <div><h3>B. Continent</h3>
+          <ul class="chart-list" aria-label="Charts in Continent">
+            <li>Choropleth map, zoomed to the continent <span class="source">after <a href="https://observablehq.com/@d3/world-choropleth" target="_blank" rel="noopener">World choropleth</a></span></li>
+            <li>Ranked bars with mix columns <span class="source">after <a href="https://observablehq.com/@d3/bar-chart" target="_blank" rel="noopener">Bar chart</a></span></li>
+            <li>Bubble scatter with a 2D brush <span class="source">after <a href="https://observablehq.com/@mbostock/the-wealth-health-of-nations" target="_blank" rel="noopener">Wealth &amp; Health of Nations</a> + <a href="https://observablehq.com/@d3/brushable-scatterplot" target="_blank" rel="noopener">Brushable scatterplot</a></span></li>
+            <li>Sorted bars of change <span class="source">after <a href="https://observablehq.com/@d3/diverging-bar-chart" target="_blank" rel="noopener">Diverging bar chart</a></span></li>
+          </ul></div>
+          <div><h3>C. Compare</h3>
+          <ul class="chart-list" aria-label="Charts in Compare">
+            <li>Radar per entity <span class="source">after <a href="https://github.com/kevinschaul/d3-star-plot" target="_blank" rel="noopener">d3-star-plot</a> + <a href="https://observablehq.com/@palewire/radar-chart" target="_blank" rel="noopener">Radar chart</a></span></li>
+            <li>Mix over time (stacked area) <span class="source">after <a href="https://observablehq.com/@d3/stacked-area-chart" target="_blank" rel="noopener">Stacked area chart</a></span></li>
+            <li>Clean vs total generation <span class="source">after <a href="https://observablehq.com/@d3/difference-chart" target="_blank" rel="noopener">Difference chart</a></span></li>
+            <li>Why CO₂e changed (decomposition bars and total line) <span class="source">after <a href="https://observablehq.com/@recifs/plot-bars-and-line" target="_blank" rel="noopener">Bars and line</a></span></li>
+          </ul></div>
+        </div>
+        <p class="section-note">Most from the
+          <a href="https://observablehq.com/@d3/gallery" target="_blank" rel="noopener">D3 gallery</a>, adapted to the data and the tasks.</p>
+      </details>
     </section>
 
     <section class="site-section reveal" aria-labelledby="data-title">
@@ -63,39 +94,6 @@
         <div><dt>What is measured</dt><dd>Electricity only: generation by source (TWh), CO₂e from electricity (MtCO₂e), population.</dd></div>
         <div><dt>Choices</dt><dd>Continents are the sum of their countries (Russia counts as Europe). Generation stands in for demand.</dd></div>
       </dl>
-    </section>
-
-    <section class="site-section reveal" aria-labelledby="how-title">
-      <h2 id="how-title">How to explore</h2>
-      <ol class="cards steps">
-        <li class="card"><span class="step">A</span><h3>World</h3><p>Six continents on a map, their electricity mix and their emissions. Overview first.</p>
-          <ul class="chart-list" aria-label="Charts in World">
-            <li>Choropleth map <span class="source">after <a href="https://observablehq.com/@d3/world-choropleth" target="_blank" rel="noopener">World choropleth</a></span></li>
-            <li>Marimekko of the electricity mix <span class="source">after <a href="https://observablehq.com/@d3/marimekko-chart" target="_blank" rel="noopener">Marimekko chart</a></span></li>
-            <li>Stacked area of emissions <span class="source">after <a href="https://observablehq.com/@d3/stacked-area-chart" target="_blank" rel="noopener">Stacked area chart</a></span></li>
-            <li>Globe view (Map / Globe switch), rotates by dragging <span class="source">after <a href="https://observablehq.com/@d3/versor-dragging" target="_blank" rel="noopener">Versor dragging</a></span></li>
-          </ul>
-        </li>
-        <li class="card"><span class="step">B</span><h3>Continent</h3><p>Europe or Asia, country by country: who grew renewables, who still emits more. Zoom and filter.</p>
-          <ul class="chart-list" aria-label="Charts in Continent">
-            <li>Choropleth map, zoomed to the continent <span class="source">after <a href="https://observablehq.com/@d3/world-choropleth" target="_blank" rel="noopener">World choropleth</a></span></li>
-            <li>Ranked bars with mix columns <span class="source">after <a href="https://observablehq.com/@d3/bar-chart" target="_blank" rel="noopener">Bar chart</a></span></li>
-            <li>Bubble scatter with a 2D brush <span class="source">after <a href="https://observablehq.com/@mbostock/the-wealth-health-of-nations" target="_blank" rel="noopener">Wealth &amp; Health of Nations</a> + <a href="https://observablehq.com/@d3/brushable-scatterplot" target="_blank" rel="noopener">Brushable scatterplot</a></span></li>
-            <li>Sorted bars of change <span class="source">after <a href="https://observablehq.com/@d3/diverging-bar-chart" target="_blank" rel="noopener">Diverging bar chart</a></span></li>
-          </ul>
-        </li>
-        <li class="card"><span class="step">C</span><h3>Compare</h3><p>Up to five countries or continents side by side, and why their CO₂e changed. Details on demand.</p>
-          <ul class="chart-list" aria-label="Charts in Compare">
-            <li>Radar per entity <span class="source">after <a href="https://github.com/kevinschaul/d3-star-plot" target="_blank" rel="noopener">d3-star-plot</a> + <a href="https://observablehq.com/@palewire/radar-chart" target="_blank" rel="noopener">Radar chart</a></span></li>
-            <li>Mix over time (stacked area) <span class="source">after <a href="https://observablehq.com/@d3/stacked-area-chart" target="_blank" rel="noopener">Stacked area chart</a></span></li>
-            <li>Clean vs total generation <span class="source">after <a href="https://observablehq.com/@d3/difference-chart" target="_blank" rel="noopener">Difference chart</a></span></li>
-            <li>Why CO₂e changed (decomposition bars and total line) <span class="source">after <a href="https://observablehq.com/@recifs/plot-bars-and-line" target="_blank" rel="noopener">Bars and line</a></span></li>
-          </ul>
-        </li>
-      </ol>
-      <p class="section-note">Chart types and the D3 examples they started from (most from the
-        <a href="https://observablehq.com/@d3/gallery" target="_blank" rel="noopener">D3 gallery</a>),
-        adapted to the data and the tasks.</p>
     </section>
 
     <section class="site-section reveal" aria-labelledby="who-title">

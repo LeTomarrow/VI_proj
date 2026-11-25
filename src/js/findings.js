@@ -17,7 +17,7 @@ function heuristicsTable(rows) {
   const table = d3.select("#heuristics").append("table").attr("class", "results-table");
   table.append("thead").append("tr").selectAll("th").data(["Heuristic", "Problems", "Worst severity"]).join("th").text((d) => d);
   table.append("tbody").selectAll("tr").data(rows).join("tr").selectAll("td")
-    .data((r) => [`${r.id} ${r.name}`, r.problems, r.maxSeverity ?? "–"]).join("td").text((d) => d);
+    .data((r) => [`${r.id} ${r.name}`, r.problems, r.maxSeverity ?? "n/a"]).join("td").text((d) => d);
 }
 
 // One dot per participant on the 0-100 scale, the mean as a bar, and the average (68) as a line.

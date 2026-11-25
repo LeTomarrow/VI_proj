@@ -162,11 +162,6 @@
   color: var(--color-text-secondary);
 }
 
-.card-value {
-  font-size: 1.8rem;
-  font-variant-numeric: tabular-nums;
-}
-
 .step {
   display: inline-grid;
   place-items: center;
@@ -202,6 +197,22 @@
   max-width: 75ch;
   margin: 0.5rem 0 1.25rem;
   padding-left: 1.25rem;
+}
+
+/* Findings: the persona's tasks the testers did. */
+.task-list {
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+  max-width: 75ch;
+  margin: 0 0 1.25rem;
+  padding: 0;
+  color: var(--color-text-secondary);
+}
+
+.task-list strong {
+  display: inline-block;
+  min-width: 2.2rem;
 }
 
 .eval-grid {
@@ -293,11 +304,10 @@
 .chart-list {
   display: grid;
   gap: 0.45rem;
-  margin: 0.8rem 0 0;
-  padding: 0.75rem 0 0;
+  margin: 0.4rem 0 0;
+  padding: 0;
   list-style: none;
   font-size: 0.85rem;
-  border-top: 1px solid var(--color-border);
 }
 
 .chart-list .source {
@@ -310,4 +320,34 @@
   margin: 0.9rem 0 0;
   font-size: 0.85rem;
   color: var(--color-text-secondary);
+}
+
+/* Chart sources, folded away: credited, but not in the way of the three steps. */
+.sources {
+  margin-top: 1rem;
+}
+
+.sources summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.sources-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.sources-grid h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 800px) {
+  .sources-grid {
+    grid-template-columns: 1fr;
+  }
 }
