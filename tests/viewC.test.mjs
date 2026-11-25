@@ -123,6 +123,46 @@ test('View C keeps the list, opens only with entities and returns to the level i
   assert.equal(state.level, 'world', 'an empty list does not open View C');
 });
 
+test('removing countries leaves View C at one remaining country and preserves the origin', () => {
+  reset({ level: 'continent', continent: 'Europe', compared: ['PRT', 'ESP', 'DEU'], year: 2024, rangeStart: 2000 });
+  st.openCompare();
+  st.toggleCompared('DEU');
+  assert.equal(state.level, 'compare', 'two countries still have a comparison');
+  st.setState({ hovered: 'ESP' });
+  st.toggleCompared('ESP');
+  assert.equal(state.level, 'continent');
+  assert.equal(state.continent, 'Europe');
+  assert.deepEqual(state.compared, ['PRT']);
+  assert.equal(state.hovered, null);
+  assert.deepEqual([state.year, state.rangeStart], [2024, 2000]);
+});
+
+test('removing the last country or clearing countries also returns to the origin', () => {
+  reset({ level: 'continent', continent: 'Europe', compared: ['PRT'] });
+  st.openCompare();
+  st.toggleCompared('PRT');
+  assert.equal(state.level, 'continent');
+  assert.deepEqual(state.compared, []);
+  reset({ level: 'continent', continent: 'Europe', compared: ['PRT', 'ESP'] });
+  st.openCompare();
+  st.setState({ compared: [], brush: null, hovered: null });
+  assert.equal(state.level, 'continent');
+  assert.deepEqual(state.compared, []);
+});
+
+test('removing a country outside View C and removing a continent keep their existing navigation', () => {
+  reset({ level: 'continent', continent: 'Europe', compared: ['PRT', 'ESP'] });
+  st.toggleCompared('ESP');
+  assert.equal(state.level, 'continent');
+  assert.deepEqual(state.compared, ['PRT']);
+  reset({ compared: ['Asia', 'Europe'] });
+  st.openCompare();
+  st.toggleCompared('Asia');
+  assert.equal(state.level, 'compare');
+  assert.deepEqual(state.compared, ['Europe']);
+  st.closeCompare();
+});
+
 test('View C needs a year after the range start: opening it moves the start back', () => {
   reset({ compared: ['Asia'], year: 1995, rangeStart: 2000 });
   st.openCompare();
