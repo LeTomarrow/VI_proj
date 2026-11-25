@@ -1482,3 +1482,10 @@ footer p {
     padding: 0.6rem 16px 0.5rem;
   }
 }
+
+/* Compact scales and units in the comparison's small charts. */
+.compare-cell .axis text,
+.compare-axis-title {
+  font-size: 9px;
+  fill: var(--color-text-secondary);
+}

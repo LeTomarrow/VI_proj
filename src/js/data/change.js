@@ -1,3 +1,5 @@
+import { CONTINENTS } from "./constants.js";
+
 // Change of each country between two years, for View B's sorted bars (task T2: did the renewable
 // share rise, and did emissions fall?).
 //   renewable: change in renewable share (pp)
@@ -20,3 +22,9 @@ export function changeRows(keys, byCountry, start, end) {
   }).filter(Boolean).sort((a, b) => b.renewable - a.renewable);
 }
 
+
+// The continent stays the scope; an active country comparison narrows the displayed rows.
+export function changeCountryKeys(keys, compared = []) {
+  const countries = compared.filter((key) => !CONTINENTS.includes(key));
+  return countries.length ? keys.filter((key) => countries.includes(key)) : keys;
+}

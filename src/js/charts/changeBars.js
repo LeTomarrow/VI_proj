@@ -6,10 +6,10 @@
 // (Cambodia +2680%), which no shared scale can show. Names in a gutter on the left. Top 10 or All.
 // Base example: Diverging bar chart (https://observablehq.com/@d3/diverging-bar-chart).
 
-import { changeRows } from "../data/change.js";
+import { changeRows, changeCountryKeys } from "../data/change.js";
 import { openEntityMenu } from "../entityMenu.js";
 import { metricColor } from "../scales.js";
-import { setState } from "../state.js";
+import { comparisonType, setState } from "../state.js";
 import { tween } from "../motion.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
@@ -104,7 +104,8 @@ export function createChangeBars(selector, { countries, world, countriesOf }) {
   function render(s) {
     const start = s.rangeStart;
     const end = s.year;
-    const keys = countriesOf.get(s.continent) ?? [];
+    const comparing = s.compared.some((key) => comparisonType(key) === "countries");
+    const keys = changeCountryKeys(countriesOf.get(s.continent) ?? [], s.compared);
     const asc = s.barsSort === "asc";
     const sorted = changeRows(keys, byCountry, start, end);
     const all = asc ? sorted.reverse() : sorted;
@@ -113,16 +114,17 @@ export function createChangeBars(selector, { countries, world, countriesOf }) {
     const position = new Map(all.map((d, i) => [d.key, i]));
     const top = (s.barsTop ?? TOP) !== "all";
     // Top 10: the largest gains, or the brushed group; compared countries always.
-    const rows = top
+    const rows = top && !comparing
       ? all.filter((d, i) => (s.brushed ? s.brushed.has(d.key) : i < TOP) || s.compared.includes(d.key))
       : all;
     const worldRow = changeRows(["World"], byWorld, start, end)[0] ?? null;
-    viewButtons.attr("aria-pressed", ([n]) => String(n === (top ? TOP : "all")));
+    viewButtons.attr("aria-pressed", ([n]) => String(n === (top && !comparing ? TOP : "all")))
+      .property("disabled", comparing);
 
     const missing = all.length < keys.length ? ` ${missingText(keys.length - all.length)} no data for ${start} or ${end}.` : "";
     note.text(end <= start
       ? `Choose a year after ${start} (or set the start with Change).`
-      : `${top ? `${rows.length} of ${all.length} countries.` : ""}${missing}`.trim());
+      : `${comparing ? "Compared countries only." : top ? `${rows.length} of ${all.length} countries.` : ""}${missing}`.trim());
     svg.attr("aria-label", `Bar chart of the change in renewable share and in emissions of ${rows.length} countries of ${s.continent}, ${start}-${end}, sorted.`);
 
     // Room for a value label beyond the longest bar on each side that has bars.

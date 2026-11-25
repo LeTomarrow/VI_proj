@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { indexByKey, realData, record } from './helpers.mjs';
 
 const { rankedColumns, comparedColumns, rankMax } = await import('../src/js/data/countryColumns.js');
-const { changeRows } = await import('../src/js/data/change.js');
+const { changeRows, changeCountryKeys } = await import('../src/js/data/change.js');
 const { brushedKeys, inRegion, scatterTrailKeys, shownAt, validBubble } = await import('../src/js/data/scatter.js');
 const { RANKS } = await import('../src/js/scales.js');
 const st = await import('../src/js/state.js');
@@ -173,4 +173,14 @@ test('scatter paths: Change reveals only the hovered compared country, with no i
   assert.deepEqual(scatterTrailKeys(['ESP', 'DEU'], { ...s, hovered: 'PRT' }), [], 'no path for a country with no visible bubble');
   assert.deepEqual(scatterTrailKeys(keys, { ...s, hovered: 'PRT', mode: 'year' }), []);
   assert.deepEqual(scatterTrailKeys(keys, { ...s, hovered: 'PRT', compared: [] }), []);
+});
+
+
+test('country-change selection shows only compared countries and restores the continent when cleared', () => {
+  const keys = ['PRT', 'ESP', 'DEU'];
+  assert.deepEqual(changeCountryKeys(keys, ['PRT', 'DEU']), ['PRT', 'DEU']);
+  assert.deepEqual(changeCountryKeys(keys, ['PRT']), ['PRT']);
+  assert.deepEqual(changeCountryKeys(keys, []), keys);
+  assert.deepEqual(changeCountryKeys(keys, ['Europe']), keys);
+  assert.deepEqual(changeCountryKeys(keys, ['CHN']), [], 'countries outside the continent are not added');
 });

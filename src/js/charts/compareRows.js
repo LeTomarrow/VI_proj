@@ -15,7 +15,7 @@ import { drawMix, mixRows } from "./mixOverTime.js";
 import { comparisonTooltip } from "./compareTooltip.js";
 import { compareColumnKeys } from "../data/compare.js";
 
-const MARGIN = { left: 48, right: 18, top: 8, bottom: 20 };
+const MARGIN = { left: 48, right: 18, top: 10, bottom: 32 };
 const num = (digits) => (v) => (v === null || v === undefined ? "No data" : d3.format(`,.${digits}f`)(v));
 const signed = (v) => (v === null || v === undefined ? "No data" : d3.format("+,.1f")(v));
 const short = (v) => d3.format(Math.abs(v) < 10 ? "+.1f" : "+,.0f")(v);
@@ -156,6 +156,12 @@ export function createCompareRows(selector, { countries, continents, onPreview =
       .call(d3.axisBottom(x).tickValues(ticks).tickFormat(d3.format("d")).tickSizeOuter(0));
     svg.append("g").attr("class", "axis").attr("transform", `translate(${left},0)`)
       .call(d3.axisLeft(y).ticks(3).tickFormat(d3.format("~s")).tickSizeOuter(0));
+    svg.append("text").attr("class", "compare-axis-title")
+      .attr("x", (left + right) / 2).attr("y", height - 2).attr("text-anchor", "middle").text("Year");
+    const unit = { mix: "kWh/person", race: "Δ TWh", effects: "Δ MtCO₂e" }[column];
+    svg.append("text").attr("class", "compare-axis-title")
+      .attr("transform", `translate(10,${(top + bottom) / 2}) rotate(-90)`)
+      .attr("text-anchor", "middle").text(unit);
     svg.append("line").attr("class", "compare-cursor").attr("y1", top).attr("y2", bottom).attr("visibility", "hidden");
     svg.append("text").attr("class", "cursor-value").attr("y", top + 9).attr("visibility", "hidden");
     cell.x = x;
