@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import { realData, record } from './helpers.mjs';
 
 const { metricValue } = await import('../src/js/data/metrics.js');
-const { METRICS, RANKS, metricColor, metricDomain, formatMetric, sourceOrder } = await import('../src/js/scales.js');
+const { MODES, METRICS, RANKS, metricColor, metricDomain, formatMetric, sourceOrder } = await import('../src/js/scales.js');
 const { orderByRank } = await import('../src/js/data/countryColumns.js');
 const { sumCountries, checkAgainstOwid } = await import('../src/js/data/aggregate.js');
 const { sourceProfile } = await import('../src/js/data/compare.js');
@@ -20,19 +20,22 @@ const near = (a, b, eps = 1e-9) => assert.ok(Math.abs(a - b) < eps, `${a} ≈ ${
 const at = (byKey, key, year) => byKey.get(key).get(year);
 const years = (values) => new Map(Object.entries(values).map(([y, v]) => [+y, v === null ? undefined : { renewableShare: v }]));
 
-test('metric value: Year, Change and Range average', () => {
+test('available modes: Year and Change only', () => {
+  assert.deepEqual(MODES, { year: 'Year', change: 'Change' });
+});
+
+test('metric value: Year and Change', () => {
   const byYear = years({ 2000: 10, 2001: 20, 2002: 30 });
   const base = { metric: 'renewableShare', year: 2002, rangeStart: 2000 };
   assert.equal(metricValue(byYear, { ...base, mode: 'year' }).value, 30);
   assert.equal(metricValue(byYear, { ...base, mode: 'change' }).value, 20);
-  assert.equal(metricValue(byYear, { ...base, mode: 'average' }).value, 20);
 });
 
-test('metric value: missing ends give no Change; an average needs half of the years', () => {
+test('metric value: Change needs both endpoints; Year only needs the selected year', () => {
   const s = { metric: 'renewableShare', year: 2003, rangeStart: 2000 };
   assert.equal(metricValue(years({ 2000: null, 2003: 30 }), { ...s, mode: 'change' }).value, null);
-  assert.equal(metricValue(years({ 2000: 10, 2003: 30 }), { ...s, mode: 'average' }).value, 20, '2 of 4 years');
-  assert.equal(metricValue(years({ 2003: 30 }), { ...s, mode: 'average' }).value, null, '1 of 4 years');
+  assert.equal(metricValue(years({ 2000: 10, 2003: 30 }), { ...s, mode: 'change' }).value, 20);
+  assert.equal(metricValue(years({ 2003: 30 }), { ...s, mode: 'year' }).value, 30);
 });
 
 test('map colour: in Change, blue always means cleaner', () => {

@@ -121,7 +121,7 @@ export function createChangeBars(selector, { countries, world, countriesOf }) {
 
     const missing = all.length < keys.length ? ` ${missingText(keys.length - all.length)} no data for ${start} or ${end}.` : "";
     note.text(end <= start
-      ? `Choose a year after ${start} (or set the start with Range average or Change).`
+      ? `Choose a year after ${start} (or set the start with Change).`
       : `${top ? `${rows.length} of ${all.length} countries.` : ""}${missing}`.trim());
     svg.attr("aria-label", `Bar chart of the change in renewable share and in emissions of ${rows.length} countries of ${s.continent}, ${start}-${end}, sorted.`);
 

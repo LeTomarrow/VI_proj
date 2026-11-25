@@ -28,7 +28,7 @@ export const METRICS = {
   },
 };
 
-export const MODES = { year: "Year", average: "Range average", change: "Change" };
+export const MODES = { year: "Year", change: "Change" };
 
 export function metricDomain(metric, mode) {
   const { domain, changeMax } = METRICS[metric];

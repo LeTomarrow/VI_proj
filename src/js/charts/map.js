@@ -60,13 +60,9 @@ function tooltipHtml(name, stat, s) {
   const value = formatMetric(s.metric, s.mode, stat.value);
   const detail = {
     year: `${label}: ${value} (${s.year})`,
-    average: `${label}: ${value}, average ${periodLabel(s)}`,
     change: `${label}: ${value}, ${s.rangeStart} → ${s.year}`,
   }[s.mode];
-  const years = s.mode === "average" && stat.yearsWithData < stat.yearsTotal
-    ? `<div class="tooltip-note">Data for ${stat.yearsWithData} of ${stat.yearsTotal} years</div>`
-    : "";
-  return `<strong>${name}</strong><div>${detail}</div>${years}${coverageLine(stat, s.mode)}`;
+  return `<strong>${name}</strong><div>${detail}</div>${coverageLine(stat, s.mode)}`;
 }
 
 export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {

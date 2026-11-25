@@ -10,10 +10,10 @@ const dispatch = d3.dispatch("change");
 export const MAX_COMPARED = 5;
 
 export const state = {
-  year: 2024,                // selected year; end of the range in the Range average and Change modes
+  year: 2024,                // selected year; end of the range in Change mode
   rangeStart: 2000,
   metric: "renewableShare",  // key in METRICS (scales.js)
-  mode: "year",              // "year" | "average" | "change"
+  mode: "year",              // "year" | "change"
   hovered: null,             // key of the highlighted entity
   level: "world",            // "world" | "continent" | "compare" (View C)
   compareFrom: "world",      // level to return to when leaving View C
