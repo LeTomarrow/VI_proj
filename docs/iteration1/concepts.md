@@ -127,7 +127,7 @@ procura cresceu tão depressa que as emissões subiram na mesma.
 - Dataset:
   - OWID Energy, CC BY 4.0;
   - 16 das 130 variáveis;
-  - cerca de 6.600 linhas, 214 países, 1985–2025;
+  - cerca de 6.600 linhas, 214 países, 1985-2025;
   - emissões só a partir de 2000.
 
 ## 8. Perguntas prováveis

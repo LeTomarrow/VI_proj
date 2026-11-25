@@ -1,131 +1,97 @@
 # Green Paradox
 
-Information Visualisation (UA, 2026/2027, 1st semester) — Practical Assignment.
-An application for the visual exploration of a data set, built with [D3.js](https://d3js.org/).
+*Greener, but not cleaner? The global electricity transition, 1985-2025.*
 
-See the full assignment brief in [`docs/guidelines`](docs/guidelines) (PDF).
+Information Visualisation (UA, 2026/2027, 1st semester), practical assignment: a
+[D3.js](https://d3js.org/) application to explore one data set. Brief: [`docs/guidelines`](docs/guidelines) (PDF).
 
-## Theme
+**Objective:** help an energy analyst find out, by continent and then by country, whether the
+growth of low-carbon electricity reduced emissions from electricity, and whether each change
+came from demand or from the mix. Persona and tasks: [`docs/iteration1/01-data-analysis.md`](docs/iteration1/01-data-analysis.md).
 
-Dataset: [Our World in Data — Energy](https://github.com/owid/energy-data) (`data/owid-energy-data.csv`),
-~23k rows × 130 variables covering energy production/consumption/mix by country and year.
+- Plan, status, removed ideas and decisions: [`docs/iteration2/01-integration-plan.md`](docs/iteration2/01-integration-plan.md)
+- Delivery checklist (30/11): [`docs/presentation/checklist-30-11.txt`](docs/presentation/checklist-30-11.txt)
+- Delivery file name: `TP?-GreenParadox-118741+119586` (`?` = class number)
 
-**Greener, but not cleaner? The global electricity transition, 1985–2025.**
+**Group:** Paulo Cunha (118741), Tomás Gameiro (119586).
 
-Objective: help an energy and environment analyst find out, first by continent and then by
-country, whether the growth of low-carbon electricity has reduced emissions from electricity
-generation, and whether each change was driven by demand or by the electricity mix. The persona,
-tasks and scope are in [`docs/iteration1/01-data-analysis.md`](docs/iteration1/01-data-analysis.md).
-
-Current plan, status and decisions: [`docs/iteration2/01-integration-plan.md`](docs/iteration2/01-integration-plan.md).
-Checklist for the final delivery (30/11): [`docs/presentation/checklist-30-11.txt`](docs/presentation/checklist-30-11.txt).
-
-Delivery file name (e-learning): `TP?-GreenParadox-118741+119586` (replace `?` with the class number).
-
-## Group
-
-- Student 1: Paulo Cunha (118741)
-- Student 2: Tomás Gameiro (119586)
-
-## Repository structure
+## Repository
 
 ```
-data/                   Raw dataset(s) used by the application
-  owid-energy-data.csv          OWID Energy dataset
-  owid-continents.csv           OWID country → continent mapping
-  iso-numeric.json              Map polygon ids → OWID country codes (generated)
-  summary.json                  Small summary for the landing page (generated, npm run build:summary)
-  sus-results.json              Anonymous evaluation results shown on the findings page (filled by hand)
+data/
+  owid-energy-data.csv      OWID Energy dataset
+  owid-continents.csv       OWID country to continent mapping
+  iso-numeric.json          Map polygon ids to OWID codes (generated)
+  summary.json              Numbers for the landing page (generated)
+  sus-results.json          Anonymous SUS results for the findings page (filled by hand)
 docs/
-  guidelines            Assignment brief (PDF, as provided by the instructor)
-  iteration1/           1st iteration deliverables (due 26/10)
-    01-data-analysis.md         Data, phenomenon, users, context, key questions
-    02-visualization-choices.md Justified choice of representation/presentation/interaction techniques
-    low-fi-prototype/           Paper or Balsamiq low-fidelity prototype assets
-    03-usability-testing.md     Usability test plan, tasks, and results
-  iteration2/            2nd iteration deliverables (due 30/11)
-    01-integration-plan.md      How iteration-1 feedback fed into the d3.js build; status and decision log
-    02-heuristic-evaluation.md  Heuristic evaluation results
-    03-user-testing.md          Final usability test plan and results
-  presentation/
-    slides/              Final presentation slides
-    video/                Short demo video
-prototype/
-  paper-sketches/         Scans/photos of paper prototypes (if not using Balsamiq)
-scripts/                  Dev-only data preparation (Node), not needed to run the app
-  build-iso-map.mjs             Builds data/iso-numeric.json (map ids → OWID codes)
-  build-summary.mjs             Builds data/summary.json (World and continents, 2000–2024) for the landing
-compose.yaml, nginx.conf   Docker Compose setup to serve the app locally
-src/                      The d3.js application (2nd iteration)
-  index.html                    Landing page: concept, data, how to explore, authors
-  app.html                      The application (Views A, B, C)
-  findings.html                 Conclusions and evaluation results (Forsell, SUS)
-  css/style.css, css/site.css   App styles; landing and findings layout
-  js/main.js                    App entry point
-  js/landing.js, findings.js    Landing and findings pages
-  js/state.js, controls.js   Shared state of the views and the filters that change it
-  js/scales.js, tooltip.js   Metrics, colours and the shared tooltip
-  js/charts/              One module per chart
-  js/data/                 Data loading, preprocessing and the pure helpers of each view
-                            (countryColumns, change, scatter, compare, greenGrowth, sus)
-tests/                    Unit tests (node:test), one file per view, with the task answers on the real data
+  guidelines                Assignment brief (PDF)
+  iteration1/               Due 26/10: data analysis, visualisation choices, paper test,
+                            concepts.md (study notes, in Portuguese), low-fi-prototype/
+  iteration2/               Due 30/11: integration plan, heuristic evaluation, user tests
+  presentation/             Checklist, slides/, video/
+prototype/paper-sketches/   Photos of the iteration-1 paper prototype
+scripts/                    Dev-only data builds (Node): build-iso-map.mjs, build-summary.mjs
+src/
+  index.html                Landing page
+  app.html                  The application (Views A, B, C)
+  findings.html             Conclusions and evaluation results
+  css/                      style.css (app), site.css (landing and findings)
+  js/main.js                App entry point; landing.js, findings.js for the other pages
+  js/state.js, controls.js  Shared view state and the filters that change it
+  js/scales.js, tooltip.js  Metrics, colours, shared tooltip
+  js/charts/                One module per chart
+  js/data/                  Loading, preprocessing and the pure logic of each view
+tests/                      node:test, one file per view, with the task answers on the real data
+compose.yaml, nginx.conf    Docker setup to serve the app
 ```
 
-## Running the application
+## Running
 
-The app is plain HTML/CSS/JS with D3 loaded from a CDN — no build step or install required.
-The simplest way is Docker Compose (nginx serving `src/` and `data/` read-only):
+Plain HTML/CSS/JS with D3 from a CDN: no build step.
 
 ```bash
-docker compose up -d      # then open http://localhost:8002/src/
-docker compose down       # stop
+docker compose up -d      # open http://localhost:8002/src/
+docker compose down
 ```
 
-Without Docker, serve the **repository root** with any static file server (the app loads the
-data from `../data/...` relative to `src/`), e.g.:
+Without Docker, serve the **repository root** (the app reads `../data/`):
 
 ```bash
-python3 -m http.server 8000
-# then open http://localhost:8000/src/ (landing page; the app is /src/app.html)
+python3 -m http.server 8000   # open http://localhost:8000/src/
 ```
 
-To rebuild `data/iso-numeric.json` or `data/summary.json` (only needed if the map or the data
-changes), and to run the tests:
+Rebuild the generated data (only if the map or the data changes) and run the tests:
 
 ```bash
 npm install
-npm run build:iso        # map ids → OWID codes
-npm run build:summary    # small summary for the landing page
+npm run build:iso        # data/iso-numeric.json
+npm run build:summary    # data/summary.json
 npm test                 # node --test tests/
 ```
 
-The tests cover the logic behind each view without a browser, one file per view, each with the
-expected answers of its tasks on the real data: View A (`viewA.test.mjs`: map, Marimekko,
-emissions, T1–T2, plus motion and the landing and findings numbers), View B (`viewB.test.mjs`:
-ranked and sorted bars, scatter, brush, T3–T4) and View C (`viewC.test.mjs`: comparison list,
-radars, rows, decomposition, T6). `helpers.mjs` loads d3 and the real data once per file.
+The tests need no browser. `viewA.test.mjs` covers the map, Marimekko, emissions, T1-T2, motion
+and the landing and findings numbers; `viewB.test.mjs` the bars, scatter, brush, T3-T4;
+`viewC.test.mjs` the comparison, radars, rows, decomposition, T6.
 
 ## Use of AI
 
-AI tools were used as assistants; the students chose the theme, persona, tasks and designs and
-remain responsible for the content, analysis and conclusions.
+The students chose the theme, persona, tasks and designs and are responsible for the content.
 
 | Tool | Used for | Contribution |
 |---|---|---|
-| Claude Code (Anthropic) | Reviewing the docs against the brief, drafting and editing documentation, implementing and refactoring chart code, checking colour palettes for colour blindness | Code and text were reviewed, tested in the browser and changed by the students; design decisions are recorded in the decision log |
+| Claude Code (Anthropic) | Reviewing docs against the brief, drafting and editing docs, writing and refactoring chart code, checking palettes for colour blindness | Students reviewed, tested in the browser and changed the code and text; decisions are in the decision log |
 
 > TODO before delivery: add any other tool used (e.g. ChatGPT, Copilot) and for what.
 
-## Non-original code / libraries
+## Non-original code and libraries
 
-- Data: Our World in Data, *Energy* and *Continents according to Our World in Data*
-  (CC BY 4.0).
+- Data: Our World in Data, *Energy* and *Continents according to Our World in Data* (CC BY 4.0).
 - Base map: [world-atlas](https://github.com/topojson/world-atlas) 2.0.2 (`countries-50m.json`,
-  derived from Natural Earth), read with [topojson-client](https://github.com/topojson/topojson-client).
-- Libraries: [D3.js](https://d3js.org/) v7 and topojson-client v3, loaded from the jsDelivr CDN;
-  [i18n-iso-countries](https://github.com/michaelwittig/node-i18n-iso-countries) (dev only, to build
-  `data/iso-numeric.json`).
-- Methods: LMDI decomposition of emissions (Ang, 2005) in `src/js/data/greenGrowth.js`.
-- Chart bases: D3 examples [World choropleth](https://observablehq.com/@d3/world-choropleth),
-  [Marimekko chart](https://observablehq.com/@d3/marimekko-chart) and
+  from Natural Earth), read with [topojson-client](https://github.com/topojson/topojson-client).
+- Libraries: D3.js v7 and topojson-client v3 from jsDelivr;
+  [i18n-iso-countries](https://github.com/michaelwittig/node-i18n-iso-countries) (dev only).
+- Method: LMDI decomposition (Ang, 2005) in `src/js/data/greenGrowth.js`.
+- Chart bases (D3 examples): [World choropleth](https://observablehq.com/@d3/world-choropleth),
+  [Marimekko chart](https://observablehq.com/@d3/marimekko-chart),
   [Stacked area chart](https://observablehq.com/@d3/stacked-area-chart).

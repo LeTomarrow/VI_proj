@@ -1,101 +1,67 @@
-# 1st Iteration — Usability Testing (Low-Fidelity Prototype)
+# 1st Iteration: Usability Testing (Paper Prototype)
 
-> Covers: "Usability testing of the prototype with users (can be done in class with
-> classmates). Do not forget to define the most important tasks that should be tested with
-> users." Presented in class on **26/10** (second half of class).
+> Brief: "Usability testing of the prototype with users (can be done in class with classmates).
+> Do not forget to define the most important tasks that should be tested with users."
+> Done in class on **26/10**.
 >
-> **Iteration-1 record, kept as it was.** The five views were regrouped into three after the
-> feedback; the current design is in [../iteration2/01-integration-plan.md](../iteration2/01-integration-plan.md).
+> **Iteration-1 record.** The current design is in [../iteration2/01-integration-plan.md](../iteration2/01-integration-plan.md).
 
-## Prototype
+## Prototype and participants
 
-Paper prototype, one sheet per view, with interactions simulated by hand. The sketches are in
-[`../../prototype/paper-sketches/`](../../prototype/paper-sketches).
-
-## Tasks tested
-
-> 1. Pick Selection Mode
-> 2. Select Portugal in the global Map
-> 3. Identify the main source of energy for Portugal in 2020 and in 2024
-> 4. In what year does Solar become noticeable in the chart
-> 5. Did production in Portugal rise or stagnate between 2000 and 2024
-> 6. Related to demand determine if Portugal's energy production is green
-> 7. Pick Comparison Mode
-> 8. Pick Portugal, Denmark and Spain for comparison
-> 9. Determine between the three which is more pollutant
-> 10. Is the biggest total emitter also the biggest emitter per capita
-> 11. Determine which of the three countries has the most green energy in it's production
-> 12. Who has the most "balanced" profile
-
-## Linked Tasks
-
-**"Greener, but not cleaner?" over one decade.** You want to know whether a country that
-became greener in the last decade also became cleaner.
-
-1. **Global Map:** switch to **Change** mode, set the range to **2014–2024**, and select one of
-   the countries whose renewable share grew the most (the darkest green, as opposed to the
-   almost white countries that barely changed).
-2. **Electricity over time:** which source grew the most and made this country greener? Did the
-   columns get wider, that is, did generation grow?
-3. **Emissions:** in 2024, is the country above or below the World's line for emissions per
-   capita?
-4. **Green Growth** (now starting in 2014): did new low-carbon generation cover the growth in
-   demand? Did emissions fall, and was the change driven more by demand or by the mix?
-5. **Country Profiles:** compared with the World's shape (in grey), on which axis does the
-   country stand out the most?
-6. **Conclusion:** did this country become "greener, but not cleaner", or both?
-
-*Success:* the participant finds a country with a large increase, names the source that grew,
-says correctly whether the area between the curves is green or red and which effect (demand
-or mix) is larger, and gives a conclusion consistent with these answers.
-
-*What it tests:*
-1. the Change mode, the diverging scale and country selection;
-2. whether the width of the Marimekko columns is read as generation;
-3. reading the scatter and the World's reference lines;
-4. the difference chart and the decomposition, and the link between the range slider and the
-   start year of Green Growth;
-5. reading the radar and its reference shape;
-6. whether the participant combines the views into one answer.
-
-Expected time: 3 to 5 minutes. If time is short, steps 3 and 5 are the first to drop.
-
-## Participants
-
-Five classmates from the Information Visualisation course, tested in class on 26/10.
+Paper prototype, one sheet per view, interactions simulated by hand
+([`../../prototype/paper-sketches/`](../../prototype/paper-sketches)). Five classmates from the
+course took part.
 
 ## Method
 
-**Think-aloud**, in two phases:
+Think-aloud in two phases: free exploration without help, then the tasks below. Each
+participant ended with free feedback.
 
-1. **Free exploration.** Participants explored the prototype on their own, without help, and
-   said aloud what they saw, what they expected each control to do and what confused them.
-2. **Tasks.** We then asked them to do the simple tasks listed in *Tasks tested*, still
-   thinking aloud.
+## Tasks tested
 
-At the end each participant gave free feedback.
+1. Pick Selection Mode
+2. Select Portugal on the global map
+3. Identify Portugal's main source of energy in 2020 and in 2024
+4. In what year does solar become noticeable in the chart?
+5. Did production in Portugal rise or stagnate between 2000 and 2024?
+6. Relative to demand, is Portugal's production green?
+7. Pick Comparison Mode
+8. Pick Portugal, Denmark and Spain for comparison
+9. Which of the three pollutes the most?
+10. Is the biggest total emitter also the biggest emitter per person?
+11. Which of the three has the most green energy in its production?
+12. Which has the most "balanced" profile?
 
-## Results & findings
+### Linked task: "greener, but not cleaner?" over one decade
 
-Feedback per participant:
+1. **Map:** Change mode, range 2014-2024; select a country whose renewable share grew most.
+2. **Electricity over time:** which source made it greener? Did the columns get wider?
+3. **Emissions:** in 2024, is it above or below the World line for emissions per person?
+4. **Green Growth** (from 2014): did new low-carbon generation cover new demand? Was the
+   emissions change driven more by demand or by the mix?
+5. **Country profiles:** against the World shape, on which axis does it stand out most?
+6. **Conclusion:** "greener, but not cleaner", or both?
+
+*Success:* finds a country with a large gain, names the source, reads the area colour and the
+larger effect correctly, and concludes consistently. It tests the Change mode, Marimekko widths,
+the scatter's World lines, the difference chart and decomposition, the radar reference, and
+whether participants combine views. Expected time 3-5 minutes; steps 3 and 5 drop first.
+
+## Results
 
 | Participant | Feedback |
 |---|---|
-| P1 | Add units to the country profile view. Add a label for the overall (net change) line in the emissions panel of Green Growth. |
-| P2 | Add labels for the areas in the demand / low-carbon panel of Green Growth. Make the units at the bottom of the Energy view more noticeable. |
+| P1 | Add units to the country profiles. Label the net-change line in the Green Growth emissions panel. |
+| P2 | Label the areas of the demand / low-carbon panel. Make the Energy view units more visible. |
 | P3 | The menus were confusing (partly because of the paper format). |
-| P4 | Add a TWh mode to the Energy view, instead of percentages only, to make growth easier to notice. |
-| P5 | Add units to the radar chart. Drop the separate Selection and Comparison modes and use a pop-up to decide whether to compare a country. |
+| P4 | Add a TWh mode to the Energy view; growth is hard to see in % only. |
+| P5 | Add units to the radar. Drop the Selection / Comparison modes; use a pop-up to decide whether to compare. |
 
 Main findings:
 
-- **Missing units and labels** were the most frequent problem (P1, P2, P5): radar axes, the
-  areas of the difference chart, the net-change line of the decomposition, and the units of
-  the Energy view.
-- **Navigation:** the split into a Selection mode and a Comparison mode was confusing (P3, P5).
-- **Energy view:** growth in generation was hard to notice with shares in % only (P4).
+- **Missing units and labels** were the most frequent problem (P1, P2, P5).
+- **Navigation:** separate Selection and Comparison modes confused (P3, P5).
+- **Energy view:** growth hard to see in % only (P4).
 
-## Changes planned for iteration 2
-
-See [`../iteration2/01-integration-plan.md`](../iteration2/01-integration-plan.md) (table
-*Feedback from the iteration-1 usability tests*).
+Changes: table *Feedback from the iteration-1 usability tests* in
+[`../iteration2/01-integration-plan.md`](../iteration2/01-integration-plan.md).
