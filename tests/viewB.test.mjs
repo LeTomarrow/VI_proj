@@ -6,7 +6,7 @@ import { indexByKey, realData, record } from './helpers.mjs';
 
 const { rankedColumns, comparedColumns, rankMax } = await import('../src/js/data/countryColumns.js');
 const { changeRows } = await import('../src/js/data/change.js');
-const { brushedKeys, inRegion, shownAt, validBubble } = await import('../src/js/data/scatter.js');
+const { brushedKeys, inRegion, scatterTrailKeys, shownAt, validBubble } = await import('../src/js/data/scatter.js');
 const { RANKS } = await import('../src/js/scales.js');
 const st = await import('../src/js/state.js');
 const { state, setState } = st;
@@ -160,4 +160,17 @@ test('T4: in Europe, the countries above the World on both axes include Kosovo, 
     .filter((r) => r?.emissionsPerCapita > w.emissionsPerCapita && r.carbonIntensity > w.carbonIntensity)
     .map((r) => r.key);
   for (const key of ['OWID_KOS', 'SRB', 'BIH', 'POL']) assert.ok(dirty.includes(key), `${key} in ${dirty}`);
+});
+
+
+test('scatter paths: Change reveals only the hovered compared country, with no idle clutter', () => {
+  const keys = ['PRT', 'ESP', 'DEU'];
+  const s = { mode: 'change', compared: keys, hovered: null };
+  assert.deepEqual(scatterTrailKeys(keys, s), []);
+  assert.deepEqual(scatterTrailKeys(keys, { ...s, hovered: 'PRT' }), ['PRT']);
+  assert.deepEqual(scatterTrailKeys(keys, { ...s, hovered: 'ESP' }), ['ESP']);
+  assert.deepEqual(scatterTrailKeys(keys, { ...s, hovered: 'FRA' }), []);
+  assert.deepEqual(scatterTrailKeys(['ESP', 'DEU'], { ...s, hovered: 'PRT' }), [], 'no path for a country with no visible bubble');
+  assert.deepEqual(scatterTrailKeys(keys, { ...s, hovered: 'PRT', mode: 'year' }), []);
+  assert.deepEqual(scatterTrailKeys(keys, { ...s, hovered: 'PRT', compared: [] }), []);
 });

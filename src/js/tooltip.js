@@ -1,13 +1,27 @@
 // One tooltip shared by all the charts. Values must be quotable: value, unit and year.
 
+import { outsidePlotPosition } from "./tooltipPosition.js";
+
 const tooltip = d3.select("body").append("div").attr("class", "tooltip").attr("hidden", true);
 
 export function showTooltip(event, html) {
+  tooltip.style("max-width", null).style("max-height", null).style("overflow", null);
   tooltip.attr("hidden", null).html(html);
   const { width, height } = tooltip.node().getBoundingClientRect();
   const x = event.clientX + 14 + width > window.innerWidth ? event.clientX - width - 14 : event.clientX + 14;
   const y = Math.min(event.clientY + 14, window.innerHeight - height - 8);
   tooltip.style("left", `${x}px`).style("top", `${y}px`);
+}
+
+// Scatter cards are anchored to the plot edge, rather than following the mouse.
+export function showTooltipOutsidePlot(plot, html) {
+  tooltip.style("max-width", "260px").style("max-height", null).style("overflow", null)
+    .attr("hidden", null).html(html);
+  const card = tooltip.node().getBoundingClientRect();
+  const position = outsidePlotPosition(plot, card, { width: window.innerWidth, height: window.innerHeight });
+  tooltip.style("left", `${position.x}px`).style("top", `${position.y}px`)
+    .style("max-width", `${Math.min(260, position.maxWidth)}px`)
+    .style("max-height", `${position.maxHeight}px`).style("overflow", "auto");
 }
 
 export function hideTooltip() {

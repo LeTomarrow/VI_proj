@@ -6,10 +6,10 @@
 import { COMPLETE_YEARS } from "../data/constants.js";
 import { openEntityMenu } from "../entityMenu.js";
 import { NO_DATA } from "../scales.js";
-import { inRegion, MIN_EMISSIONS, scatterComparedCountries, shownAt, validBubble } from "../data/scatter.js";
+import { inRegion, MIN_EMISSIONS, scatterComparedCountries, scatterTrailKeys, shownAt, validBubble } from "../data/scatter.js";
 import { addCompared, MAX_COMPARED, setState } from "../state.js";
 import { tween } from "../motion.js";
-import { hideTooltip, showTooltip } from "../tooltip.js";
+import { hideTooltip, showTooltipOutsidePlot } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
 
 const MARGIN = { top: 14, right: 28, bottom: 40, left: 58 };
@@ -33,22 +33,12 @@ const QUADRANTS = [
   { left: false, top: false, text: "Clean grid, high use per person", cls: "" },
 ];
 
-function versusWorld(r, w) {
-  if (!validBubble(w)) return "";
-  const perPerson = r.emissionsPerCapita < w.emissionsPerCapita ? "lower" : "higher";
-  const intensity = r.carbonIntensity < w.carbonIntensity ? "lower" : "higher";
-  return `<div class="tooltip-note">vs World: ${perPerson} per person, ${intensity} per kWh</div>`;
-}
-
-function tooltipHtml(r, w) {
+function tooltipHtml(r) {
   const row = (label, value) => `<div class="tooltip-row"><span>${label}</span><span>${value}</span></div>`;
   return `<strong>${r.name}, ${r.year}</strong>`
-    + row("Emissions per person", `${fmt(2)(r.emissionsPerCapita)} t CO₂e`)
-    + row("Carbon intensity", `${fmt(0)(r.carbonIntensity)} gCO₂e/kWh`)
-    + row("Total emissions", `${fmt(1)(r.emissions)} Mt CO₂e`)
-    + row("Renewable share", r.renewableShare === null ? "no data" : `${fmt(1)(r.renewableShare)}%`)
-    + versusWorld(r, w)
-    + `<div class="tooltip-note">From electricity generation. Click for details or + Compare</div>`;
+    + row("CO₂e/person", `${fmt(2)(r.emissionsPerCapita)} t`)
+    + row("CO₂e/kWh", `${fmt(0)(r.carbonIntensity)} g`)
+    + row("Renewable share", r.renewableShare === null ? "no data" : `${fmt(1)(r.renewableShare)}%`);
 }
 
 export function createBubbleScatter(selector, { countries, world, countriesOf }) {
@@ -213,8 +203,8 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
         .attr("y", (q) => (q.top ? 10 : innerH - 6));
     }
 
-    // Path of each compared country over the range, from a hollow start dot to its bubble.
-    const comparedHere = s.mode === "year" ? [] : s.compared.filter((k) => keys.includes(k));
+    // Hover reveals a single history, avoiding overlapping trails for the whole comparison.
+    const comparedHere = scatterTrailKeys(shown.map((r) => r.key), s);
     const trailData = comparedHere.map((key) => ({
       key,
       path: d3.range(s.rangeStart, s.year + 1).map((yr) => byCountry.get(key)?.get(yr)).filter(validBubble),
@@ -318,7 +308,11 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
         const p = nearest(event);
         const key = p?.r.key ?? null;
         if (key !== hoveredKey) { hoveredKey = key; setState({ hovered: key }); }
-        if (p) showTooltip(event, tooltipHtml(p.r, w));
+        if (p) {
+          const box = svg.node().getBoundingClientRect();
+          showTooltipOutsidePlot({ left: box.left + MARGIN.left, right: box.right - MARGIN.right,
+            top: box.top + MARGIN.top, bottom: box.bottom - MARGIN.bottom }, tooltipHtml(p.r));
+        }
         else hideTooltip();
         brushLayer.select(".overlay").style("cursor", p ? "pointer" : null);
       })

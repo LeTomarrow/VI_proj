@@ -30,3 +30,9 @@ export function brushedKeys(keys, byCountry, s) {
     return shownAt(r, s) && inRegion(r, b);
   }));
 }
+
+// One history at a time: only the hovered, visible compared country in Change mode.
+export function scatterTrailKeys(keys, s) {
+  return s.mode === "change" && s.hovered && scatterComparedCountries(s).includes(s.hovered)
+    && keys.includes(s.hovered) ? [s.hovered] : [];
+}
