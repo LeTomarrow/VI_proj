@@ -160,10 +160,13 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     radius.domain(d.r);
     const comparedCountries = scatterComparedCountries(s);
     const comparing = comparedCountries.length > 0;
-    const keys = (countriesOf.get(s.continent) ?? []).filter((key) => !comparing || comparedCountries.includes(key));
-    filterButtons.attr("aria-pressed", ([n]) => String(n === (comparing ? 0 : (s.scatterMin ?? 0))))
-      .property("disabled", comparing)
-      .attr("title", ([n]) => comparing ? "All compared countries with data are shown. Clear the comparison to filter all countries."
+    // Comparing: only the compared countries, plus the brushed group while there is a brush.
+    const keys = (countriesOf.get(s.continent) ?? [])
+      .filter((key) => !comparing || comparedCountries.includes(key) || !!s.brushed?.has(key));
+    const filterOff = comparing && !s.brushed;
+    filterButtons.attr("aria-pressed", ([n]) => String(n === (filterOff ? 0 : (s.scatterMin ?? 0))))
+      .property("disabled", filterOff)
+      .attr("title", ([n]) => filterOff ? "All compared countries with data are shown. Clear the comparison to filter all countries."
         : n ? `Only countries emitting at least ${n} Mt CO₂e from electricity` : "Every country with data");
     const ofYear = keys.map((k) => byCountry.get(k)?.get(s.year)).filter(validBubble);
     const shown = ofYear.filter((r) => shownAt(r, s));
@@ -175,7 +178,8 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
 
     note.text(s.year < COMPLETE_YEARS[0]
       ? `No emissions data before ${COMPLETE_YEARS[0]}. Move the year slider to ${COMPLETE_YEARS[0]} or later.`
-      : [comparing ? "Showing compared countries only. Clear the comparison to show all countries again." : "",
+      : [comparing ? (s.brushed ? "Showing the selected and compared countries. Click outside the box to clear the selection."
+        : "Showing compared countries only. Clear the comparison to show all countries again.") : "",
         withGeneration > ofYear.length ? `${withGeneration - ofYear.length} of ${withGeneration} countries have no emissions data in ${s.year}.` : "",
         hidden ? `${hidden} smaller emitters hidden (Show).` : ""].filter(Boolean).join(" "));
     svg.attr("aria-label", `Bubble scatter of ${points.length} countries of ${s.continent} in ${s.year}: emissions per person, carbon intensity and total emissions.`);
@@ -197,10 +201,14 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
       worldX.attr("x1", wx).attr("x2", wx).attr("y1", 0).attr("y2", innerH);
       worldY.attr("x1", 0).attr("x2", innerW).attr("y1", wy).attr("y2", wy);
       worldLabel.attr("x", innerW).attr("y", wy - 4);
-      // Each label in the outer corner of its quadrant.
+      // Each label in the outer corner of its quadrant. On a narrow plot, a row whose two labels
+      // would overlap keeps only the bold one (cleaner / more polluting than the World).
       quadrants
         .attr("x", (q) => (q.left ? 6 : innerW - 4))
         .attr("y", (q) => (q.top ? 10 : innerH - 6));
+      const widthOf = new Map(quadrants.nodes().map((n, i) => [QUADRANTS[i], n.getComputedTextLength()]));
+      const rowFits = (top) => d3.sum(QUADRANTS.filter((q) => q.top === top), (q) => widthOf.get(q)) + 24 <= innerW;
+      quadrants.attr("display", (q) => (q.cls || rowFits(q.top) ? null : "none"));
     }
 
     // Hover reveals a single history, avoiding overlapping trails for the whole comparison.
@@ -228,7 +236,8 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
       .attr("class", "bubble")
       .classed("is-compared", (p) => s.compared.includes(p.r.key))
       .classed("is-hovered", (p) => p.r.key === s.hovered)
-      .classed("is-outside", (p) => !!s.brushed && !s.brushed.has(p.r.key) && p.r.key !== s.hovered);
+      .classed("is-outside", (p) => !!s.brushed && !s.brushed.has(p.r.key) && p.r.key !== s.hovered
+        && !s.compared.includes(p.r.key));
     // Marked bubbles on top, so their outline is never covered.
     bubbles.selectAll("circle.is-compared, circle.is-hovered").raise();
 
@@ -237,7 +246,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     const free = MAX_COMPARED - compared.length;
     const brushedNew = s.brushed ? points.filter((p) => s.brushed.has(p.r.key) && !s.compared.includes(p.r.key)) : [];
     toCompare = brushedNew.map((p) => p.r.key);
-    compareButton.attr("hidden", s.brushed && !comparing ? null : true)
+    compareButton.attr("hidden", s.brushed ? null : true)
       .property("disabled", !brushedNew.length || free <= 0)
       .text(!brushedNew.length ? "+ Compare: all selected are compared"
         : free <= 0 ? `+ Compare: list full (${compared.length})`

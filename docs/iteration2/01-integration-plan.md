@@ -48,7 +48,8 @@ site has three pages: landing (`index.html`), app (`app.html`), findings (`findi
 - **Comparison list**: chips in the sticky filter bar; *Compare* opens View C. World keeps only
   continents; a continent keeps only its countries; View C and the way back keep the list.
 - **Brush** (scatter only) highlights the group in every View B chart; *+ Compare* adds it,
-  largest emitters first, up to 5.
+  largest emitters first, up to 5. The brush and the comparison are independent: while both
+  exist, the scatter and the sorted bars show the brushed group plus the compared countries.
 - **Compared entities** have an outline and ✓ in A and B, and a fixed colour in View C and the chips.
 - **Breadcrumb**: World › Europe › Compare; leaving View C returns to the previous level.
 - **One year in View C**: the three columns share the range's time axis. Hovering a row shows
@@ -144,6 +145,15 @@ replaced them; the *Removed* table keeps what was dropped.
   would read as lower); the emissions chart switches to one line per compared continent.
 - **Brush (B)**: a region in data units, so it follows the year; *+ Compare* adds the group,
   largest emitters first, up to 5 (10 would need 10 colour-blind-safe colours).
+- **Brush with a comparison (user test)**: adding one country to the comparison switched the
+  scatter to compared-only, which emptied the brush ("0 countries selected"). Now the brush
+  ignores the comparison: with both, the scatter and bars show the brushed group plus the
+  compared countries; without a brush, compared-only as before. Compared countries are never
+  faded by the brush (they were near invisible in the bars). An empty brush counts as no brush
+  (it faded every chart and emptied the bars). Narrow scatter: a row of quadrant labels that
+  would overlap keeps only the bold one. Mix chart: a brushed group outside the Top N faded every
+  column; now its countries follow the compared ones on the right (up to 5, by the ranking). Showing every country was
+  rejected (overlapping bubbles); the limit stays 5, and only the comparison goes to View C.
 - **Motion**: 500 ms ease-out; marks move only when the data changes, never on hover; keyed
   joins; the drill-down zooms the map (700 ms); off under `prefers-reduced-motion`.
 

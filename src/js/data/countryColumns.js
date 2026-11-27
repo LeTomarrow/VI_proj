@@ -1,6 +1,6 @@
 // Columns of View B's mix chart (bars + mix), in the order of the chosen ranking (rank, from RANKS
-// in scales.js). rankedColumns: the continent's ranked top N, then the compared countries outside
-// it; comparedColumns: the compared countries only, from any continent.
+// in scales.js). rankedColumns: the continent's ranked top N, then the compared and brushed
+// countries outside it; comparedColumns: the compared countries only, from any continent.
 
 import { metricValue } from "./metrics.js";
 
@@ -12,16 +12,26 @@ function byRank(byCountry, keys, rank, s) {
     .sort((a, b) => rank.value(b) - rank.value(a) || b.generation - a.generation);
 }
 
+// Brushed countries outside the top N shown on the right, at most (more would make the columns
+// too narrow; the scatter shows the whole group).
+export const MAX_BRUSHED_EXTRA = 5;
+
 // Top N by the ranked value (only countries that have some), then the compared countries outside
-// it. position: rank of each shown country among the continent's countries.
-export function rankedColumns({ byCountry, keys, compared, rank }, s, n) {
+// it, then the brushed ones outside it (highest ranked first, up to MAX_BRUSHED_EXTRA).
+// position: rank of each shown country among the continent's countries. brushedHidden: brushed
+// countries with data that did not fit.
+export function rankedColumns({ byCountry, keys, compared, rank, brushed = null }, s, n) {
   const ofYear = byRank(byCountry, keys, rank, s);
   const top = ofYear.filter((r) => rank.value(r) > 0).slice(0, n);
-  const extra = ofYear.filter((r) => compared.includes(r.key) && !top.includes(r));
+  const outside = ofYear.filter((r) => !top.includes(r));
+  const comparedExtra = outside.filter((r) => compared.includes(r.key));
+  const brushedExtra = outside.filter((r) => brushed?.has(r.key) && !compared.includes(r.key));
+  const extra = [...comparedExtra, ...brushedExtra.slice(0, MAX_BRUSHED_EXTRA)];
   const shown = [...top, ...extra];
   return {
     records: top,
     extra,
+    brushedHidden: Math.max(0, brushedExtra.length - MAX_BRUSHED_EXTRA),
     stats: new Map(shown.map((r) => [r.key, metricValue(byCountry.get(r.key), s)])),
     position: new Map(shown.map((r) => [r.key, ofYear.indexOf(r) + 1])),
     total: ofYear.length,

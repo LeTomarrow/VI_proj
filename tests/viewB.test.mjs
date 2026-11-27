@@ -42,6 +42,16 @@ test('ranked columns: compared countries outside the top N follow on the right',
   assert.ok(cols.stats.has('MLT'));
 });
 
+test('ranked columns: brushed countries outside the top N follow the compared ones, up to 5', () => {
+  const cols = rankedColumns({ byCountry, keys, compared: ['MLT'], rank: rank('generation'), brushed: new Set(['PRT', 'FRA']) }, s2024, 1);
+  assert.deepEqual(cols.records.map((r) => r.key), ['FRA'], 'a brushed country in the top N stays there');
+  assert.deepEqual(cols.extra.map((r) => r.key), ['MLT', 'PRT']);
+  assert.equal(cols.brushedHidden, 0);
+  const many = rankedColumns({ byCountry, keys, compared: [], rank: rank('generation'), brushed: new Set(keys) }, s2024, 0);
+  assert.equal(many.extra.length + many.brushedHidden, keys.length);
+  assert.ok(many.extra.length <= 5);
+});
+
 test('compared view: only the compared countries, ranked, with their rank in their continent', () => {
   const cols = comparedColumns({ byCountry, countriesOf, compared: ['PRT', 'DEU'], rank: rank('lowCarbon') }, s2024);
   assert.deepEqual(cols.records.map((r) => r.key), ['DEU', 'PRT']);
@@ -91,11 +101,16 @@ test('scatter: country comparisons filter bubbles; clearing restores the saved e
   assert.equal(shownAt({ ...portugal, emissions: null }, s), false, 'missing emissions remain unavailable');
 });
 
-test('brush: unselected countries cannot be brushed while comparing countries', () => {
-  const records = [record({ key: 'PRT', gas: 10, emissions: 5 }), record({ key: 'DEU', coal: 100, emissions: 80 })];
-  const s = { level: 'continent', continent: 'Europe', year: 2024, compared: ['PRT'],
-    brush: { continent: 'Europe', x: [0, 1000], y: [0, 2000] } };
-  assert.deepEqual([...brushedKeys(['PRT', 'DEU'], indexByKey(records), s)], ['PRT']);
+test('brush: the group ignores the comparison; while both exist, the scatter shows both', () => {
+  const records = [record({ key: 'PRT', gas: 10, emissions: 5 }), record({ key: 'DEU', coal: 100, emissions: 80 }),
+    record({ key: 'FRA', nuclear: 100, emissions: 2 })];
+  const s = { level: 'continent', continent: 'Europe', year: 2024, compared: ['FRA'],
+    brush: { continent: 'Europe', x: [0, 1000], y: [100, 2000] } };
+  const brushed = brushedKeys(['PRT', 'DEU', 'FRA'], indexByKey(records), s);
+  assert.deepEqual([...brushed].sort(), ['DEU', 'PRT']);
+  assert.deepEqual(records.filter((r) => shownAt(r, { ...s, brushed })).map((r) => r.key), ['PRT', 'DEU', 'FRA']);
+  assert.deepEqual(records.filter((r) => shownAt(r, s)).map((r) => r.key), ['FRA'], 'no brush: compared only');
+  assert.deepEqual(changeCountryKeys(['PRT', 'DEU', 'FRA'], ['FRA'], new Set(['PRT'])), ['PRT', 'FRA']);
 });
 
 test('brush: a region in data units; follows the year; ignored on another continent', () => {
@@ -108,10 +123,10 @@ test('brush: a region in data units; follows the year; ignored on another contin
   const brush = { continent: 'Europe', x: [1, 20], y: [500, 1200] };
   const s = { level: 'continent', continent: 'Europe', year: 2024, brush, scatterMin: 0 };
   assert.deepEqual([...brushedKeys(['POL', 'SWE'], by, s)], ['POL']);
-  assert.deepEqual([...brushedKeys(['POL', 'SWE'], by, { ...s, year: 2000 })], [], 'in 2000 Poland is outside the box');
+  assert.equal(brushedKeys(['POL', 'SWE'], by, { ...s, year: 2000 }), null, 'in 2000 the box is empty: no brush');
   assert.equal(brushedKeys(['POL'], by, { ...s, continent: 'Asia' }), null);
   assert.equal(brushedKeys(['POL'], by, { ...s, brush: null }), null);
-  assert.deepEqual([...brushedKeys(['POL'], by, { ...s, scatterMin: 10 })], [], 'hidden countries are not selected');
+  assert.equal(brushedKeys(['POL'], by, { ...s, scatterMin: 10 }), null, 'hidden countries are not selected');
   assert.equal(inRegion(recs[0], brush), true);
 });
 
@@ -120,6 +135,7 @@ test('outside the brush: a summed column is inside if any of its countries is', 
   assert.equal(st.isOutsideBrush(['ESP'], s), true);
   assert.equal(st.isOutsideBrush(['ESP', 'PRT'], s), false);
   assert.equal(st.isOutsideBrush(['ESP'], { brushed: null }), false);
+  assert.equal(st.isOutsideBrush(['ESP'], { ...s, compared: ['ESP'] }), false, 'compared countries are never faded');
 });
 
 test('a second compared country switches the mix chart to the compared countries', () => {

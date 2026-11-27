@@ -99,7 +99,7 @@ async function init() {
       continentRecord,
     } : atCountries ? {
       view: "top",
-      columns: rankedColumns({ byCountry, keys, compared: s.compared, rank }, s, s.mekkoTop ?? 10),
+      columns: rankedColumns({ byCountry, keys, compared: s.compared, rank, brushed: s.brushed }, s, s.mekkoTop ?? 10),
       max: rankMaxOf(s.continent, rank),
       continentRecord,
     } : null;
@@ -125,7 +125,12 @@ async function init() {
         : `Top ${s.mekkoTop ?? 10} by ${rank.name}, ${s.continent}, ${s.year}`);
     const dashed = rank.groups.length && ranking?.columns.records.every((r) => r.continent === s.continent)
       ? ` (dashed = ${s.continent})` : "";
-    const extraNote = ranking?.columns.extra.length ? " Compared countries outside it on the right." : "";
+    const extraKeys = ranking?.columns.extra.map((r) => r.key) ?? [];
+    const extraWho = [extraKeys.some((k) => s.compared.includes(k)) && "compared",
+      extraKeys.some((k) => !s.compared.includes(k)) && "selected"].filter(Boolean).join(" and ");
+    const hiddenBrushed = ranking?.columns.brushedHidden ?? 0;
+    const extraNote = (extraWho ? ` ${extraWho[0].toUpperCase()}${extraWho.slice(1)} countries outside it on the right.` : "")
+      + (hiddenBrushed ? ` ${hiddenBrushed} more selected not shown (see the scatter).` : "");
     d3.select("#marimekko-how-to-read").text(!atCountries
       ? `Width = total generation, height = share of each source${atBase}.`
       : `Bars = TWh; columns = share of each source${atBase}${dashed}.${onlyCompared ? "" : extraNote}`);
@@ -146,9 +151,9 @@ async function init() {
     d3.select("#scatter-title").text(`Emissions from electricity by country, ${s.continent}, ${s.year}`);
     d3.select("#scatter-how-to-read").text("Area = total emissions. "
       + (s.mode === "year" ? "Compared countries are outlined." : `Hover a compared country to see its path since ${s.rangeStart}.`)
-      + (s.brushed ? ` ${s.brushed.size} countries selected (dashed on the map); ${comparedCountries.length ? "click outside the box to clear the selection." : "+ Compare adds them; click outside the box or Clear all to clear."}`
-        : comparedCountries.length ? " Drag to select among the compared countries." : " Drag to select a group in every chart."));
-    d3.select("#bars-title").text(`Change by ${comparedCountries.length ? "compared countries" : `country, ${s.continent}`}, ${s.rangeStart}-${s.year}`);
+      + (s.brushed ? ` ${s.brushed.size} countries selected (dashed on the map); + Compare adds them; click outside the box${comparedCountries.length ? "" : " or Clear all"} to clear.`
+        : comparedCountries.length ? " Drag to select a group next to the compared countries." : " Drag to select a group in every chart."));
+    d3.select("#bars-title").text(`Change by ${comparedCountries.length ? (s.brushed ? "selected and compared countries" : "compared countries") : `country, ${s.continent}`}, ${s.rangeStart}-${s.year}`);
     d3.select("#bars-how-to-read").text(`Sorted from the ${s.barsSort === "asc" ? "smallest" : "largest"} renewable gain; dashed line = World. CO₂e: ▼ fell, ▲ rose.`);
 
     map.update(mapStats, s);
