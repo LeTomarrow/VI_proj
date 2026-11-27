@@ -96,7 +96,7 @@ site has three pages: landing (`index.html`), app (`app.html`), findings (`findi
 | M5 Labels and units | Done for A, B and C |
 | M6 Animations | Done (`motion.js`): year, reorder, map zoom, View C entrance; off under reduced motion |
 | M7 Other continents at country level | Future work |
-| M8 Heuristic evaluation + user tests with SUS | In progress: heuristic findings being collected ([02-](02-heuristic-evaluation.md)); user tests planned ([03-](03-user-testing.md)) |
+| M8 Heuristic evaluation + user tests with SUS | In progress: both heuristic reviews recorded (22 findings; consolidation pending, [02-](02-heuristic-evaluation.md)); user tests planned ([03-](03-user-testing.md)) |
 | M9 Website, slides, video | Landing and findings done (read `data/summary.json` and `data/sus-results.json`, not the CSV). Slides and video planned ([checklist](../presentation/checklist-30-11.txt)) |
 
 ## Decision log

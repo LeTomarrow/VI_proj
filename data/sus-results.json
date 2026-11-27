@@ -1,6 +1,68 @@
 {
-  "about": "Anonymous results of the iteration-2 evaluation. sus: one entry per participant, the 10 SUS answers (1-5) in item order; the page computes the score. heuristics: merged Forsell problems per heuristic. Fill after the tests (docs/iteration2/02- and 03-).",
+  "about": "Anonymous iteration-2 results. sus: one entry per participant, with 10 SUS answers (1-5) in item order. heuristics: counts of recorded evaluator findings per heuristic; see docs/iteration2/02-heuristic-evaluation.md for review and consolidation status.",
   "testsDate": null,
   "sus": [],
-  "heuristics": []
+  "heuristics": [
+    {
+      "id": "H1",
+      "name": "Information coding",
+      "problems": 8,
+      "maxSeverity": 3
+    },
+    {
+      "id": "H2",
+      "name": "Minimal actions",
+      "problems": 0,
+      "maxSeverity": null
+    },
+    {
+      "id": "H3",
+      "name": "Flexibility",
+      "problems": 0,
+      "maxSeverity": null
+    },
+    {
+      "id": "H4",
+      "name": "Orientation and help",
+      "problems": 2,
+      "maxSeverity": 2
+    },
+    {
+      "id": "H5",
+      "name": "Spatial organisation",
+      "problems": 6,
+      "maxSeverity": 3
+    },
+    {
+      "id": "H6",
+      "name": "Consistency",
+      "problems": 2,
+      "maxSeverity": 2
+    },
+    {
+      "id": "H7",
+      "name": "Recognition rather than recall",
+      "problems": 0,
+      "maxSeverity": null
+    },
+    {
+      "id": "H8",
+      "name": "Prompting",
+      "problems": 3,
+      "maxSeverity": 3
+    },
+    {
+      "id": "H9",
+      "name": "Remove the extraneous",
+      "problems": 0,
+      "maxSeverity": null
+    },
+    {
+      "id": "H10",
+      "name": "Data set reduction",
+      "problems": 1,
+      "maxSeverity": 3
+    }
+  ],
+  "heuristicsStatus": "Independent reviews recorded: E1 (16 findings) and E2 (6 findings). Deduplication and joint severity agreement pending."
 }
