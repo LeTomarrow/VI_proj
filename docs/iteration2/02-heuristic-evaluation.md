@@ -56,7 +56,15 @@ important).
 | 9 | H5 B3 Spatial organisation | Compare: radars vs rows | Hovering a row redraws the radars for that year, but the radars are at the top and the rows below, off screen, so the link is lost: both are never visible at once | E1 | 2 | |
 | 10 | H6 E16 Consistency | Compare: rows, "Why did CO₂e change?" (T6) | Orange means "More or less electricity" in this column, but Gas in the mix column of the same row: one colour, two meanings side by side | E1 | 2 | |
 | 11 | H1 B5 Information coding | Continent: sorted bars, CO₂e column | Gibraltar shows "▲ 0%": an up arrow for no change is misleading (should be "0%" with no arrow) | E1 | 1 | |
-| 12 | | | | | | |
+| 12 | H10 B9 Data set reduction | Continent: bubble scatter (Asia, brush + comparison) | Adding one country to the comparison switched the scatter to compared-only, which emptied the brushed group ("0 countries selected"), so a brush and a comparison could not be used together | E1 | 3 | Brush and comparison are independent: with both, the scatter and the sorted bars show the brushed group plus the compared countries |
+| 13 | H1 B5 Information coding | Continent: sorted bars (Europe, Russia compared, brush) | A compared country outside the brush was faded like any other, so Russia's bar, arrow and name were near invisible | E1 | 2 | Compared and hovered countries are never faded by the brush, in every chart |
+| 14 | H4 B7 Orientation and help | Continent: all charts (Europe, empty brush) | A brush box with no country inside still counted as a selection: every chart faded and the sorted bars were empty ("0 of 40 countries") | E1 | 2 | An empty brush counts as no brush; the box stays and fills again if the year brings countries into it |
+| 15 | H5 B3 Spatial organisation | Continent: mix chart (Asia, Top 5, brush) | When the brushed countries were not in the Top N, all columns faded and the chart showed nothing of the group | E1 | 2 | Brushed countries outside the Top N follow on the right (up to 5, by the ranking), with a note for the rest |
+| 16 | H5 B3 Spatial organisation | Continent: bubble scatter (narrow screen) | The two quadrant labels of a row overlapped ("Carbon-heavy grid, low use per person" over "More polluting than the World") | E1 | 1 | A row whose labels would overlap keeps only the bold one |
+| 17 | | | | | | |
+
+#12-16 were found in the free pass (step 1 of the procedure), not while running a task, so
+they say nothing about how well T1-T6 are answered.
 
 ## Summary per heuristic
 
@@ -78,3 +86,5 @@ important).
 Severity 3-4 are fixed before the user tests; 1-2 if time allows, otherwise listed as future
 work. Each fix gets a line in the decision log of
 [01-integration-plan.md](01-integration-plan.md).
+
+- **#12-16** (brush and comparison): fixed; decision log entry "Brush with a comparison".

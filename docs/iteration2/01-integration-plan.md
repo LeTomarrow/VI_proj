@@ -145,7 +145,7 @@ replaced them; the *Removed* table keeps what was dropped.
   would read as lower); the emissions chart switches to one line per compared continent.
 - **Brush (B)**: a region in data units, so it follows the year; *+ Compare* adds the group,
   largest emitters first, up to 5 (10 would need 10 colour-blind-safe colours).
-- **Brush with a comparison (user test)**: adding one country to the comparison switched the
+- **Brush with a comparison (heuristic evaluation #12-16)**: adding one country to the comparison switched the
   scatter to compared-only, which emptied the brush ("0 countries selected"). Now the brush
   ignores the comparison: with both, the scatter and bars show the brushed group plus the
   compared countries; without a brush, compared-only as before. Compared countries are never
