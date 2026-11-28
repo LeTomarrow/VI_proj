@@ -101,16 +101,19 @@ test('scatter: country comparisons filter bubbles; clearing restores the saved e
   assert.equal(shownAt({ ...portugal, emissions: null }, s), false, 'missing emissions remain unavailable');
 });
 
-test('brush: the group ignores the comparison; while both exist, the scatter shows both', () => {
+test('brush: comparison restricts selection and never reveals background countries', () => {
   const records = [record({ key: 'PRT', gas: 10, emissions: 5 }), record({ key: 'DEU', coal: 100, emissions: 80 }),
     record({ key: 'FRA', nuclear: 100, emissions: 2 })];
-  const s = { level: 'continent', continent: 'Europe', year: 2024, compared: ['FRA'],
+  const by = indexByKey(records);
+  const keys = ['PRT', 'DEU', 'FRA'];
+  const s = { level: 'continent', continent: 'Europe', year: 2024, compared: ['PRT', 'FRA'], scatterMin: 10,
     brush: { continent: 'Europe', x: [0, 1000], y: [100, 2000] } };
-  const brushed = brushedKeys(['PRT', 'DEU', 'FRA'], indexByKey(records), s);
-  assert.deepEqual([...brushed].sort(), ['DEU', 'PRT']);
-  assert.deepEqual(records.filter((r) => shownAt(r, { ...s, brushed })).map((r) => r.key), ['PRT', 'DEU', 'FRA']);
-  assert.deepEqual(records.filter((r) => shownAt(r, s)).map((r) => r.key), ['FRA'], 'no brush: compared only');
-  assert.deepEqual(changeCountryKeys(['PRT', 'DEU', 'FRA'], ['FRA'], new Set(['PRT'])), ['PRT', 'FRA']);
+  const brushed = brushedKeys(keys, by, s);
+  assert.deepEqual([...brushed], ['PRT'], 'only compared countries can enter the brush, including small emitters');
+  assert.deepEqual(records.filter((r) => shownAt(r, { ...s, brushed })).map((r) => r.key), ['PRT', 'FRA']);
+  assert.equal(shownAt(records[1], { ...s, brushed: new Set(['DEU']) }), false, 'stale brushes cannot reveal an unselected country');
+  assert.deepEqual([...brushedKeys(keys, by, { ...s, compared: ['FRA'] })], [], 'a brush covering only hidden countries is empty');
+  assert.deepEqual([...brushedKeys(keys, by, { ...s, compared: [] })], ['DEU'], 'clearing comparison restores the Show filter');
 });
 
 test('brush: a region in data units; follows the year; ignored on another continent', () => {
@@ -135,7 +138,7 @@ test('outside the brush: a summed column is inside if any of its countries is', 
   assert.equal(st.isOutsideBrush(['ESP'], s), true);
   assert.equal(st.isOutsideBrush(['ESP', 'PRT'], s), false);
   assert.equal(st.isOutsideBrush(['ESP'], { brushed: null }), false);
-  assert.equal(st.isOutsideBrush(['ESP'], { ...s, compared: ['ESP'] }), false, 'compared countries are never faded');
+  assert.equal(st.isOutsideBrush(['ESP'], { ...s, compared: ['ESP'] }), true, 'comparison does not override the brush');
 });
 
 test('a second compared country switches the mix chart to the compared countries', () => {
@@ -199,4 +202,44 @@ test('country-change selection shows only compared countries and restores the co
   assert.deepEqual(changeCountryKeys(keys, []), keys);
   assert.deepEqual(changeCountryKeys(keys, ['Europe']), keys);
   assert.deepEqual(changeCountryKeys(keys, ['CHN']), [], 'countries outside the continent are not added');
+});
+
+
+test('comparison brushing keeps outside bubbles available for fading without changing the list', () => {
+  const records = [record({ key: 'PRT', gas: 10, emissions: 5 }), record({ key: 'FRA', nuclear: 100, emissions: 2 }),
+    record({ key: 'DEU', coal: 100, emissions: 80 })];
+  const by = indexByKey(records);
+  const keys = records.map((r) => r.key);
+  const s = { level: 'continent', continent: 'Europe', year: 2024, compared: ['PRT', 'FRA'], scatterMin: 10,
+    brush: { continent: 'Europe', x: [0, 1000], y: [100, 2000] } };
+  const visible = (state) => records.filter((r) => shownAt(r, state)).map((r) => r.key);
+  assert.deepEqual(visible(s), ['PRT', 'FRA']);
+  const expanded = { ...s, brush: { ...s.brush, y: [0, 2000] } };
+  assert.deepEqual(visible(expanded), ['PRT', 'FRA']);
+  assert.deepEqual([...brushedKeys(keys, by, expanded)], ['PRT', 'FRA']);
+  const empty = { ...s, brush: { ...s.brush, x: [900, 1000] } };
+  assert.deepEqual(visible(empty), ['PRT', 'FRA']);
+  assert.deepEqual([...brushedKeys(keys, by, empty)], []);
+  assert.deepEqual(visible({ ...empty, brush: null }), ['PRT', 'FRA']);
+  assert.deepEqual(s.compared, ['PRT', 'FRA'], 'brushing does not change the comparison list');
+});
+
+
+test('comparison brush coordinates scatter, country-change rows and Marimekko without altering comparison', () => {
+  const records = [record({ key: 'PRT', gas: 10, emissions: 5 }), record({ key: 'FRA', nuclear: 100, emissions: 2 }),
+    record({ key: 'DEU', coal: 100, emissions: 80 })];
+  const by = indexByKey(records);
+  const keys = records.map((r) => r.key);
+  const s = { ...s2024, level: 'continent', continent: 'Europe', compared: ['PRT', 'FRA'],
+    brush: { continent: 'Europe', x: [0, 1000], y: [100, 2000] } };
+  const brushed = brushedKeys(keys, by, s);
+  const active = { ...s, brushed };
+  assert.deepEqual(changeCountryKeys(keys, s.compared, brushed), ['PRT']);
+  assert.equal(st.isOutsideBrush(['PRT'], active), false);
+  assert.equal(st.isOutsideBrush(['FRA'], active), true, 'Marimekko fades the outside compared country');
+  assert.deepEqual(records.filter((r) => shownAt(r, active)).map((r) => r.key), ['PRT', 'FRA'], 'scatter keeps outside bubbles available for fading');
+  assert.deepEqual(changeCountryKeys(keys, s.compared, new Set()), [], 'empty brush gives no change rows');
+  assert.deepEqual(changeCountryKeys(keys, s.compared, null), ['PRT', 'FRA'], 'clearing restores both rows');
+  assert.equal(st.isOutsideBrush(['FRA'], { ...s, brushed: null }), false);
+  assert.deepEqual(s.compared, ['PRT', 'FRA']);
 });

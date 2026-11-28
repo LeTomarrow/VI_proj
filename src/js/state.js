@@ -55,9 +55,9 @@ export function isDimmed(key, s, shown) {
 
 // Outside the scatter brush, while there is one (s.brushed: Set of keys, added by main.js).
 // keys: the countries of a mark; a summed column is inside if any of its countries is.
-// Compared and hovered countries are never outside.
+// Brushing takes precedence over comparison highlighting; hovering can reveal a mark.
 export function isOutsideBrush(keys, s) {
-  return !!s.brushed && !keys.some((k) => s.brushed.has(k) || k === s.hovered || s.compared?.includes(k));
+  return !!s.brushed && !keys.some((k) => s.brushed.has(k) || k === s.hovered);
 }
 
 // View A's emissions chart: the compared continents, in stack order.

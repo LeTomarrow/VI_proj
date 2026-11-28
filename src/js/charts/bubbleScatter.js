@@ -6,7 +6,7 @@
 import { COMPLETE_YEARS } from "../data/constants.js";
 import { openEntityMenu } from "../entityMenu.js";
 import { NO_DATA, svgUnitText } from "../scales.js";
-import { inRegion, MIN_EMISSIONS, scatterComparedCountries, scatterTrailKeys, shownAt, validBubble } from "../data/scatter.js";
+import { brushedKeys, MIN_EMISSIONS, scatterComparedCountries, scatterTrailKeys, shownAt, validBubble } from "../data/scatter.js";
 import { addCompared, MAX_COMPARED, setState } from "../state.js";
 import { tween } from "../motion.js";
 import { hideTooltip, showTooltipOutsidePlot } from "../tooltip.js";
@@ -122,7 +122,8 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     .on("brush", (event) => {
       if (!event.sourceEvent || !event.selection) return;
       const region = regionOf(event.selection);
-      const signature = points.filter((p) => inRegion(p.r, region)).map((p) => p.r.key).join();
+      const selected = brushedKeys(countriesOf.get(current.continent) ?? [], byCountry, { ...current, brush: region });
+      const signature = [...(selected ?? [])].sort().join();
       if (signature !== brushSignature) { brushSignature = signature; setState({ brush: region }); }
     })
     .on("end", (event) => {
@@ -160,16 +161,19 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
   }
 
   function render(s) {
+    // Keep bubble positions, labels and visibility stable while the box is being drawn.
+    // Other charts can preview the selection; this scatter applies it on brush end.
+    if (brushing) return;
     const d = domainsOf(s.continent);
     x.domain(d.x).nice();
     y.domain(d.y).nice();
     radius.domain(d.r);
     const comparedCountries = scatterComparedCountries(s);
     const comparing = comparedCountries.length > 0;
-    // Comparing: only the compared countries, plus the brushed group while there is a brush.
+    // The brush never expands a comparison to hidden countries.
     const keys = (countriesOf.get(s.continent) ?? [])
-      .filter((key) => !comparing || comparedCountries.includes(key) || !!s.brushed?.has(key));
-    const filterOff = comparing && !s.brushed;
+      .filter((key) => !comparing || comparedCountries.includes(key));
+    const filterOff = comparing;
     filterButtons.attr("aria-pressed", ([n]) => String(n === (filterOff ? 0 : (s.scatterMin ?? 0))))
       .property("disabled", filterOff)
       .attr("title", ([n]) => filterOff ? "All compared countries with data are shown. Clear the comparison to filter all countries."
@@ -242,8 +246,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
       .attr("class", "bubble")
       .classed("is-compared", (p) => s.compared.includes(p.r.key))
       .classed("is-hovered", (p) => p.r.key === s.hovered)
-      .classed("is-outside", (p) => !!s.brushed && !s.brushed.has(p.r.key) && p.r.key !== s.hovered
-        && !s.compared.includes(p.r.key));
+      .classed("is-outside", (p) => !!s.brushed && !s.brushed.has(p.r.key) && p.r.key !== s.hovered);
     // Marked bubbles on top, so their outline is never covered.
     bubbles.selectAll("circle.is-compared, circle.is-hovered").raise();
 
@@ -252,7 +255,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     const free = MAX_COMPARED - compared.length;
     const brushedNew = s.brushed ? points.filter((p) => s.brushed.has(p.r.key) && !s.compared.includes(p.r.key)) : [];
     toCompare = brushedNew.map((p) => p.r.key);
-    compareButton.attr("hidden", s.brushed ? null : true)
+    compareButton.attr("hidden", s.brushed && !comparing ? null : true)
       .property("disabled", !brushedNew.length || free <= 0)
       .text(!brushedNew.length ? "+ Compare: all selected are compared"
         : free <= 0 ? `+ Compare: list full (${compared.length})`
@@ -307,6 +310,7 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     });
     labels.selectAll("text").data(named, (p) => p.r.key).join("text")
       .attr("class", (p) => `bubble-label${s.compared.includes(p.r.key) ? " is-compared" : ""}`)
+      .classed("is-outside", (p) => !!s.brushed && !s.brushed.has(p.r.key) && p.r.key !== s.hovered)
       .call((sel) => tween(sel, s)
         .attr("x", (p) => (p.box.anchor === "start" ? p.box.x0 : p.box.anchor === "end" ? p.box.x1 : (p.box.x0 + p.box.x1) / 2))
         .attr("y", (p) => p.box.ty))

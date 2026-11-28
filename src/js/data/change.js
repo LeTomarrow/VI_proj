@@ -26,5 +26,5 @@ export function changeRows(keys, byCountry, start, end) {
 // The continent stays the scope; an active country comparison narrows the displayed rows.
 export function changeCountryKeys(keys, compared = [], brushed = null) {
   const countries = compared.filter((key) => !CONTINENTS.includes(key));
-  return countries.length ? keys.filter((key) => countries.includes(key) || !!brushed?.has(key)) : keys;
+  return countries.length ? keys.filter((key) => countries.includes(key) && (!brushed || brushed.has(key))) : keys;
 }
