@@ -17,16 +17,13 @@ export function createNavigation(selector, { nameOf, compareSelector = selector 
     .text("Clear all")
     .attr("aria-label", "Remove every entry from the comparison and clear the scatter selection")
     .on("click", () => setState({ compared: [], brush: null, hovered: null }));
-  // View C: the list stays as it is.
-  const open = compare.append("button").attr("type", "button").attr("class", "compare-open")
-    .text("Compare →")
-    .on("click", () => openCompare());
   const hint = compare.append("span").attr("class", "compare-hint");
 
   return {
     update(s) {
       const type = s.compared.length ? comparisonType(s.compared[0]) : null;
-      label.text(type ? `Comparing ${type} (${s.compared.length}/${MAX_COMPARED})` : `Compare (up to ${MAX_COMPARED})`);
+      // "Selected", not "Comparing": the list alone is not the comparison view (user test, T5).
+      label.text(type ? `Selected ${type} (${s.compared.length}/${MAX_COMPARED})` : `Compare (up to ${MAX_COMPARED})`);
       compare.attr("aria-label", type ? `Comparing ${type}` : "Comparison list");
       const steps = [{ label: "World", patch: { level: "world", continent: null } }];
       const inCompare = s.level === "compare";
@@ -34,10 +31,19 @@ export function createNavigation(selector, { nameOf, compareSelector = selector 
         steps.push({ label: s.continent, patch: { level: "continent" } });
       }
       if (inCompare) steps.push({ label: "Compare" });
+      // The next level, once something is in the list: the comparison as the last step of the
+      // path, next to the charts where the countries are picked (user test, T5).
+      else if (s.compared.length) steps.push({ next: "Compare in detail →" });
       crumbs.selectAll("li").data(steps).join("li").each(function (step, i) {
         const li = d3.select(this);
         li.selectAll("*").remove();
-        if (i < steps.length - 1) {
+        li.classed("is-next", !!step.next);
+        if (step.next) {
+          li.append("button").attr("type", "button").attr("class", "compare-open")
+            .attr("title", `Open the comparison: one row per ${type === "continents" ? "continent" : "country"}`)
+            .text(step.next)
+            .on("click", () => openCompare());
+        } else if (i < steps.findLastIndex((st) => !st.next)) {
           li.append("button").attr("type", "button").attr("class", "link")
             .text(step.label)
             .on("click", () => goToLevel(step.patch));
@@ -48,8 +54,6 @@ export function createNavigation(selector, { nameOf, compareSelector = selector 
 
       hint.attr("hidden", s.compared.length ? true : null)
         .text(s.level === "world" ? "Click a continent, then + Compare" : "Click a country, then + Compare");
-      open.attr("hidden", s.compared.length && !inCompare ? null : true)
-        .attr("title", `Open the comparison: one row per ${type === "continents" ? "continent" : "country"}`);
       const brushShown = s.level === "continent" && s.brush?.continent === s.continent;
       clear.attr("hidden", s.compared.length >= 2 || brushShown ? null : true);
       const items = chips.selectAll("li").data(s.compared, (k) => k).join((enter) => {

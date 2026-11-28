@@ -4,6 +4,7 @@
 import { COMPLETE_YEARS, YEARS } from "./data/constants.js";
 import { METRICS, MODES } from "./scales.js";
 import { setState } from "./state.js";
+import { createYearPicker } from "./yearPicker.js";
 
 const pct = (year) => (100 * (year - YEARS[0])) / (YEARS[1] - YEARS[0]);
 const PLAY_STEP = 1000; // ms per year
@@ -18,17 +19,18 @@ export function createControls(selector, { coverage, metricSelector }) {
     .attr("value", ([key]) => key)
     .text(([, m]) => m.label);
 
-  const mode = root.append("div").attr("class", "control");
-  mode.append("span").attr("class", "control-label").text("Show");
-  const modeButtons = mode.append("div").attr("class", "segmented").attr("role", "group")
-    .selectAll("button").data(Object.entries(MODES)).join("button")
-    .attr("type", "button")
-    .text(([, label]) => label)
-    .on("click", (_, [key]) => { stop(); setState({ mode: key }); });
-
   const years = root.append("div").attr("class", "control control-years");
   const yearsHead = years.append("div").attr("class", "control-head");
-  const yearsLabel = yearsHead.append("span").attr("class", "control-label");
+  // Year / Change sits with the slider: Change adds the start handle, which sets the period of the
+  // map colours and of the change bars (user test, T3).
+  const mode = yearsHead.append("div").attr("class", "segmented segmented-compact").attr("role", "group")
+    .attr("aria-label", "One year or the change over a period");
+  const modeButtons = mode.selectAll("button").data(Object.entries(MODES)).join("button")
+    .attr("type", "button")
+    .text(([, label]) => label)
+    .attr("title", ([key]) => (key === "year" ? "One year" : "Change over a period: drag the start handle"))
+    .on("click", (_, [key]) => { stop(); setState({ mode: key }); });
+  const picker = createYearPicker(years);
   const playButton = yearsHead.append("button").attr("type", "button").attr("class", "play")
     .on("click", () => (timer ? stop() : play()));
   const slider = years.append("div").attr("class", "slider");
@@ -65,6 +67,20 @@ export function createControls(selector, { coverage, metricSelector }) {
     playButton.call(playLabel);
   }
 
+  // The chosen years, under their handles: each one follows its handle and opens the year grid.
+  // The same limits as the handles.
+  function openPicker(button, isStart) {
+    const ranged = current.mode !== "year" || current.level === "compare";
+    stop();
+    picker.open(button, {
+      value: isStart ? current.rangeStart : current.year,
+      min: isStart ? YEARS[0] : ranged ? current.rangeStart + 1 : YEARS[0],
+      max: isStart ? current.year - 1 : YEARS[1],
+      range: ranged ? [current.rangeStart, current.year] : null,
+      onPick: (y) => setState(isStart ? { rangeStart: y } : { year: y }),
+    });
+  }
+
   const playLabel = (button) => button
     .text(timer ? "❚❚ Pause" : "▶ Play")
     .attr("aria-label", timer ? "Pause" : "Play through the years");
@@ -80,10 +96,19 @@ export function createControls(selector, { coverage, metricSelector }) {
     setState(ranged ? { year: Math.max(year, current.rangeStart + 1) } : { year });
   });
 
+  // Under the track: the two ends as quiet marks, and the chosen years as buttons.
   const ticks = years.append("div").attr("class", "slider-ticks");
-  ticks.selectAll("span").data([YEARS[0], ...COMPLETE_YEARS]).join("span")
+  const ends = ticks.selectAll("span").data(YEARS).join("span")
     .style("left", (y) => `${pct(y)}%`)
     .text((y) => y);
+  const valueButton = (isStart) => ticks.append("button").attr("type", "button").attr("class", "year-button")
+    .attr("aria-haspopup", "dialog").attr("aria-expanded", "false")
+    .attr("title", "Choose a year")
+    .on("click", function () { openPicker(this, isStart); });
+  const startValue = valueButton(true);
+  const yearValue = valueButton(false);
+  // Two years closer than this (% of the track) are pushed apart, so they never overlap.
+  const MIN_GAP = 9;
 
   const note = root.append("p").attr("class", "control-note");
   playButton.call(playLabel);
@@ -98,8 +123,27 @@ export function createControls(selector, { coverage, metricSelector }) {
       mode.attr("hidden", compare ? true : null);
       metricSelect.property("value", s.metric);
       modeButtons.attr("aria-pressed", ([key]) => key === s.mode);
-      yearsLabel.text(compare ? `Since ${s.rangeStart}, up to ${s.year}` : ranged ? `Years ${s.rangeStart}-${s.year}` : `Year ${s.year}`);
-      startHandle.property("value", s.rangeStart).attr("hidden", ranged ? null : true);
+      yearsHead.attr("hidden", compare ? true : null); // nothing left in it: no switch, no Play
+      const close = ranged && pct(s.year) - pct(s.rangeStart) < MIN_GAP;
+      startValue.attr("hidden", ranged ? null : true)
+        .style("left", `${pct(s.rangeStart)}%`)
+        .classed("is-pushed-left", close)
+        .attr("aria-label", `Start year ${s.rangeStart}: choose a year`)
+        .text(s.rangeStart);
+      yearValue.style("left", `${pct(s.year)}%`)
+        .classed("is-pushed-right", close)
+        .attr("aria-label", `${ranged ? "End year" : "Year"} ${s.year}: choose a year`)
+        .text(s.year);
+      const shown = ranged ? [s.rangeStart, s.year] : [s.year];
+      ends.attr("hidden", (y) => (shown.some((v) => Math.abs(pct(v) - pct(y)) < MIN_GAP) ? true : null));
+      // The start handle flashes once when Change brings it in, so the new control is noticed.
+      const appears = ranged && startHandle.attr("hidden") !== null;
+      startHandle.property("value", s.rangeStart).attr("hidden", ranged ? null : true)
+        .classed("is-new", false);
+      if (appears) {
+        startHandle.node().offsetWidth; // restart the animation
+        startHandle.classed("is-new", true);
+      }
       playButton.attr("hidden", ranged ? true : null);
       yearHandle.property("value", s.year);
       selection
