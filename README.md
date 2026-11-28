@@ -74,6 +74,10 @@ The tests need no browser. `viewA.test.mjs` covers the map, Marimekko, emissions
 and the landing and findings numbers; `viewB.test.mjs` the bars, scatter, brush, T3-T4;
 `viewC.test.mjs` the comparison, radars, rows, decomposition, T6.
 
+## GitHub Pages
+
+Deployed on GitHub Pages: [Green Paradox](https://letomarrow.github.io/VI_proj/).
+
 ## Use of AI
 
 The students chose the theme, persona, tasks and designs and are responsible for the content.
