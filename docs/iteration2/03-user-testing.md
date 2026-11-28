@@ -18,8 +18,10 @@
 | P1 | Informática | No | 2 |
 | P2 | Informática | No | 2 |
 | P3 | not recorded | not recorded | not recorded |
+| P4 | Enfermagem | No | 3 |
 
-P4 and P5 were not run, so n = 3.
+P4 tested on 28/11, after the fixes of the decision log entry "User tests and heuristic fixes".
+P5 was not run, so n = 4.
 
 ## Roles and setup
 
@@ -91,33 +93,37 @@ Spreadsheet, answers in B-K: `=2.5*((B2-1)+(5-C2)+(D2-1)+(5-E2)+(F2-1)+(5-G2)+(H
 
 | Task | P1 | P2 | P3 | P4 | P5 | Success | Median time |
 |---|---|---|---|---|---|---|---|
-| T1 | ✓ 38 s | ✓ 45 s | ~ 240 s | | | 2/3 | 45 s |
-| T2 | ✓ 24 s | ✓ 10 s | ✓ 20 s | | | 3/3 | 20 s |
-| T3 | ~ 95 s | ~ 60 s | ✓ 60 s | | | 1/3 | 60 s |
-| T4 | ✗ 222 s | ✗ 120 s | ~ 80 s | | | 0/3 | 120 s |
-| T5 | ~ 238 s | ~ 240 s | ~ 260 s | | | 0/3 | 240 s |
-| T6 | ✓ 15 s | ✓ 30 s | ✓ 59 s | | | 3/3 | 30 s |
+| T1 | ✓ 38 s | ✓ 45 s | ~ 240 s | ✓ 60 s | | 3/4 | 53 s |
+| T2 | ✓ 24 s | ✓ 10 s | ✓ 20 s | ✓ 15 s | | 4/4 | 18 s |
+| T3 | ~ 95 s | ~ 60 s | ✓ 60 s | ✓ 50 s | | 2/4 | 60 s |
+| T4 | ✗ 222 s | ✗ 120 s | ~ 80 s | ✓ 45 s | | 1/4 | 100 s |
+| T5 | ~ 238 s | ~ 240 s | ~ 260 s | ~ 70 s | | 0/4 | 239 s |
+| T6 | ✓ 15 s | ✓ 30 s | ✓ 59 s | ✓ 30 s | | 4/4 | 30 s |
 
-Success counts ✓ only. Errors: 2 (P2, T4). T4 (brush) and T5 (compare) are the weak tasks.
+Success counts ✓ only. Errors: 3 (P2 T4: 2, P4 T5: 1). T4 (brush) and T5 (compare) are the weak
+tasks. P4, on the fixed version, solved T4 "easily with the new legends" and found *Compare*
+easily; T5 still needed help, because "low-carbon" is not explained.
 
 ### SUS
 
 | Item | P1 | P2 | P3 | P4 | P5 | Mean |
 |---|---|---|---|---|---|---|
-| 1 | 3 | 4 | 3 | | | 3.3 |
-| 2 | 2 | 2 | 2 | | | 2.0 |
-| 3 | 4 | 3 | 3 | | | 3.3 |
-| 4 | 4 | 4 | 3 | | | 3.7 |
-| 5 | 4 | 4 | 4 | | | 4.0 |
-| 6 | 1 | 2 | 1 | | | 1.3 |
-| 7 | 3 | 4 | 4 | | | 3.7 |
-| 8 | 2 | 2 | 3 | | | 2.3 |
-| 9 | 3 | 3 | 3 | | | 3.0 |
-| 10 | 3 | 2 | 1 | | | 2.0 |
-| **SUS score** | 62.5 | 65.0 | 67.5 | | | **65.0** |
+| 1 | 3 | 4 | 3 | 3 | | 3.3 |
+| 2 | 2 | 2 | 2 | 1 | | 1.8 |
+| 3 | 4 | 3 | 3 | 4 | | 3.5 |
+| 4 | 4 | 4 | 3 | 1 | | 3.0 |
+| 5 | 4 | 4 | 4 | 4 | | 4.0 |
+| 6 | 1 | 2 | 1 | 1 | | 1.3 |
+| 7 | 3 | 4 | 4 | 3 | | 3.5 |
+| 8 | 2 | 2 | 3 | 1 | | 2.0 |
+| 9 | 3 | 3 | 3 | 5 | | 3.5 |
+| 10 | 3 | 2 | 1 | 1 | | 1.8 |
+| **SUS score** | 62.5 | 65.0 | 67.5 | 85.0 | | **70.0** |
 
-Mean 65.0, just below the average (68); indicative only with n = 3. Lowest items: 9 (confidence, 3.0) and
-1 (use often, 3.3); best: 5 (well integrated, 4.0) and 6 (little inconsistency, 1.3).
+Mean 70.0, just above the average (68); indicative only with n = 4. P1-P3 (old version) average
+65.0, P4 (fixed version) 85.0: one participant, so no claim that the fixes raised the score.
+Lowest items: 1 (use often, 3.3) and 4 (would need technical support, 3.0); best: 5 (well
+integrated, 4.0) and 6 (little inconsistency, 1.3).
 
 ### Problems found
 
@@ -131,6 +137,9 @@ Mean 65.0, just below the average (68); indicative only with n = 3. Lowest items
 | 6 | CO₂e arrows too faint (T3, P2) | 2 | Coloured ▲▼ and a hover band across the row |
 | 7 | *Change* seemed to apply to every chart (T3, P2) | 2 | Year \| Change switch beside the slider it changes |
 | 8 | Choosing years by dragging; one tester asked for a year calendar | 1 | Year picker under the slider handles |
+| 9 | "Low-carbon" not explained; radar titles confusing (T5, P2, P4) | 2 | Planned: state "Low-carbon = renewables + nuclear" (heuristic #20) |
+| 10 | *Electricity per person* on the map confused the reading of per-person values (T4, P2, P4) | 2 | Planned |
+| 11 | *Change* on the map not read as a difference at first (T1, P4) | 1 | Planned |
 
 ## Comparison with iteration 1
 

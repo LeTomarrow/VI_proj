@@ -1,6 +1,6 @@
 {
   "about": "Anonymous iteration-2 results. sus: one entry per participant, with 10 SUS answers (1-5) in item order. heuristics: counts of recorded evaluator findings per heuristic; see docs/iteration2/02-heuristic-evaluation.md for review and consolidation status.",
-  "testsDate": "2026-11-23 to 2026-11-27",
+  "testsDate": "2026-11-23 to 2026-11-28",
   "sus": [
     {
       "id": "P1",
@@ -44,6 +44,21 @@
         4,
         3,
         3,
+        1
+      ]
+    },
+    {
+      "id": "P4",
+      "answers": [
+        3,
+        1,
+        4,
+        1,
+        4,
+        1,
+        3,
+        1,
+        5,
         1
       ]
     }
