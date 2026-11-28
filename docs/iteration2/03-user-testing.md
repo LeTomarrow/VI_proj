@@ -15,11 +15,11 @@
 
 | ID | Course / year | Saw iteration 1? | Reads charts often? (1-5) |
 |---|---|---|---|
-| P1 | | | |
-| P2 | | | |
-| P3 | | | |
-| P4 (optional) | | | |
-| P5 (optional) | | | |
+| P1 | Informática | No | 2 |
+| P2 | Informática | No | 2 |
+| P3 | not recorded | not recorded | not recorded |
+
+P4 and P5 were not run, so n = 3.
 
 ## Roles and setup
 
@@ -91,36 +91,51 @@ Spreadsheet, answers in B-K: `=2.5*((B2-1)+(5-C2)+(D2-1)+(5-E2)+(F2-1)+(5-G2)+(H
 
 | Task | P1 | P2 | P3 | P4 | P5 | Success | Median time |
 |---|---|---|---|---|---|---|---|
-| T1 | | | | | | /5 | |
-| T2 | | | | | | /5 | |
-| T3 | | | | | | /5 | |
-| T4 | | | | | | /5 | |
-| T5 | | | | | | /5 | |
-| T6 | | | | | | /5 | |
+| T1 | ✓ 38 s | ✓ 45 s | ~ 240 s | | | 2/3 | 45 s |
+| T2 | ✓ 24 s | ✓ 10 s | ✓ 20 s | | | 3/3 | 20 s |
+| T3 | ~ 95 s | ~ 60 s | ✓ 60 s | | | 1/3 | 60 s |
+| T4 | ✗ 222 s | ✗ 120 s | ~ 80 s | | | 0/3 | 120 s |
+| T5 | ~ 238 s | ~ 240 s | ~ 260 s | | | 0/3 | 240 s |
+| T6 | ✓ 15 s | ✓ 30 s | ✓ 59 s | | | 3/3 | 30 s |
+
+Success counts ✓ only. Errors: 2 (P2, T4). T4 (brush) and T5 (compare) are the weak tasks.
 
 ### SUS
 
 | Item | P1 | P2 | P3 | P4 | P5 | Mean |
 |---|---|---|---|---|---|---|
-| 1 | | | | | | |
-| 2 | | | | | | |
-| 3 | | | | | | |
-| 4 | | | | | | |
-| 5 | | | | | | |
-| 6 | | | | | | |
-| 7 | | | | | | |
-| 8 | | | | | | |
-| 9 | | | | | | |
-| 10 | | | | | | |
-| **SUS score** | | | | | | |
+| 1 | 3 | 4 | 3 | | | 3.3 |
+| 2 | 2 | 2 | 2 | | | 2.0 |
+| 3 | 4 | 3 | 3 | | | 3.3 |
+| 4 | 4 | 4 | 3 | | | 3.7 |
+| 5 | 4 | 4 | 4 | | | 4.0 |
+| 6 | 1 | 2 | 1 | | | 1.3 |
+| 7 | 3 | 4 | 4 | | | 3.7 |
+| 8 | 2 | 2 | 3 | | | 2.3 |
+| 9 | 3 | 3 | 3 | | | 3.0 |
+| 10 | 3 | 2 | 1 | | | 2.0 |
+| **SUS score** | 62.5 | 65.0 | 67.5 | | | **65.0** |
+
+Mean 65.0, just below the average (68); indicative only with n = 3. Lowest items: 9 (confidence, 3.0) and
+1 (use often, 3.3); best: 5 (well integrated, 4.0) and 6 (little inconsistency, 1.3).
 
 ### Problems found
 
 | # | Problem (task, participant) | Severity (0-4) | Change made / planned |
 |---|---|---|---|
-| | | | |
+| 1 | *Compare* hard to find; the current screen looked like a comparison already (T5, P1; "the hidden view") | 3 | *Compare in detail →* in the breadcrumb (heuristic #21) |
+| 2 | Bubble scatter crowded and its title does not say "per person" (T3-T4, P1, P2) | 3 | New title, quadrant names, *Electricity/person* in the tooltip (heuristic #3, #4); no new axis |
+| 3 | Fossil vs low-carbon hard to tell; *Rank by* low-carbon still stacks coal and gas (T4-T5, P2) | 2 | *Rank by* grouped, other sources faded, legend split fossil \| low-carbon (#22) |
+| 4 | Radar reference not labelled; close countries hard to tell apart (T5, P2, P3) | 2 | *Dashed grey = Europe*; card line *Low-carbon X% \| cleaner than Europe (Y%)* (#7) |
+| 5 | Marimekko source names only in the legend (T2, P1, P2) | 2 | Segment names wherever they fit, in both levels |
+| 6 | CO₂e arrows too faint (T3, P2) | 2 | Coloured ▲▼ and a hover band across the row |
+| 7 | *Change* seemed to apply to every chart (T3, P2) | 2 | Year \| Change switch beside the slider it changes |
+| 8 | Choosing years by dragging; one tester asked for a year calendar | 1 | Year picker under the slider handles |
 
 ## Comparison with iteration 1
 
-> TODO after the session: which of U1-U7 no longer appeared, what is still an issue, what is
-> out of scope. The paper test had no SUS, so the comparison is qualitative.
+Qualitative only: the paper test had no SUS.
+
+- **Gone**: U2, U3, U5. Nobody asked about the decomposition, difference chart or growth in TWh.
+- **Still an issue**: U1, U4 (units): P2 still asked for them; fixed with unit hovers. U6, U7
+  (navigation): P1 missed *Compare*; moved to the breadcrumb (#21).
