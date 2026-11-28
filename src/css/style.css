@@ -434,14 +434,6 @@ main {
   min-height: 2rem;
 }
 
-/* The next step of the path: a button, but at the size of the breadcrumb text. */
-.breadcrumb .compare-open {
-  height: 1.6rem;
-  padding: 0 0.65rem;
-  font-size: 0.82rem;
-  box-shadow: none;
-}
-
 .breadcrumb [aria-current] {
   font-weight: 600;
   color: var(--color-text);
@@ -464,8 +456,7 @@ main {
   gap: 0.5rem;
 }
 
-/* In the sticky filter bar, after the slider: a summary of the list; the button that opens the
-   comparison is the last step of the breadcrumb. */
+/* The selected entities and Compare action stay together in the sticky filter bar. */
 #global-filters .compare-list {
   align-self: center;
   margin-left: 1rem;
@@ -1716,4 +1707,62 @@ tspan.unit {
 .compare-axis-title {
   font-size: 9px;
   fill: var(--color-text-secondary);
+}
+
+/* One-time explanation anchored to Compare, without changing the chart layout. */
+.compare-action {
+  position: relative;
+}
+
+.compare-help {
+  position: absolute;
+  top: calc(100% + 0.65rem);
+  right: 0;
+  z-index: 12;
+  width: min(290px, calc(100vw - 2rem));
+  padding: 0.85rem;
+  color: #39235b;
+  background: #f3edfc;
+  border: 1px solid #b79ad9;
+  border-radius: 8px;
+  box-shadow: 0 3px 12px rgb(92 52 145 / 18%);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.compare-help::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 24px;
+  width: 10px;
+  height: 10px;
+  background: #f3edfc;
+  border-top: 1px solid #b79ad9;
+  border-left: 1px solid #b79ad9;
+  transform: rotate(45deg);
+}
+
+.compare-help .link {
+  color: #65349b;
+  font-weight: 600;
+}
+
+.compare-help input {
+  accent-color: #7947ac;
+}
+
+.compare-help p {
+  margin: 0 0 0.65rem;
+}
+
+.compare-help-preference {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.65rem;
+}
+
+.compare-help-preference input {
+  margin: 0;
 }

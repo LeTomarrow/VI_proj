@@ -17,6 +17,33 @@ export function createNavigation(selector, { nameOf, compareSelector = selector 
     .text("Clear all")
     .attr("aria-label", "Remove every entry from the comparison and clear the scatter selection")
     .on("click", () => setState({ compared: [], brush: null, hovered: null }));
+  const action = compare.append("div").attr("class", "compare-action");
+  const open = action.append("button").attr("type", "button").attr("class", "compare-open")
+    .text("Compare →")
+    .on("click", () => { dismissHelp(); openCompare(); });
+  const help = action.append("div").attr("class", "compare-help").attr("id", "compare-help")
+    .attr("role", "region").attr("aria-label", "About the comparison view").attr("hidden", true);
+  help.append("p").text("Select Compare to open the comparison view, where you can explore the selected countries side by side.");
+  const preference = help.append("label").attr("class", "compare-help-preference");
+  const preferenceKey = "green-paradox.hide-compare-help";
+  let hideHelp = false;
+  let helpOffered = false;
+  try { hideHelp = localStorage.getItem(preferenceKey) === "true"; } catch { /* Storage may be unavailable. */ }
+  preference.append("input").attr("type", "checkbox")
+    .on("change", (event) => {
+      hideHelp = event.target.checked;
+      try { localStorage.setItem(preferenceKey, String(hideHelp)); } catch { /* Dismissal still works for this visit. */ }
+    });
+  preference.append("span").text("Don’t show again");
+  help.append("button").attr("type", "button").attr("class", "link").text("Got it")
+    .on("click", () => { dismissHelp(); open.node().focus(); });
+  help.on("keydown", (event) => {
+    if (event.key === "Escape") { dismissHelp(); open.node().focus(); }
+  });
+  function dismissHelp() {
+    help.attr("hidden", true);
+    open.attr("aria-describedby", null);
+  }
   const hint = compare.append("span").attr("class", "compare-hint");
 
   return {
@@ -31,19 +58,10 @@ export function createNavigation(selector, { nameOf, compareSelector = selector 
         steps.push({ label: s.continent, patch: { level: "continent" } });
       }
       if (inCompare) steps.push({ label: "Compare" });
-      // The next level, once something is in the list: the comparison as the last step of the
-      // path, next to the charts where the countries are picked (user test, T5).
-      else if (s.compared.length) steps.push({ next: "Compare in detail →" });
       crumbs.selectAll("li").data(steps).join("li").each(function (step, i) {
         const li = d3.select(this);
         li.selectAll("*").remove();
-        li.classed("is-next", !!step.next);
-        if (step.next) {
-          li.append("button").attr("type", "button").attr("class", "compare-open")
-            .attr("title", `Open the comparison: one row per ${type === "continents" ? "continent" : "country"}`)
-            .text(step.next)
-            .on("click", () => openCompare());
-        } else if (i < steps.findLastIndex((st) => !st.next)) {
+        if (i < steps.length - 1) {
           li.append("button").attr("type", "button").attr("class", "link")
             .text(step.label)
             .on("click", () => goToLevel(step.patch));
@@ -51,6 +69,18 @@ export function createNavigation(selector, { nameOf, compareSelector = selector 
           li.append("span").attr("aria-current", "page").text(step.label);
         }
       });
+
+      const canCompare = s.compared.length > 0 && !inCompare;
+      action.attr("hidden", canCompare ? null : true);
+      open.attr("title", `Open the comparison: one row per ${type === "continents" ? "continent" : "country"}`);
+      if (!canCompare) dismissHelp();
+      else if (!helpOffered) {
+        helpOffered = true;
+        if (!hideHelp) {
+          help.attr("hidden", null);
+          open.attr("aria-describedby", "compare-help");
+        }
+      }
 
       hint.attr("hidden", s.compared.length ? true : null)
         .text(s.level === "world" ? "Click a continent, then + Compare" : "Click a country, then + Compare");

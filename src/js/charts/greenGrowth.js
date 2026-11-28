@@ -10,7 +10,7 @@ export const RACE_COLORS = { total: "#52514e", lowCarbon: "#2166ac", behind: "#b
 // Two neutral categorical colours, named in place; the sign of the bar gives the direction.
 export const EFFECT_COLORS = { demand: "#e18a24", mix: "#6f8fb8", net: "#0b0b0b" };
 // Legend and tooltip words, short enough for one line.
-export const EFFECT_LABELS = { demand: "More or less electricity", mix: "Different way of making it", net: "Total change" };
+export const EFFECT_LABELS = { demand: "More or less electricity", mix: "Cleaner or dirtier electricity", net: "Total change" };
 
 // Names at the right end of the lines (first row only), moved apart when they would overlap.
 function endLabels(g, items, x) {
