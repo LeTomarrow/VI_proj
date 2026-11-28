@@ -195,7 +195,12 @@ replaced them; the *Removed* table keeps what was dropped.
   - Ranked by Low-carbon or Fossil, the columns show only that set (100% = the set), so its
     sources compare in detail; shares of all generation stay in the tooltip. Countries: no dashed
     continent line. World Marimekko: width = the set's TWh (x fixed to its largest world year).
-  - Radars: low-carbon share vs the reference on each card; *Dashed grey* names it (#7, P2, P3).
+    Critique fixes (28/11): the tooltip adds each source's share of the set; no 50% line in set
+    mode; country columns under 5% of all generation are faded, an empty set reads *None*.
+  - Radars: a verdict vs the reference on each card, backed by the matching share (*Fossil 64% |
+    dirtier than World*, *Low-carbon 99% | cleaner than World*), without the reference's number
+    (it read as a "dirtier" percentage); judged on the rounded low-carbon shares; *Dashed grey*
+    names it (#7, P2, P3).
   - Sorted bars: coloured ▲▼, row hover band, no arrow at 0%, blue/red explained (#11, #17, P2).
   - Year | Change beside the slider; year picker under its handles (P2, one tester).
   - Unit hovers (pp, TWh, gCO₂e/kWh) in every chart (P2).

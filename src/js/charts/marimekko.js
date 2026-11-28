@@ -45,11 +45,15 @@ const RANK_GROUPS = [
 const kindOf = (key) => (FOSSIL_KEYS.includes(key) ? "Fossil" : "Low-carbon");
 const DARK_TEXT = ["solar", "gas", "nuclear", "wind"];
 const CHAR_W = 6.2; // estimated label width per character
-// Ranked by a group (Low-carbon, Fossil): the other sources are muted.
+// Ranked by a group (Low-carbon, Fossil): the other sources are muted (only where they are drawn;
+// the set-only columns leave them out).
 const isMuted = (rank, key) => rank.groups.length > 1 && !rank.groups.includes(key);
 // The ranked set's share of all generation (%).
 const setShare = (rank, record) => d3.sum(SOURCE_GROUPS.filter((g) => rank.groups.includes(g.key)),
   (g) => d3.sum(g.parts, (k) => record.shares[k]));
+// Under this share of all generation, a set-only country column is faded: a full-height split of
+// a few TWh would read as a large set (critique).
+const SMALL_SET = 5;
 // A source name fits inside a segment of this height and width.
 const fitsLabel = (seg, height, width, rank) => !isMuted(rank, seg.group.key)
   && height >= MIN_LABEL_H && width >= seg.group.label.length * CHAR_W + 10;
@@ -72,23 +76,32 @@ function fitText(node, text, maxWidth) {
 // Total generation: the source under the pointer is bold.
 function columnTooltip(record, stat, current, rank, rankNote = "") {
   const bold = (key) => (rank.groups.length ? rank.groups.includes(key) : key === current);
+  // Ranked by a set, the columns show each source's share of the set: a third column with that
+  // number, under a header, so the rows do not wrap.
+  const within = rank.groups.length > 1;
+  const set = within ? setShare(rank, record) : 0;
+  const row = (cls, cells) => `<div class="tooltip-row${cls}">${cells.map((c) => `<span>${c}</span>`).join("")}</div>`;
+  const ofSet = (share) => (set > 0 ? `${format(0)(share * 100 / set)}%` : "");
   const rows = SOURCE_GROUPS.map((group) => {
     const twh = d3.sum(group.parts, (k) => record.sources[k]);
     const share = d3.sum(group.parts, (k) => record.shares[k]);
-    return `<div class="tooltip-row${bold(group.key) ? " is-current" : ""}"><span>${group.label}</span>`
-      + `<span>${format(0)(twh)} TWh (${format(1)(share)}%)</span></div>`;
+    const cells = [group.label, `${format(0)(twh)} TWh (${format(1)(share)}%)`];
+    if (within) cells.push(rank.groups.includes(group.key) ? ofSet(share) : "");
+    return row(bold(group.key) ? " is-current" : "", cells);
   }).join("");
   const ranked = SOURCE_GROUPS.filter((g) => rank.groups.includes(g.key));
   const subtotal = ranked.length > 1
-    ? `<div class="tooltip-row is-current"><span>${rank.label}</span><span>`
-      + `${format(0)(d3.sum(ranked, (g) => d3.sum(g.parts, (k) => record.sources[k])))} TWh (`
-      + `${format(1)(d3.sum(ranked, (g) => d3.sum(g.parts, (k) => record.shares[k])))}%)</span></div>`
+    ? row(" is-current", [rank.label,
+      `${format(0)(d3.sum(ranked, (g) => d3.sum(g.parts, (k) => record.sources[k])))} TWh (${format(1)(set)}%)`,
+      set > 0 ? "100%" : ""])
     : "";
+  const total = row(" is-total", ["Total", `${format(0)(record.generation)} TWh`, ...(within ? [""] : [])]);
+  const head = within ? row(" tooltip-head", ["", "of all", `of ${rank.label.toLowerCase()}`]) : "";
+  const table = within ? `<div class="tooltip-split">${head}${rows}${subtotal}${total}</div>` : `${rows}${subtotal}${total}`;
   const parts = SOURCE_GROUPS.find((g) => g.parts.length > 1).parts
     .map((k) => `${SOURCE_LABELS[k]} ${format(0)(record.sources[k])}`).join(", ");
   const ranking = rankNote ? `<div class="tooltip-note">${rankNote}</div>` : "";
-  return `<strong>${record.name}, ${record.year}</strong>${ranking}${rows}${subtotal}`
-    + `<div class="tooltip-row is-total"><span>Total</span><span>${format(0)(record.generation)} TWh</span></div>`
+  return `<strong>${record.name}, ${record.year}</strong>${ranking}${table}`
     + `<div class="tooltip-note">${parts} TWh</div>${coverageLine(stat, "year")}`;
 }
 
@@ -250,6 +263,7 @@ export function createMarimekko(selector) {
     svgUnitText(yTitle, [within ? `Share of ${rank.label.toLowerCase()} (` : "Share (", ["%", "%"], ")"]);
     plot.attr("display", null);
     ranked.attr("display", "none");
+    reference.attr("display", within ? "none" : null); // "half of the set" is no threshold
     x.domain([0, maxTotal]);
     xAxis.attr("transform", `translate(0, ${innerH})`)
       .call(d3.axisBottom(x).ticks(Math.max(2, Math.floor(innerW / 70))).tickFormat(d3.format(",")).tickSize(4));
@@ -427,6 +441,7 @@ export function createMarimekko(selector) {
       g.append("rect").attr("class", "column-hatch").attr("fill", "url(#mekko-hatch)");
       g.append("rect").attr("class", "column-outline");
       g.append("text").attr("class", "rank-name");
+      g.append("text").attr("class", "set-empty").attr("text-anchor", "middle");
       return g;
     });
     const shown = layout.map((d) => d.record.key);
@@ -435,7 +450,12 @@ export function createMarimekko(selector) {
     groups
       .classed("is-compared", (d) => !onlyCompared && s.compared.includes(d.record.key))
       .classed("is-dimmed", (d) => (!onlyCompared && isDimmed(d.record.key, s, shown)) || isOutsideBrush([d.record.key], s))
-      .classed("is-hovered", (d) => d.record.key === s.hovered);
+      .classed("is-hovered", (d) => d.record.key === s.hovered)
+      .classed("is-small-set", (d) => within && setShare(rank, d.record) < SMALL_SET);
+    groups.select(".set-empty")
+      .attr("x", columnWidth / 2)
+      .attr("y", (mixTop + mixBottom) / 2)
+      .text((d) => (within && !(setShare(rank, d.record) > 0) ? "None" : ""));
     tween(groups.select(".rank-bar"), s)
       .attr("width", columnWidth)
       .attr("y", (d) => yBar(d.value))

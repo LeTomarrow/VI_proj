@@ -151,9 +151,9 @@ async function init() {
     const within = rank.groups.length > 1;
     const split = `how the ${setName} part splits (100% = ${setName})`;
     d3.select("#marimekko-how-to-read").html(!atCountries
-      ? (within ? `<b>Width</b> = ${rank.name}; <b>height</b> = ${split}; <b>dashed</b> = 50%. <b>Hover</b> for shares of all generation.`
+      ? (within ? `<b>Width</b> = ${rank.name}; <b>height</b> = ${split}. <b>Hover</b> for shares of all generation.`
         : `<b>Width</b> = total generation; <b>height</b> = share of each source${atBase}; <b>dashed</b> = 50%.`)
-      : (within ? `<b>Bars</b> = ${rank.name} (TWh); <b>columns</b> = ${split}. <b>Hover</b> for shares of all generation.`
+      : (within ? `<b>Bars</b> = ${rank.name} (TWh); <b>columns</b> = ${split}; <b>faded</b> = under 5% of all generation. <b>Hover</b> for shares of all generation.`
         : `<b>Bars</b> = ${rank.name} (TWh); <b>columns</b> = share of each source${atBase}${dashed}.`)
         + (onlyCompared ? "" : extraNote));
     const compared = comparedContinents(s);

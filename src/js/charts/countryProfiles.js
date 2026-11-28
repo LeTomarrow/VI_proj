@@ -130,9 +130,15 @@ export function createCountryProfiles(selector, { countries, continents, world }
     const own = lowCarbonOf(profile.values);
     if (!currentReference) return `Low-carbon ${own.toFixed(0)}%`;
     const ref = lowCarbonOf(currentReference.values);
-    const diff = own - ref;
-    const verdict = Math.abs(diff) < 0.5 ? "same as" : diff > 0 ? "cleaner than" : "dirtier than";
-    return `Low-carbon ${own.toFixed(0)}% | ${verdict} ${currentReference.name} (${ref.toFixed(0)}%)`;
+    // Judged on the rounded shares, so the verdict never contradicts the number shown.
+    const diff = Math.round(own) - Math.round(ref);
+    // The number backs the verdict: fossil share when dirtier, low-carbon share otherwise. Only
+    // the entity's number: the reference's share read as a "dirtier" percentage (user test).
+    if (diff < 0) {
+      const fossil = d3.sum(profile.values.filter((v) => FOSSIL_GROUPS.includes(v.key)), (v) => v.share);
+      return `Fossil ${fossil.toFixed(0)}% | dirtier than ${currentReference.name}`;
+    }
+    return `Low-carbon ${own.toFixed(0)}% | ${diff === 0 ? "same as" : "cleaner than"} ${currentReference.name}`;
   }
 
   function updateShapes(shapes, series, s, scale, reference) {

@@ -905,9 +905,20 @@ main {
   opacity: 0.25;
 }
 
-/* Country columns ranked by a set show only that set: the other sources are not drawn. */
+/* Columns ranked by a set show only that set: the other sources are not drawn. */
 .legend li.is-absent {
   opacity: 0.4;
+}
+
+/* A set under 5% of the country's generation: its full-height split steps back. */
+.column.is-small-set .segment,
+.column.is-small-set .segment-label {
+  opacity: 0.35;
+}
+
+.set-empty {
+  fill: var(--color-text-secondary);
+  font-size: 0.72rem;
 }
 
 .swatch {
@@ -1249,6 +1260,30 @@ svg.is-globe:active {
 .tooltip-row.is-current,
 .tooltip-row.is-total {
   font-weight: 600;
+}
+
+/* Ranked by a set: a third column, each source's share of the set, aligned as a table. */
+.tooltip:has(.tooltip-split) {
+  max-width: 340px;
+}
+
+.tooltip-split {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  column-gap: 0.75rem;
+}
+
+.tooltip-split .tooltip-row {
+  display: contents;
+}
+
+.tooltip-split .tooltip-row > span:not(:first-child) {
+  text-align: right;
+}
+
+.tooltip-split .tooltip-head {
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
 }
 
 .tooltip-section {
