@@ -39,7 +39,7 @@ export function openEntityMenu(event, key, name = key) {
   const sameType = state.compared.filter((k) => comparisonType(k) === comparisonType(key));
   const full = !compared && sameType.length >= MAX_COMPARED;
   menu.append("button").attr("type", "button")
-    .text(compared ? "✓ In comparison · Remove" : "+ Compare")
+    .text(compared ? "✓ In comparison: remove" : "+ Compare")
     .attr("disabled", full ? true : null)
     .on("click", () => { closeEntityMenu(); toggleCompared(key); });
   if (full) menu.append("p").attr("class", "entity-menu-note").text(`The comparison holds ${MAX_COMPARED} at most`);

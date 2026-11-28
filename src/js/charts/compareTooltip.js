@@ -29,6 +29,6 @@ export function comparisonTooltip(entity, column, year, start, pinned = false) {
       + line(EFFECT_LABELS.demand, row?.effects?.demand, "MtCO₂e") + line(EFFECT_LABELS.mix, row?.effects?.mix, "MtCO₂e")
       + line(EFFECT_LABELS.net, row?.effects?.net, "MtCO₂e", true);
   }
-  if (pinned) html += `<div class="tooltip-note">Pinned · ← → year · Esc to release</div>`;
+  if (pinned) html += `<div class="tooltip-note">Pinned: ← → to change the year, Esc to release</div>`;
   return html;
 }

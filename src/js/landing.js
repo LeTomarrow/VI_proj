@@ -99,7 +99,7 @@ function storiesChart(summary) {
           const year = Math.round(x.invert(d3.pointer(event)[0]));
           cursor.attr("visibility", "visible").attr("x1", x(year)).attr("x2", x(year));
           showTooltip(event, `<strong>CO₂e from electricity, ${year}</strong>`
-            + series.map((s) => { const p = s.points.find((d) => d.year === year); return p ? `<div class="tooltip-row"><span>${s.key}</span><span>${d3.format(",.0f")(p.raw)} Mt · ${pct(p.value)}%</span></div>` : ""; }).join(""));
+            + series.map((s) => { const p = s.points.find((d) => d.year === year); return p ? `<div class="tooltip-row"><span>${s.key}</span><span>${d3.format(",.0f")(p.raw)} Mt (${pct(p.value)}%)</span></div>` : ""; }).join(""));
         })
         .on("mouseleave", () => { cursor.attr("visibility", "hidden"); hideTooltip(); });
     };

@@ -71,9 +71,9 @@ export function createParadox(selector, { world }) {
         cursor.attr("visibility", "visible").attr("x1", x(year)).attr("x2", x(year));
         const r = row.record;
         showTooltip(event, `<strong>World, ${year}</strong><div class="tooltip-note">change since ${first}</div>`
-          + `<div class="tooltip-row"><span>Low-carbon</span><span>${pct(row.lowCarbon)}% · ${d3.format(",.0f")(r.lowCarbon)} TWh</span></div>`
-          + `<div class="tooltip-row"><span>Total generation</span><span>${pct(row.generation)}% · ${d3.format(",.0f")(r.generation)} TWh</span></div>`
-          + `<div class="tooltip-row"><span>CO₂e</span><span>${pct(row.emissions)}% · ${d3.format(",.0f")(r.emissions)} MtCO₂e</span></div>`);
+          + `<div class="tooltip-row"><span>Low-carbon</span><span>${pct(row.lowCarbon)}% (${d3.format(",.0f")(r.lowCarbon)} TWh)</span></div>`
+          + `<div class="tooltip-row"><span>Total generation</span><span>${pct(row.generation)}% (${d3.format(",.0f")(r.generation)} TWh)</span></div>`
+          + `<div class="tooltip-row"><span>CO₂e</span><span>${pct(row.emissions)}% (${d3.format(",.0f")(r.emissions)} MtCO₂e)</span></div>`);
       })
       .on("mouseleave", () => { cursor.attr("visibility", "hidden"); hideTooltip(); });
   });
