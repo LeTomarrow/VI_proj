@@ -15,6 +15,7 @@ import { createCountryProfiles } from "./charts/countryProfiles.js";
 import { createMap } from "./charts/map.js";
 import { createMarimekko } from "./charts/marimekko.js";
 import { createEmissionsArea } from "./charts/emissionsArea.js";
+import { titleWith } from "./titles.js";
 
 async function init() {
   const data = await loadEnergyData();
@@ -107,54 +108,59 @@ async function init() {
     const suffix = s.mode === "year" ? "" : ` (${MODES[s.mode].toLowerCase()})`;
 
     const { label, darker, cleanerIs } = METRICS[s.metric];
-    d3.select("#map-title").text(atCountries
-      ? `${label} by country, ${s.continent}, ${period}${suffix}`
-      : `${label}, ${period}${suffix}`);
+    // Titles: what the chart shows, then where and when in a lighter weight (titleWith).
+    titleWith("#map-title", `${label}${atCountries ? " by country" : ""}${suffix}`,
+      atCountries ? `${s.continent}, ${period}` : period);
     const [cleaner, dirtier] = cleanerIs > 0 ? ["rose", "fell"] : ["fell", "rose"];
+    // Reading lines, in every chart: the mark or the action in bold, then what it means.
     const colourLine = s.mode === "change"
-      ? (cleanerIs ? `Blue = ${label.toLowerCase()} ${cleaner} (cleaner), red = it ${dirtier}.`
-        : `Purple = more ${label.toLowerCase()}, orange = less.`)
-      : `Darker = ${darker}.`;
-    d3.select("#map-how-to-read").text(atCountries
+      ? (cleanerIs ? `<b>Blue</b> = ${label.toLowerCase()} ${cleaner} (cleaner), <b>red</b> = it ${dirtier}.`
+        : `<b>Purple</b> = more ${label.toLowerCase()}, <b>orange</b> = less.`)
+      : `<b>Darker</b> = ${darker}.`;
+    d3.select("#map-how-to-read").html(atCountries
       ? `${colourLine}${s.continent === "Europe" ? " Russia counts as Europe." : ""}`
-      : `${colourLine} Hatched = data for under 80% of the continent's electricity.`);
-    // One short reading line; the tooltips give the details.
+      : `${colourLine} <b>Hatched</b> = data for under 80% of the continent's electricity.`);
+    // One short reading line; the tooltips give the details. Both levels: "Electricity mix of ...,
+    // ranked by ...", and the same reading words (width or bars, then the source shares).
     const atBase = rank.groups.length ? `, ${rank.name.replace(/ generation$/, "")} at the base` : "";
-    d3.select("#marimekko-title").text(!atCountries ? `Electricity mix by continent, ranked by ${rank.name}, ${s.year}`
-      : onlyCompared ? `Compared countries by ${rank.name}, ${s.year}`
-        : `Top ${s.mekkoTop ?? 10} by ${rank.name}, ${s.continent}, ${s.year}`);
+    titleWith("#marimekko-title", !atCountries ? `Electricity mix by continent, ranked by ${rank.name}`
+      : onlyCompared ? `Electricity mix of the compared countries, ranked by ${rank.name}`
+        : `Electricity mix of the top ${s.mekkoTop ?? 10} by ${rank.name}`,
+    atCountries && !onlyCompared ? `${s.continent}, ${s.year}` : s.year);
     const dashed = rank.groups.length && ranking?.columns.records.every((r) => r.continent === s.continent)
-      ? ` (dashed = ${s.continent})` : "";
+      ? `; <b>dashed</b> = ${s.continent}` : "";
     const extraKeys = ranking?.columns.extra.map((r) => r.key) ?? [];
     const extraWho = [extraKeys.some((k) => s.compared.includes(k)) && "compared",
       extraKeys.some((k) => !s.compared.includes(k)) && "selected"].filter(Boolean).join(" and ");
     const hiddenBrushed = ranking?.columns.brushedHidden ?? 0;
     const extraNote = (extraWho ? ` ${extraWho[0].toUpperCase()}${extraWho.slice(1)} countries outside it on the right.` : "")
       + (hiddenBrushed ? ` ${hiddenBrushed} more selected not shown (see the scatter).` : "");
-    d3.select("#marimekko-how-to-read").text(!atCountries
-      ? `Width = total generation, height = share of each source${atBase}.`
-      : `Bars = TWh; columns = share of each source${atBase}${dashed}.${onlyCompared ? "" : extraNote}`);
+    d3.select("#marimekko-how-to-read").html(!atCountries
+      ? `<b>Width</b> = total generation; <b>height</b> = share of each source${atBase}; <b>dashed</b> = 50%.`
+      : `<b>Bars</b> = ${rank.name} (TWh); <b>columns</b> = share of each source${atBase}${dashed}.${onlyCompared ? "" : extraNote}`);
     const compared = comparedContinents(s);
-    d3.select("#emissions-title").text(`CO₂e from electricity, 2000-2024${compared.length ? `: ${compared.join(" vs ")}` : ""}`);
-    d3.select("#emissions-how-to-read").text(compared.length
-      ? "Compared continents only, each from zero. Remove them from the comparison to see the world stack."
-      : "Stacked by continent; the top edge is the world total.");
+    titleWith("#emissions-title", `CO₂e from electricity${compared.length ? `: ${compared.join(" vs ")}` : ""}`, "2000-2024");
+    d3.select("#emissions-how-to-read").html(compared.length
+      ? "<b>One line</b> per compared continent, each from zero. Remove them from the comparison to see the world stack."
+      : "<b>Stacked</b> by continent; the <b>top edge</b> is the world total.");
 
     controls.update(s);
     navigation.update(s);
     // The map and the Marimekko stay; only the third panel changes with the level.
     d3.select("#panel-emissions").attr("hidden", atCountries ? true : null);
     d3.select("#panel-continent").attr("hidden", atCountries ? null : true);
-    d3.select("#continent-title").text(s.continent ? `${s.continent}: countries` : "");
+    if (s.continent) titleWith("#continent-title", `${s.continent}: countries`, s.year);
+    else d3.select("#continent-title").text("");
     // The bottom row gets more room at the country level: the scatter needs height.
     d3.select(".views").classed("is-continent", atCountries);
-    d3.select("#scatter-title").text(`Emissions from electricity by country, ${s.continent}, ${s.year}`);
-    d3.select("#scatter-how-to-read").text("Area = total emissions. "
-      + (s.mode === "year" ? "Compared countries are outlined." : `Hover a compared country to see its path since ${s.rangeStart}.`)
-      + (s.brushed ? ` ${s.brushed.size} countries selected (dashed on the map); + Compare adds them; click outside the box${comparedCountries.length ? "" : " or Clear all"} to clear.`
-        : comparedCountries.length ? " Drag to select a group next to the compared countries." : " Drag to select a group in every chart."));
-    d3.select("#bars-title").text(`Change by ${comparedCountries.length ? (s.brushed ? "selected and compared countries" : "compared countries") : `country, ${s.continent}`}, ${s.rangeStart}-${s.year}`);
-    d3.select("#bars-how-to-read").text(`Sorted from the ${s.barsSort === "asc" ? "smallest" : "largest"} renewable gain; dashed line = World. CO₂e: ▼ fell, ▲ rose.`);
+    // One title, one line on how to use it; the axes and quadrant names do the reading, and the
+    // selection state sits next to the buttons it concerns (bubbleScatter.js).
+    d3.select("#scatter-title").text("Dirty electricity vs CO₂e per person");
+    d3.select("#scatter-how-to-read").html("One bubble per country. <b>Hover</b> for values, <b>click</b> to compare, "
+      + `<b>drag a box</b> to select a group in every chart.${s.mode === "year" ? "" : ` Hover a compared country to see its path since ${s.rangeStart}.`}`);
+    d3.select("#bars-title").text(`Change since ${s.rangeStart}${comparedCountries.length ? (s.brushed ? ": selected and compared" : ": compared countries") : ""}`);
+    d3.select("#bars-how-to-read").html(`<b>Bars</b> = renewable gain, from the ${s.barsSort === "asc" ? "smallest" : "largest"}; <b>dashed</b> = World. `
+      + `CO₂e: <span class="co2-rise-text">▲ rose</span>, <span class="co2-fall-text">▼ fell</span>.`);
 
     map.update(mapStats, s);
     marimekko.update(s, atCountries

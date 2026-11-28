@@ -5,7 +5,7 @@
 
 import { COMPLETE_YEARS } from "../data/constants.js";
 import { openEntityMenu } from "../entityMenu.js";
-import { NO_DATA } from "../scales.js";
+import { NO_DATA, svgUnitText } from "../scales.js";
 import { inRegion, MIN_EMISSIONS, scatterComparedCountries, scatterTrailKeys, shownAt, validBubble } from "../data/scatter.js";
 import { addCompared, MAX_COMPARED, setState } from "../state.js";
 import { tween } from "../motion.js";
@@ -28,8 +28,8 @@ const fmt = (digits) => d3.format(`,.${digits}f`);
 // per person, so right of the World line with a clean grid means a high use of clean electricity.
 const QUADRANTS = [
   { left: true, top: false, text: "Cleaner than the World", cls: "is-cleaner" },
-  { left: false, top: true, text: "More polluting than the World", cls: "is-dirtier" },
-  { left: true, top: true, text: "Carbon-heavy grid, low use per person", cls: "" },
+  { left: false, top: true, text: "Dirty grid, high CO₂e per person", cls: "is-dirtier" },
+  { left: true, top: true, text: "Dirty grid, low use per person", cls: "" },
   { left: false, top: false, text: "Clean grid, high use per person", cls: "" },
 ];
 
@@ -38,6 +38,8 @@ function tooltipHtml(r) {
   return `<strong>${r.name}, ${r.year}</strong>`
     + row("CO₂e/person", `${fmt(2)(r.emissionsPerCapita)} t`)
     + row("CO₂e/kWh", `${fmt(0)(r.carbonIntensity)} g`)
+    + row("Electricity/person", r.generationPerCapita === null ? "no data" : `${fmt(0)(r.generationPerCapita)} kWh`)
+    + row("Total CO₂e", `${fmt(1)(r.emissions)} Mt`)
     + row("Renewable share", r.renewableShare === null ? "no data" : `${fmt(1)(r.renewableShare)}%`);
 }
 
@@ -65,8 +67,10 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
   const compareButton = tools.append("button").attr("type", "button").attr("class", "sort-toggle compare-brushed")
     .attr("hidden", true)
     .on("click", () => addCompared(toCompare));
-  const note = root.append("p").attr("class", "how-to-read scatter-note").attr("role", "status");
-  const legend = root.append("ul").attr("class", "legend");
+  // Beside the Show buttons, which it refers to.
+  const note = tools.append("p").attr("class", "how-to-read scatter-note").attr("role", "status");
+  // Below the plot (appended after the svg), so the plot sits right under its controls.
+  const legend = d3.create("ul").attr("class", "legend scatter-legend");
   const ramp = legend.append("li");
   ramp.append("span").text("Renewable share 0%");
   ramp.append("span").attr("class", "ramp")
@@ -77,13 +81,14 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
   legend.append("li").html(`<span class="swatch swatch-dash"></span>World`);
 
   const svg = root.append("svg").attr("role", "img");
+  root.append(() => legend.node());
   const plot = svg.append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
   const xAxis = plot.append("g").attr("class", "axis");
   const yAxis = plot.append("g").attr("class", "axis");
-  const xTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle")
-    .text("Emissions per person (t CO₂e, log scale)");
-  const yTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle")
-    .text("Carbon intensity (gCO₂e/kWh)");
+  const xTitle = svgUnitText(plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle"),
+    [["CO₂e", "CO₂e"], " per person (", ["t", "t"], ", ", ["log scale", "log"], ") →"]);
+  const yTitle = svgUnitText(plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle"),
+    ["Dirtier electricity (", ["gCO₂e/kWh", "gCO₂e/kWh"], ") →"]);
   const worldX = plot.append("line").attr("class", "reference-line");
   const worldY = plot.append("line").attr("class", "reference-line");
   const worldLabel = plot.append("text").attr("class", "axis-title").attr("text-anchor", "end").text("World");
@@ -145,7 +150,8 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
     innerH = height - MARGIN.top - MARGIN.bottom;
     x.range([0, innerW]);
     y.range([innerH, 0]);
-    radius.range([0, Math.max(12, Math.min(40, Math.min(innerW, innerH) / 8))]);
+    // Kept small so neighbours overlap less; the area still ranks the emitters.
+    radius.range([0, Math.max(10, Math.min(26, Math.min(innerW, innerH) / 12))]);
     brush.extent([[0, 0], [Math.max(1, innerW), Math.max(1, innerH)]]);
     brushLayer.call(brush);
     xTitle.attr("x", innerW / 2).attr("y", innerH + 34);
@@ -178,8 +184,8 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
 
     note.text(s.year < COMPLETE_YEARS[0]
       ? `No emissions data before ${COMPLETE_YEARS[0]}. Move the year slider to ${COMPLETE_YEARS[0]} or later.`
-      : [comparing ? (s.brushed ? "Showing the selected and compared countries. Click outside the box to clear the selection."
-        : "Showing compared countries only. Clear the comparison to show all countries again.") : "",
+      : [s.brushed ? `${s.brushed.size} selected (dashed on the map). Click outside the box to clear.`
+        : comparing ? "Compared countries only. Clear the comparison to see all." : "",
         withGeneration > ofYear.length ? `${withGeneration - ofYear.length} of ${withGeneration} countries have no emissions data in ${s.year}.` : "",
         hidden ? `${hidden} smaller emitters hidden (Show).` : ""].filter(Boolean).join(" "));
     svg.attr("aria-label", `Bubble scatter of ${points.length} countries of ${s.continent} in ${s.year}: emissions per person, carbon intensity and total emissions.`);
@@ -265,7 +271,13 @@ export function createBubbleScatter(selector, { countries, world, countriesOf })
       ...points.filter((p) => s.compared.includes(p.r.key) && p.r.key !== s.hovered),
       ...others.filter((p) => !marked(p)),
     ];
+    // The quadrant names count as placed labels, so country names keep clear of them.
     const boxes = [];
+    quadrants.each(function () {
+      if (this.getAttribute("display") === "none") return;
+      const b = this.getBBox();
+      boxes.push({ x0: b.x, x1: b.x + b.width, y0: b.y, y1: b.y + b.height });
+    });
     const hitsLabel = (box) => boxes.some((b) => b.x0 < box.x1 && box.x0 < b.x1 && b.y0 < box.y1 && box.y0 < b.y1);
     const hitsBubble = (box, self) => points.some((q) => q !== self
       && Math.hypot(q.cx - Math.max(box.x0, Math.min(q.cx, box.x1)), q.cy - Math.max(box.y0, Math.min(q.cy, box.y1))) < q.rr);

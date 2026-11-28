@@ -165,8 +165,88 @@ select {
 }
 
 .control-years {
-  flex: 1 1 320px;
-  max-width: 560px;
+  position: relative;
+  flex: 1 1 300px;
+  max-width: 420px;
+}
+
+/* A year in the label: looks like text with a dotted underline; opens the year grid. */
+.year-button {
+  padding: 0 0.15rem;
+  font: inherit;
+  color: var(--color-accent);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  border-radius: 3px;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+
+.year-button:hover,
+.year-button[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.year-picker {
+  position: absolute;
+  z-index: 30;
+  padding: 0.5rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+}
+
+.year-picker[hidden] {
+  display: none;
+}
+
+.year-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 2.2rem);
+  gap: 2px;
+}
+
+.year-cell {
+  height: 1.6rem;
+  padding: 0;
+  font: inherit;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+  cursor: pointer;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+.year-cell.is-partial {
+  color: var(--color-muted);
+}
+
+.year-cell.is-in-range {
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+}
+
+.year-cell:hover:not(:disabled) {
+  border-color: var(--color-accent);
+}
+
+.year-cell[aria-pressed="true"] {
+  color: #fff;
+  background: var(--color-accent);
+}
+
+.year-cell:disabled {
+  cursor: default;
+  opacity: 0.3;
+}
+
+.year-picker-note {
+  margin: 0.4rem 0 0;
+  font-size: 0.7rem;
+  color: var(--color-muted);
 }
 
 .slider {
@@ -232,6 +312,34 @@ select {
   border-radius: 50%;
 }
 
+/* Change mode: the start handle that just appeared pulses twice, then rests. */
+@media (prefers-reduced-motion: no-preference) {
+  .slider input.is-new::-webkit-slider-thumb {
+    animation: handle-in 700ms cubic-bezier(0.16, 1, 0.3, 1) 2;
+  }
+
+  .slider input.is-new::-moz-range-thumb {
+    animation: handle-in 700ms cubic-bezier(0.16, 1, 0.3, 1) 2;
+  }
+}
+
+@keyframes handle-in {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-accent) 55%, transparent);
+  }
+
+  to {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-accent) 0%, transparent);
+  }
+}
+
+/* The Year / Change switch at the size of the other chart toolbars, so the slider leads. */
+.segmented-compact button {
+  height: 1.5rem;
+  padding: 0 0.55rem;
+  font-size: 0.78rem;
+}
+
 .slider-ticks {
   position: relative;
   height: 1rem;
@@ -243,6 +351,30 @@ select {
 .slider-ticks span {
   position: absolute;
   transform: translateX(-50%);
+}
+
+.control-head[hidden],
+.slider-ticks span[hidden],
+.slider-ticks .year-button[hidden] {
+  display: none;
+}
+
+/* The chosen years, under their handles: the value reads as the control. */
+.slider-ticks .year-button {
+  position: absolute;
+  top: -1px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+}
+
+.slider-ticks .year-button.is-pushed-left {
+  transform: translateX(calc(-100% + 0.6rem));
+}
+
+.slider-ticks .year-button.is-pushed-right {
+  transform: translateX(-0.6rem);
 }
 
 .control-note {
@@ -297,6 +429,19 @@ main {
   color: var(--color-muted);
 }
 
+.breadcrumb {
+  align-items: center;
+  min-height: 2rem;
+}
+
+/* The next step of the path: a button, but at the size of the breadcrumb text. */
+.breadcrumb .compare-open {
+  height: 1.6rem;
+  padding: 0 0.65rem;
+  font-size: 0.82rem;
+  box-shadow: none;
+}
+
 .breadcrumb [aria-current] {
   font-weight: 600;
   color: var(--color-text);
@@ -319,10 +464,11 @@ main {
   gap: 0.5rem;
 }
 
-/* In the sticky filter bar: right-aligned, level with the slider. */
+/* In the sticky filter bar, after the slider: a summary of the list; the button that opens the
+   comparison is the last step of the breadcrumb. */
 #global-filters .compare-list {
   align-self: center;
-  margin-left: auto;
+  margin-left: 1rem;
 }
 
 .compare-clear {
@@ -501,7 +647,7 @@ main {
 /* Ring in a darker step of the bubble's own fill (--ring, set per bubble), so pale bubbles
    (low renewable share) still have an edge on the light surface. */
 .bubble {
-  fill-opacity: 0.85;
+  fill-opacity: 0.7;
   stroke: var(--ring, var(--color-bg));
   stroke-width: 1;
 }
@@ -523,17 +669,22 @@ main {
   fill: var(--color-text);
 }
 
+/* The quadrant names carry the reading of the scatter, so they are not faint. */
 .quadrant-label {
   font-size: 11px;
   font-style: italic;
-  fill: var(--color-muted);
+  fill: var(--color-text-secondary);
   pointer-events: none;
 }
 
 .quadrant-label.is-cleaner,
 .quadrant-label.is-dirtier {
   font-weight: 600;
-  fill: var(--color-text-secondary);
+  fill: var(--color-text);
+}
+
+.scatter-legend {
+  margin-top: 0.4rem;
 }
 
 .trail path {
@@ -562,6 +713,25 @@ main {
 
 .co2-arrow.is-rise {
   fill: #b2182b;
+}
+
+.row-band {
+  fill: #0b0b0b;
+  fill-opacity: 0.08;
+  pointer-events: none;
+}
+
+/* The arrows named in text, in the same colours as in the chart. */
+.co2-rise-text {
+  font-weight: 600;
+  color: #b2182b;
+  fill: #b2182b;
+}
+
+.co2-fall-text {
+  font-weight: 600;
+  color: #2166ac;
+  fill: #2166ac;
 }
 
 .legend .ramp {
@@ -635,8 +805,16 @@ main {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.25rem;
   font-size: 0.9rem;
+}
+
+.profile-summary {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-text-secondary);
 }
 
 .chart .profile-card svg {
@@ -682,6 +860,19 @@ main {
   color: var(--color-text-secondary);
 }
 
+/* A title's context (where and when): same line, lighter weight, so the subject reads first. */
+.title-context {
+  margin-left: 0.15em;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+/* The mark or the action in a reading line: one weight and colour in every chart. */
+.how-to-read b {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
 /* The svg takes the room left in the panel and keeps its aspect ratio. */
 .chart {
   display: flex;
@@ -712,6 +903,15 @@ main {
   display: flex;
   align-items: center;
   gap: 0.3rem;
+}
+
+.legend li.legend-heading {
+  color: var(--color-muted);
+}
+
+/* Ranked by a group: the other sources step back, so the group reads on its own (user test, T5). */
+.segment.is-muted {
+  opacity: 0.25;
 }
 
 .swatch {
@@ -1121,6 +1321,11 @@ footer p {
   display: none;
 }
 
+.mekko-tools .scatter-note {
+  flex: 1 1 12rem;
+  margin: 0;
+}
+
 .mekko-tools label {
   display: flex;
   align-items: center;
@@ -1349,11 +1554,13 @@ footer p {
 }
 
 .compare-open {
-  height: 1.75rem;
-  padding: 0 0.7rem;
+  height: 2rem;
+  padding: 0 0.9rem;
   font: inherit;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #fff;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 25%);
   cursor: pointer;
   background: var(--color-accent);
   border: 1px solid var(--color-accent);
@@ -1388,6 +1595,13 @@ footer p {
 
 .figcaption-tools > div:first-child {
   flex: 1 1 14rem;
+}
+
+#map-metric {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
 }
 
 .map-metric .control-label {
@@ -1485,6 +1699,20 @@ footer p {
 
 /* Compact scales and units in the comparison's small charts. */
 .compare-cell .axis text,
+/* A unit with its meaning on hover: a quiet dotted underline, never a colour of its own. */
+abbr.unit {
+  text-decoration: underline dotted;
+  text-decoration-color: color-mix(in srgb, currentcolor 45%, transparent);
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+tspan.unit {
+  text-decoration: underline dotted;
+  cursor: help;
+  pointer-events: all;
+}
+
 .compare-axis-title {
   font-size: 9px;
   fill: var(--color-text-secondary);

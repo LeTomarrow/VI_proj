@@ -6,7 +6,7 @@
 // Click a cell (or focus it) to pin the year: ← → step, Home/End jump, Esc releases.
 
 import { greenGrowthRows } from "../data/greenGrowth.js";
-import { COUNTRY_COMPARE_COLORS, CONTINENT_COLORS, SOURCE_GROUPS } from "../scales.js";
+import { COUNTRY_COMPARE_COLORS, CONTINENT_COLORS, SOURCE_GROUPS, svgUnitText, unitHtml } from "../scales.js";
 import { comparedSlot, comparisonType, setState } from "../state.js";
 import { openEntityMenu } from "../entityMenu.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
@@ -30,19 +30,19 @@ const COLUMNS = [
   {
     key: "mix",
     title: "What is it made of?",
-    unit: (s) => `kWh per person, ${s.rangeStart}-${s.year} · same scale in every row`,
+    unit: (s) => `${unitHtml("kWh/person", "kWh per person")}, ${s.rangeStart}-${s.year} | same scale in every row`,
     legend: [...SOURCE_GROUPS].reverse().map((g) => [g.label, g.color, "area"]),
   },
   {
     key: "race",
     title: "Is clean electricity keeping up?",
-    unit: (s) => `TWh added since ${s.rangeStart} · own scale per row`,
+    unit: (s) => `${unitHtml("TWh")} added since ${s.rangeStart} | own scale per row`,
     legend: [["clean ahead", RACE_COLORS.lowCarbon, "tint"], ["clean behind", RACE_COLORS.behind, "tint"]],
   },
   {
     key: "effects",
     title: "Why did CO₂e change?",
-    unit: (s) => `MtCO₂e since ${s.rangeStart}; below 0 = less CO₂e · own scale per row`,
+    unit: (s) => `${unitHtml("MtCO₂e")} since ${s.rangeStart} (below 0 = less CO₂e) | own scale per row`,
     legend: [[EFFECT_LABELS.demand, EFFECT_COLORS.demand, "area"], [EFFECT_LABELS.mix, EFFECT_COLORS.mix, "area"]],
   },
 ];
@@ -82,7 +82,7 @@ export function createCompareRows(selector, { countries, continents, onPreview =
       });
       return cell;
     }).order();
-    items.select(".compare-unit").text((c) => c.unit?.(s) ?? "");
+    items.select(".compare-unit").html((c) => c.unit?.(s) ?? "");
   }
 
   function entity(key, s) {
@@ -158,10 +158,10 @@ export function createCompareRows(selector, { countries, continents, onPreview =
       .call(d3.axisLeft(y).ticks(3).tickFormat(d3.format("~s")).tickSizeOuter(0));
     svg.append("text").attr("class", "compare-axis-title")
       .attr("x", (left + right) / 2).attr("y", height - 2).attr("text-anchor", "middle").text("Year");
-    const unit = { mix: "kWh/person", race: "Δ TWh", effects: "Δ MtCO₂e" }[column];
-    svg.append("text").attr("class", "compare-axis-title")
+    const unit = { mix: [["kWh/person", "kWh/person"]], race: ["Δ ", ["TWh", "TWh"]], effects: ["Δ ", ["MtCO₂e", "MtCO₂e"]] }[column];
+    svgUnitText(svg.append("text").attr("class", "compare-axis-title")
       .attr("transform", `translate(10,${(top + bottom) / 2}) rotate(-90)`)
-      .attr("text-anchor", "middle").text(unit);
+      .attr("text-anchor", "middle"), unit);
     svg.append("line").attr("class", "compare-cursor").attr("y1", top).attr("y2", bottom).attr("visibility", "hidden");
     svg.append("text").attr("class", "cursor-value").attr("y", top + 9).attr("visibility", "hidden");
     cell.x = x;

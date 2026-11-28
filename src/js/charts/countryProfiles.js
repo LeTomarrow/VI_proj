@@ -7,6 +7,7 @@ import { SOURCE_GROUPS, COUNTRY_COMPARE_COLORS, CONTINENT_COLORS } from "../scal
 import { comparedSlot, comparisonType, setState } from "../state.js";
 import { referenceFor, sourceProfile } from "../data/compare.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
+import { titleWith } from "../titles.js";
 
 const LABEL_ROOM_X = 66; // beside the radar, for the axis names
 const LABEL_ROOM_Y = 24;
@@ -16,6 +17,7 @@ const RING_STEP = 20; // % between rings
 const MIN_MAX_SHARE = 40;
 const POINT_R = 4;  // 8 px markers
 const HIT_R = 10;   // hover zone around each marker
+const FOSSIL_GROUPS = ["coal", "oil", "gas"];
 
 // Axes run clockwise, starting at the top of the radar.
 function axisPoint(index, distance) {
@@ -108,16 +110,29 @@ export function createCountryProfiles(selector, { countries, continents, world }
   }
 
   function updateDescription(state, { missing }, reference) {
-    d3.select("#profiles-title").text(`Share of each source, ${state.year}`);
-    d3.select("#profiles-description").text(`Same 0-${radial.domain()[1]}% scale on every radar.`
-      + (reference.profile ? ` Dashed grey = ${reference.profile.name}.` : ""));
+    titleWith("#profiles-title", "Share of each source", state.year);
+    d3.select("#profiles-description").html(`<b>Each axis</b> = share of one source, same 0-${radial.domain()[1]}% scale on every radar.`
+      + (reference.profile ? ` <b>Dashed grey</b> = ${reference.profile.name}.` : ""));
     note.text(missing.length ? `No generation data for ${missing.join(", ")} in ${state.year}.` : "");
   }
 
   function pointTooltip(profile, v, year) {
+    const ref = currentReference?.values.find((r) => r.key === v.key);
     return `<strong>${profile.name}, ${year}</strong>`
       + `<div class="tooltip-row"><span>${v.label}</span><span>${v.share.toFixed(1)}%</span></div>`
+      + (ref ? `<div class="tooltip-row"><span>${currentReference.name}</span><span>${ref.share.toFixed(1)}%</span></div>` : "")
       + `<div class="tooltip-row"><span>Generation</span><span>${d3.format(",.1f")(v.generation)} TWh</span></div>`;
+  }
+
+  // Low-carbon share as one number per card, so close shapes can still be told apart (user test, T5).
+  const lowCarbonOf = (values) => d3.sum(values.filter((v) => !FOSSIL_GROUPS.includes(v.key)), (v) => v.share);
+  function summaryText(profile) {
+    const own = lowCarbonOf(profile.values);
+    if (!currentReference) return `Low-carbon ${own.toFixed(0)}%`;
+    const ref = lowCarbonOf(currentReference.values);
+    const diff = own - ref;
+    const verdict = Math.abs(diff) < 0.5 ? "same as" : diff > 0 ? "cleaner than" : "dirtier than";
+    return `Low-carbon ${own.toFixed(0)}% | ${verdict} ${currentReference.name} (${ref.toFixed(0)}%)`;
   }
 
   function updateShapes(shapes, series, s, scale, reference) {
@@ -176,6 +191,7 @@ export function createCountryProfiles(selector, { countries, continents, world }
           const title = element.append("h4").attr("class", "profile-card-title");
           title.append("span").attr("class", "swatch");
           title.append("span").attr("class", "profile-country-name");
+          element.append("p").attr("class", "profile-summary");
           const svg = element.append("svg").attr("class", "profile-radar").attr("role", "img");
           const plot = svg.append("g");
           const card = { profile, svg, plot, axes: plot.append("g"), shapes: plot.append("g") };
@@ -198,6 +214,7 @@ export function createCountryProfiles(selector, { countries, continents, world }
       const element = d3.select(this);
       element.select(".swatch").style("background", profile.color);
       element.select(".profile-country-name").text(profile.name);
+      element.select(".profile-summary").text(summaryText(profile));
       const card = cards.get(profile.key);
       card.profile = profile;
       card.svg.attr("aria-label", `${profile.name}, electricity source shares in ${state.year}. All axes range from 0 to ${radial.domain()[1]} percent.`);

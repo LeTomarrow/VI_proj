@@ -5,7 +5,7 @@
 // (TWh) above equal-width columns of the mix, for the ranked top N or for the compared countries.
 
 import { openEntityMenu } from "../entityMenu.js";
-import { RANKS, SOURCE_GROUPS, SOURCE_LABELS, sourceOrder } from "../scales.js";
+import { RANKS, SOURCE_GROUPS, SOURCE_LABELS, sourceOrder, svgUnitText } from "../scales.js";
 import { comparisonType, isDimmed, isOutsideBrush, setState } from "../state.js";
 import { tween } from "../motion.js";
 import { orderByRank } from "../data/countryColumns.js";
@@ -36,6 +36,21 @@ const VIEW_TITLES = {
   10: "The 10 highest by the ranked value",
 };
 
+const FOSSIL_KEYS = ["coal", "oil", "gas"];
+const RANK_GROUPS = [
+  ["Totals", ["generation", "lowCarbon", "fossil"]],
+  ["Fossil sources", FOSSIL_KEYS],
+  ["Low-carbon sources", ["nuclear", "hydro", "wind", "solar", "bioOther"]],
+];
+const kindOf = (key) => (FOSSIL_KEYS.includes(key) ? "Fossil" : "Low-carbon");
+const DARK_TEXT = ["solar", "gas", "nuclear", "wind"];
+const CHAR_W = 6.2; // estimated label width per character
+// Ranked by a group (Low-carbon, Fossil): the other sources are muted.
+const isMuted = (rank, key) => rank.groups.length > 1 && !rank.groups.includes(key);
+// A source name fits inside a segment of this height and width.
+const fitsLabel = (seg, height, width, rank) => !isMuted(rank, seg.group.key)
+  && height >= MIN_LABEL_H && width >= seg.group.label.length * CHAR_W + 10;
+
 const format = (digits) => d3.format(`,.${digits}f`);
 const formatTwh = (v) => format(v < 10 ? 1 : 0)(v);
 
@@ -50,17 +65,26 @@ function fitText(node, text, maxWidth) {
 }
 
 // The whole column, in legend order, with the source under the pointer in bold.
-function columnTooltip(record, stat, current, rankNote = "") {
+// Ranked by sources (Fossil, Coal...): those rows are bold, with their sum when there are several.
+// Total generation: the source under the pointer is bold.
+function columnTooltip(record, stat, current, rank, rankNote = "") {
+  const bold = (key) => (rank.groups.length ? rank.groups.includes(key) : key === current);
   const rows = SOURCE_GROUPS.map((group) => {
     const twh = d3.sum(group.parts, (k) => record.sources[k]);
     const share = d3.sum(group.parts, (k) => record.shares[k]);
-    return `<div class="tooltip-row${group.key === current ? " is-current" : ""}"><span>${group.label}</span>`
-      + `<span>${format(0)(twh)} TWh · ${format(1)(share)}%</span></div>`;
+    return `<div class="tooltip-row${bold(group.key) ? " is-current" : ""}"><span>${group.label}</span>`
+      + `<span>${format(0)(twh)} TWh (${format(1)(share)}%)</span></div>`;
   }).join("");
+  const ranked = SOURCE_GROUPS.filter((g) => rank.groups.includes(g.key));
+  const subtotal = ranked.length > 1
+    ? `<div class="tooltip-row is-current"><span>${rank.label}</span><span>`
+      + `${format(0)(d3.sum(ranked, (g) => d3.sum(g.parts, (k) => record.sources[k])))} TWh (`
+      + `${format(1)(d3.sum(ranked, (g) => d3.sum(g.parts, (k) => record.shares[k])))}%)</span></div>`
+    : "";
   const parts = SOURCE_GROUPS.find((g) => g.parts.length > 1).parts
     .map((k) => `${SOURCE_LABELS[k]} ${format(0)(record.sources[k])}`).join(", ");
   const ranking = rankNote ? `<div class="tooltip-note">${rankNote}</div>` : "";
-  return `<strong>${record.name}, ${record.year}</strong>${ranking}${rows}`
+  return `<strong>${record.name}, ${record.year}</strong>${ranking}${rows}${subtotal}`
     + `<div class="tooltip-row is-total"><span>Total</span><span>${format(0)(record.generation)} TWh</span></div>`
     + `<div class="tooltip-note">${parts} TWh</div>${coverageLine(stat, "year")}`;
 }
@@ -84,7 +108,10 @@ export function createMarimekko(selector) {
   rankControl.append("span").text("Rank by");
   const rankSelect = rankControl.append("select")
     .on("change", (event) => setState({ mekkoRank: event.target.value }));
-  rankSelect.selectAll("option").data(RANKS).join("option")
+  // Grouped, so the fossil and low-carbon sources read as two sets (user test, T4).
+  rankSelect.selectAll("optgroup").data(RANK_GROUPS).join("optgroup")
+    .attr("label", ([label]) => label)
+    .selectAll("option").data(([, keys]) => RANKS.filter((r) => keys.includes(r.key))).join("option")
     .attr("value", (d) => d.key)
     .text((d) => d.label);
   const sortButton = tools.append("button").attr("type", "button").attr("class", "sort-toggle")
@@ -102,13 +129,24 @@ export function createMarimekko(selector) {
   // Legend in stack order (ranked groups first). At the country level an entry ranks by its source.
   function renderLegend(order, rank, clickable) {
     const pick = (d) => setState({ mekkoRank: rank.groups.length === 1 && rank.key === d.key ? "generation" : d.key });
-    legend.selectAll("li").data(order, (d) => d.key).join((enter) => {
+    // A "|" between the runs of fossil and low-carbon sources, so the two sets read apart on one line.
+    const items = [];
+    order.forEach((d, i) => {
+      if (i > 0 && kindOf(order[i - 1].key) !== kindOf(d.key)) items.push({ heading: true, key: `h${i}` });
+      items.push(d);
+    });
+    legend.selectAll("li.legend-heading").data(items.filter((d) => d.heading), (d) => d.key).join("li")
+      .attr("class", "legend-heading")
+      .attr("aria-hidden", true)
+      .text("|");
+    legend.selectAll("li:not(.legend-heading)").data(order, (d) => d.key).join((enter) => {
       const li = enter.append("li");
       li.append("span").attr("class", "swatch").style("background", (d) => d.color);
       li.append("span").text((d) => d.label);
       return li;
-    })
-      .order()
+    });
+    legend.selectAll("li").data(items, (d) => d.key).order();
+    legend.selectAll("li:not(.legend-heading)")
       .classed("is-current", (d) => rank.groups.includes(d.key))
       .classed("is-clickable", clickable)
       .attr("role", clickable ? "button" : null)
@@ -133,9 +171,11 @@ export function createMarimekko(selector) {
   // World: Marimekko of the continents.
   const plot = svg.append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
   const yAxis = plot.append("g").attr("class", "axis");
-  const yTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("Share (%)");
+  const yTitle = svgUnitText(plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle"),
+    ["Share (", ["%", "%"], ")"]);
   const xAxis = plot.append("g").attr("class", "axis");
-  const xTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("Generation (TWh)");
+  const xTitle = svgUnitText(plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle"),
+    ["Generation (", ["TWh", "TWh"], ")"]);
   const columns = plot.append("g");
   const reference = plot.append("line").attr("class", "reference-line").attr("x1", 0);
   // Above the columns, so thin columns are easy to hover.
@@ -143,9 +183,11 @@ export function createMarimekko(selector) {
 
   // Country level: bars of the ranked value above equal-width mix columns.
   const ranked = svg.append("g").attr("display", "none");
-  const rBarsTitle = ranked.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("TWh");
+  const rBarsTitle = svgUnitText(ranked.append("text").attr("class", "axis-title").attr("text-anchor", "middle"),
+    [["TWh", "TWh"]]);
   const rMixAxis = ranked.append("g").attr("class", "axis");
-  const rMixTitle = ranked.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("Share (%)");
+  const rMixTitle = svgUnitText(ranked.append("text").attr("class", "axis-title").attr("text-anchor", "middle"),
+    ["Share (", ["%", "%"], ")"]);
   const rColumns = ranked.append("g");
   const rReference = ranked.append("line").attr("class", "reference-line");
   const rReferenceLabel = ranked.append("text").attr("class", "reference-label");
@@ -252,6 +294,7 @@ export function createMarimekko(selector) {
       .data((d) => d.segments.map((segment) => ({ ...segment, column: d })), (d) => d.group.key)
       .join((enter) => enter.append("rect").attr("y", innerH).attr("height", 0)) // new columns grow up
       .attr("class", "segment")
+      .classed("is-muted", (d) => isMuted(rank, d.group.key))
       .attr("fill", (d) => d.group.color)
       .call((sel) => tween(sel, s)
         .attr("y", (d) => y(d.y1))
@@ -261,17 +304,19 @@ export function createMarimekko(selector) {
     groups.select(".column-outline").raise();
     tween(groups.select(".column-outline"), s).attr("width", columnWidth).attr("height", innerH);
 
-    // Direct labels only on the widest column; the legend covers the rest.
+    // Direct labels on every segment where the name fits (the widest column always tries), so the
+    // sources can be read without the legend (user test, T2).
     groups.selectAll("text.segment-label")
-      .data((d) => (d.record.key === widest
-        ? d.segments.filter((seg) => y(seg.y0) - y(seg.y1) >= MIN_LABEL_H).map((seg) => ({ ...seg, column: d }))
-        : []), (d) => d.group.key)
+      .data((d) => d.segments
+        .filter((seg) => fitsLabel(seg, y(seg.y0) - y(seg.y1), columnWidth(d), rank) || (d.record.key === widest && rank.key === "generation"
+          && y(seg.y0) - y(seg.y1) >= MIN_LABEL_H && !isMuted(rank, seg.group.key)))
+        .map((seg) => ({ ...seg, column: d })), (d) => d.group.key)
       .join("text")
       .attr("class", "segment-label")
       .attr("x", 6)
       .attr("y", (d) => (y(d.y0) + y(d.y1)) / 2)
       .attr("dy", "0.32em")
-      .attr("fill", (d) => (["solar", "gas", "nuclear", "wind"].includes(d.group.key) ? "#0b0b0b" : "#ffffff"))
+      .attr("fill", (d) => (DARK_TEXT.includes(d.group.key) ? "#0b0b0b" : "#ffffff"))
       .text((d) => d.group.label);
 
     const zones = hitZones(layout.map((d) => [d.x0, d.x0 + d.width]), MIN_HIT);
@@ -286,7 +331,7 @@ export function createMarimekko(selector) {
       .on("mousemove", (event, d) => {
         const share = y.invert(d3.pointer(event, plot.node())[1]);
         const source = d.segments.find((seg) => share >= seg.y0 && share < seg.y1)?.group.key;
-        showTooltip(event, columnTooltip(d.record, stats.get(d.record.key), source));
+        showTooltip(event, columnTooltip(d.record, stats.get(d.record.key), source, rank));
       })
       .on("mouseleave", () => { setState({ hovered: null }); hideTooltip(); });
   }
@@ -397,11 +442,21 @@ export function createMarimekko(selector) {
       .data((d) => d.segments.map((segment) => ({ ...segment, column: d })), (d) => d.group.key)
       .join("rect")
       .attr("class", "segment")
+      .classed("is-muted", (d) => isMuted(rank, d.group.key))
       .attr("fill", (d) => d.group.color)
       .call((sel) => tween(sel, s)
         .attr("y", (d) => yMix(d.y1))
         .attr("width", columnWidth)
         .attr("height", (d) => Math.max(0, yMix(d.y0) - yMix(d.y1) - (d.y1 - d.y0 > 1 ? GAP : 0))));
+    groups.selectAll("text.segment-label")
+      .data((d) => d.segments.filter((seg) => fitsLabel(seg, yMix(seg.y0) - yMix(seg.y1), columnWidth, rank)), (d) => d.group.key)
+      .join("text")
+      .attr("class", "segment-label")
+      .attr("x", 4)
+      .attr("y", (d) => (yMix(d.y0) + yMix(d.y1)) / 2)
+      .attr("dy", "0.32em")
+      .attr("fill", (d) => (DARK_TEXT.includes(d.group.key) ? "#0b0b0b" : "#ffffff"))
+      .text((d) => d.group.label);
     groups.select(".column-hatch")
       .attr("y", mixTop)
       .attr("width", columnWidth)
@@ -438,7 +493,7 @@ export function createMarimekko(selector) {
       .on("mousemove", (event, d) => {
         const pointerShare = yMix.invert(d3.pointer(event, ranked.node())[1]);
         const source = d.segments.find((seg) => pointerShare >= seg.y0 && pointerShare < seg.y1)?.group.key;
-        showTooltip(event, columnTooltip(d.record, stats.get(d.record.key), source, rankNote(d)));
+        showTooltip(event, columnTooltip(d.record, stats.get(d.record.key), source, rank, rankNote(d)));
       })
       .on("mouseleave", () => { setState({ hovered: null }); hideTooltip(); });
   }

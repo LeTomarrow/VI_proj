@@ -8,7 +8,7 @@
 
 import { changeRows, changeCountryKeys } from "../data/change.js";
 import { openEntityMenu } from "../entityMenu.js";
-import { metricColor } from "../scales.js";
+import { metricColor, svgUnitText } from "../scales.js";
 import { comparisonType, setState } from "../state.js";
 import { tween } from "../motion.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
@@ -17,7 +17,7 @@ import { fitToSize } from "./fitToSize.js";
 const MARGIN = { top: 30, right: 8, bottom: 24, left: 4 };
 const GAP = 14;         // between the columns
 const NAME_W = [64, 108]; // name gutter, px (min, max); 28% of the width in between
-const CO2_W = 58;       // CO₂e column: arrow + value
+const CO2_W = 66;       // CO₂e column: arrow + value
 const VALUE_W = 30;     // room for a value label at a bar end
 const VALUE_MIN_W = 110; // a narrower bar column shows no values (the tooltip has them)
 const MIN_DOMAIN = 10;  // pp, so small changes are not blown up to the full width
@@ -66,14 +66,18 @@ export function createChangeBars(selector, { countries, world, countriesOf }) {
   const note = root.append("p").attr("class", "how-to-read scatter-note").attr("role", "status");
   const svg = root.append("svg").attr("role", "img");
   const plot = svg.append("g").attr("transform", `translate(${MARGIN.left}, ${MARGIN.top})`);
+  // Hovered row: a light band from the name to the CO₂e arrow, so thin rows can be followed across.
+  const rowBand = plot.append("rect").attr("class", "row-band").attr("display", "none");
   const col1 = plot.append("g");
   const col2 = plot.append("g");
   const names = plot.append("g");
   const xAxis = col1.append("g").attr("class", "axis");
-  const head = col1.append("text").attr("class", "column-title").attr("text-anchor", "middle")
-    .text("Renewables (pp)");
-  const head2 = col2.append("text").attr("class", "column-title").attr("text-anchor", "middle")
-    .text("CO₂e");
+  const head = svgUnitText(col1.append("text").attr("class", "column-title").attr("text-anchor", "middle"),
+    ["Renewables (", ["pp", "pp"], ")"]);
+  const head2 = svgUnitText(col2.append("text").attr("class", "column-title").attr("text-anchor", "middle"),
+    [["CO₂e", "CO₂e"], " "]);
+  head2.append("tspan").attr("class", "co2-rise-text").text("▲");
+  head2.append("tspan").attr("class", "co2-fall-text").text("▼");
   const bars = col1.append("g");
   const arrows = col2.append("g");
   const zero = col1.append("line").attr("class", "zero-line");
@@ -167,7 +171,8 @@ export function createChangeBars(selector, { countries, world, countriesOf }) {
         .attr("fill", (d) => colorOf(d.renewable)));
     bars.selectAll("rect.is-compared, rect.is-hovered").raise();
     // One arrow per row, even when the row is too thin for text: the column reads as a pattern.
-    const size = Math.max(3, Math.min(9, y.bandwidth()));
+    // Large enough to read as up or down at a glance (user test, T3).
+    const size = Math.max(6, Math.min(14, y.bandwidth()));
     arrows.selectAll("path").data(rows.filter((d) => d.emissions !== null), (d) => d.key).join("path")
       .attr("class", (d) => `co2-arrow ${d.emissions < 0 ? "is-fall" : "is-rise"}${outside(d) ? " is-outside" : ""}`)
       .attr("d", (d) => `M${-size / 2},0L${size / 2},0L0,${d.emissions < 0 ? size : -size}Z`)
@@ -221,6 +226,12 @@ export function createChangeBars(selector, { countries, world, countriesOf }) {
       .attr("class", labelClass("bar-label"))
       .attr("x", size + 5).attr("y", cy).attr("dy", "0.32em")
       .text((d) => co2Text(d.emissions));
+
+    const hoveredRow = rows.find((d) => d.key === s.hovered);
+    rowBand.attr("display", hoveredRow ? null : "none")
+      .attr("x", 0).attr("width", innerW)
+      .attr("y", hoveredRow ? y(hoveredRow.key) - (y.step() - y.bandwidth()) / 2 : 0)
+      .attr("height", Math.max(y.step(), 4));
 
     // One full-width row per country (both columns), so thin bars are easy to hover.
     hits.selectAll("rect").data(rows, (d) => d.key).join("rect")

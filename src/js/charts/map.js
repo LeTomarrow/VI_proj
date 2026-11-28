@@ -8,7 +8,7 @@
 
 import { CONTINENTS } from "../data/constants.js";
 import { openEntityMenu } from "../entityMenu.js";
-import { NO_DATA, METRICS, formatMetric, metricColor, metricDomain } from "../scales.js";
+import { NO_DATA, METRICS, UNITS, formatMetric, metricColor, metricDomain, svgUnitText } from "../scales.js";
 import { setState } from "../state.js";
 import { DURATION, moves, tween } from "../motion.js";
 import { coverageLine, hideTooltip, showTooltip } from "../tooltip.js";
@@ -354,9 +354,12 @@ export function createMap(selector, { atlas, mapKey, continentOf, nameOf }) {
       legendAxis.call(d3.axisBottom(d3.scaleLinear().domain([lo, hi]).range([0, LEGEND_WIDTH])).ticks(5).tickSize(4));
       legendAxis.select(".domain").remove();
       const { unit, changeUnit, cleanerIs } = METRICS[s.metric];
-      legendTitle.text(s.mode === "change"
-        ? `${changeUnit.trim()}, ${cleanerIs ? "blue = cleaner" : "purple = more"}`
-        : unit.trim());
+      const u = (s.mode === "change" ? changeUnit : unit).trim();
+      const key = u === "kWh" ? "kWh/person" : u;
+      const unitPart = UNITS[key] ? [u, key] : u;
+      svgUnitText(legendTitle, s.mode === "change"
+        ? [unitPart, `, ${cleanerIs ? "blue = cleaner" : "purple = more"}`]
+        : [unitPart]);
     },
   };
 }

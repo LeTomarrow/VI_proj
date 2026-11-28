@@ -7,7 +7,7 @@
 
 import { COMPLETE_YEARS } from "../data/constants.js";
 import { openEntityMenu } from "../entityMenu.js";
-import { CONTINENT_COLORS, EMISSIONS_STACK } from "../scales.js";
+import { CONTINENT_COLORS, EMISSIONS_STACK, svgUnitText } from "../scales.js";
 import { comparedContinents, isDimmed, setState } from "../state.js";
 import { hideTooltip, showTooltip } from "../tooltip.js";
 import { fitToSize } from "./fitToSize.js";
@@ -73,7 +73,8 @@ export function createEmissionsArea(selector, { continents }) {
   const lines = plot.append("g");
   const xAxis = plot.append("g").attr("class", "axis");
   const yAxis = plot.append("g").attr("class", "axis");
-  const yTitle = plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle").text("MtCO₂e");
+  const yTitle = svgUnitText(plot.append("text").attr("class", "axis-title").attr("text-anchor", "middle"),
+    [["MtCO₂e", "MtCO₂e"]]);
   const labels = plot.append("g");
   const yearLine = plot.append("line").attr("class", "year-line").attr("y1", 0);
   const crosshair = plot.append("line").attr("class", "crosshair").attr("y1", 0).attr("display", "none");

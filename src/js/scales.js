@@ -30,6 +30,33 @@ export const METRICS = {
 
 export const MODES = { year: "Year", change: "Change" };
 
+// What each unit means, shown on hover where a unit is named (axis titles, column heads).
+export const UNITS = {
+  pp: "Percentage points: from 20% to 30% is +10 pp (not +50%).",
+  "%": "Share of the electricity generated.",
+  "gCO₂e/kWh": "Grams of CO₂ equivalent per kWh generated: how dirty the electricity is.",
+  "CO₂e": "CO₂ equivalent: other greenhouse gases counted as the CO₂ with the same warming effect.",
+  t: "Tonnes of CO₂e from electricity per person in a year.",
+  TWh: "Terawatt-hours: one TWh is a billion kWh.",
+  "kWh/person": "Electricity generated per person in a year.",
+  "MtCO₂e": "Million tonnes of CO₂ equivalent.",
+  log: "Log scale: each step to the right multiplies by 10, so small and large countries fit together.",
+};
+
+// HTML: a unit with its meaning on hover.
+export const unitHtml = (key, label = key) => `<abbr class="unit" title="${UNITS[key]}">${label}</abbr>`;
+
+// SVG: writes a text from parts; a part [label, key] is a unit with its meaning on hover.
+export function svgUnitText(text, parts) {
+  text.text(null);
+  for (const part of parts) {
+    const [label, key] = Array.isArray(part) ? part : [part, null];
+    const span = text.append("tspan").text(label);
+    if (key) span.attr("class", "unit").append("title").text(UNITS[key]);
+  }
+  return text;
+}
+
 export function metricDomain(metric, mode) {
   const { domain, changeMax } = METRICS[metric];
   return mode === "change" ? [-changeMax, changeMax] : domain;
