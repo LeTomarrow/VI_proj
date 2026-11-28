@@ -28,7 +28,17 @@ async function init() {
   setContinentLookup((key) => continentOf.get(key));
   const countriesByYear = d3.group(data.countries, (r) => r.year);
   const totalCountries = new Set(data.countries.map((r) => r.key)).size;
-  const maxTotal = d3.max(d3.rollup(data.continents, (rows) => d3.sum(rows, (r) => r.generation), (r) => r.year).values());
+  // x domain of the continent Marimekko: the largest yearly world value of what sets the width
+  // (total generation, or the ranked set's TWh), fixed across years (U5).
+  const worldMaxCache = new Map();
+  const worldMaxOf = (rank) => {
+    const value = rank.groups.length > 1 ? rank.value : (r) => r.generation;
+    const key = rank.groups.length > 1 ? rank.key : "generation";
+    if (!worldMaxCache.has(key)) {
+      worldMaxCache.set(key, d3.max(d3.rollup(data.continents, (rows) => d3.sum(rows, value), (r) => r.year).values()));
+    }
+    return worldMaxCache.get(key);
+  };
   // Scale of the ranked bars: the largest value of the continent's countries in any year.
   const rankMaxCache = new Map();
   const rankMaxOf = (continent, rank) => {
@@ -135,9 +145,17 @@ async function init() {
     const hiddenBrushed = ranking?.columns.brushedHidden ?? 0;
     const extraNote = (extraWho ? ` ${extraWho[0].toUpperCase()}${extraWho.slice(1)} countries outside it on the right.` : "")
       + (hiddenBrushed ? ` ${hiddenBrushed} more selected not shown (see the scatter).` : "");
+    // Ranked by a set (Low-carbon, Fossil): the columns split that set only (100% = the set); the
+    // shares of all generation are in the tooltip.
+    const setName = rank.name.replace(/ generation$/, "");
+    const within = rank.groups.length > 1;
+    const split = `how the ${setName} part splits (100% = ${setName})`;
     d3.select("#marimekko-how-to-read").html(!atCountries
-      ? `<b>Width</b> = total generation; <b>height</b> = share of each source${atBase}; <b>dashed</b> = 50%.`
-      : `<b>Bars</b> = ${rank.name} (TWh); <b>columns</b> = share of each source${atBase}${dashed}.${onlyCompared ? "" : extraNote}`);
+      ? (within ? `<b>Width</b> = ${rank.name}; <b>height</b> = ${split}; <b>dashed</b> = 50%. <b>Hover</b> for shares of all generation.`
+        : `<b>Width</b> = total generation; <b>height</b> = share of each source${atBase}; <b>dashed</b> = 50%.`)
+      : (within ? `<b>Bars</b> = ${rank.name} (TWh); <b>columns</b> = ${split}. <b>Hover</b> for shares of all generation.`
+        : `<b>Bars</b> = ${rank.name} (TWh); <b>columns</b> = share of each source${atBase}${dashed}.`)
+        + (onlyCompared ? "" : extraNote));
     const compared = comparedContinents(s);
     titleWith("#emissions-title", `CO₂e from electricity${compared.length ? `: ${compared.join(" vs ")}` : ""}`, "2000-2024");
     d3.select("#emissions-how-to-read").html(compared.length
@@ -165,7 +183,7 @@ async function init() {
     map.update(mapStats, s);
     marimekko.update(s, atCountries
       ? { rank, ranking }
-      : { records: data.continents.filter((r) => r.year === s.year), stats, maxTotal, rank });
+      : { records: data.continents.filter((r) => r.year === s.year), stats, maxTotal: worldMaxOf(rank), rank });
     emissions.update(s);
     scatter.update(s);
     bars.update(s);

@@ -905,6 +905,11 @@ main {
   opacity: 0.25;
 }
 
+/* Country columns ranked by a set show only that set: the other sources are not drawn. */
+.legend li.is-absent {
+  opacity: 0.4;
+}
+
 .swatch {
   width: 0.7rem;
   height: 0.7rem;

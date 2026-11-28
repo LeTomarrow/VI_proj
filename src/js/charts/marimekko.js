@@ -47,6 +47,9 @@ const DARK_TEXT = ["solar", "gas", "nuclear", "wind"];
 const CHAR_W = 6.2; // estimated label width per character
 // Ranked by a group (Low-carbon, Fossil): the other sources are muted.
 const isMuted = (rank, key) => rank.groups.length > 1 && !rank.groups.includes(key);
+// The ranked set's share of all generation (%).
+const setShare = (rank, record) => d3.sum(SOURCE_GROUPS.filter((g) => rank.groups.includes(g.key)),
+  (g) => d3.sum(g.parts, (k) => record.shares[k]));
 // A source name fits inside a segment of this height and width.
 const fitsLabel = (seg, height, width, rank) => !isMuted(rank, seg.group.key)
   && height >= MIN_LABEL_H && width >= seg.group.label.length * CHAR_W + 10;
@@ -127,7 +130,8 @@ export function createMarimekko(selector) {
   const legend = root.append("ul").attr("class", "legend");
 
   // Legend in stack order (ranked groups first). At the country level an entry ranks by its source.
-  function renderLegend(order, rank, clickable) {
+  // within: the country columns show only the ranked set, so the other sources step back.
+  function renderLegend(order, rank, clickable, within = false) {
     const pick = (d) => setState({ mekkoRank: rank.groups.length === 1 && rank.key === d.key ? "generation" : d.key });
     // A "|" between the runs of fossil and low-carbon sources, so the two sets read apart on one line.
     const items = [];
@@ -148,6 +152,7 @@ export function createMarimekko(selector) {
     legend.selectAll("li").data(items, (d) => d.key).order();
     legend.selectAll("li:not(.legend-heading)")
       .classed("is-current", (d) => rank.groups.includes(d.key))
+      .classed("is-absent", (d) => within && !rank.groups.includes(d.key))
       .classed("is-clickable", clickable)
       .attr("role", clickable ? "button" : null)
       .attr("tabindex", clickable ? 0 : null)
@@ -221,7 +226,7 @@ export function createMarimekko(selector) {
       .attr("aria-label", asc ? "Sorted from the smallest; sort from the largest" : "Sorted from the largest; sort from the smallest");
     viewGroup.attr("hidden", ranking ? null : true);
     const order = sourceOrder(rank);
-    renderLegend(order, rank, true);
+    renderLegend(order, rank, true, rank.groups.length > 1);
     if (!ranking) {
       renderContinents(s, { ...options, rank, order });
       return;
@@ -236,6 +241,13 @@ export function createMarimekko(selector) {
 
   function renderContinents(s, { records: unsorted, stats, maxTotal, rank, order }) {
     const records = orderByRank(unsorted, rank, s.mekkoSort);
+    // Ranked by a set (Low-carbon, Fossil): width = the set's TWh, height = how it splits, so each
+    // area is a source's TWh, as with total generation.
+    const within = rank.groups.length > 1;
+    const stack = within ? order.filter((g) => rank.groups.includes(g.key)) : order;
+    const widthOf = within ? rank.value : (r) => r.generation;
+    svgUnitText(xTitle, [within ? `${rank.label} generation (` : "Generation (", ["TWh", "TWh"], ")"]);
+    svgUnitText(yTitle, [within ? `Share of ${rank.label.toLowerCase()} (` : "Share (", ["%", "%"], ")"]);
     plot.attr("display", null);
     ranked.attr("display", "none");
     x.domain([0, maxTotal]);
@@ -247,18 +259,19 @@ export function createMarimekko(selector) {
     let lastLabel = -Infinity;
     const layout = records.map((record) => {
       let top = 0;
-      const segments = order.map((g) => {
-        const share = d3.sum(g.parts, (k) => record.shares[k]);
+      const total = within ? setShare(rank, record) : 100;
+      const segments = stack.map((g) => {
+        const share = total > 0 ? d3.sum(g.parts, (k) => record.shares[k]) * 100 / total : 0;
         const segment = { group: g, y0: top, y1: top + share };
         top += share;
         return segment;
       });
       const x0 = x(start);
-      const width = x(start + record.generation) - x0;
+      const width = x(start + widthOf(record)) - x0;
       const center = x0 + width / 2;
       const labelShift = Math.max(0, lastLabel + LABEL_SPACING - center);
       lastLabel = center + labelShift;
-      start += record.generation;
+      start += widthOf(record);
       return { record, x0, width, segments, labelShift, id: record.key };
     });
     const widest = d3.greatest(layout, (d) => d.width)?.record.key;
@@ -341,6 +354,8 @@ export function createMarimekko(selector) {
   // base, so their shares are compared on a common baseline. Names are slanted when the columns
   // are narrow. The compared countries outside the top N follow after a gap. Dashed line = the
   // continent's share of the ranked sources.
+  // Ranked by a set (Low-carbon, Fossil): each column is the split of that set only (100% = the
+  // set), so its sources compare in detail; the shares of all generation are in the tooltip.
   // view "compared": only the compared countries (any continent), so none is outlined or marked.
   function renderRanked(s, rank, order, { view, columns: shownColumns, max, continentRecord }) {
     plot.attr("display", "none");
@@ -370,15 +385,19 @@ export function createMarimekko(selector) {
     rBarsTitle.attr("transform", `translate(-40, ${barsH / 2}) rotate(-90)`);
     rMixAxis.call(d3.axisLeft(yMix).tickValues([0, 50, 100]).tickFormat((d) => `${d}%`).tickSize(4))
       .call((g) => g.select(".domain").remove());
+    const within = rank.groups.length > 1;
+    svgUnitText(rMixTitle, [within ? `Share of ${rank.label.toLowerCase()} (` : "Share (", ["%", "%"], ")"]);
     rMixTitle.attr("transform", `translate(-40, ${(mixTop + mixBottom) / 2}) rotate(-90)`);
     rEmpty.attr("x", w / 2).attr("y", (mixTop + mixBottom) / 2)
       .text(all.length ? "" : onlyCompared ? `No compared country has data in ${s.year}`
         : `No country of ${s.continent} has ${rank.name} in ${s.year}`);
 
+    const stack = within ? order.filter((g) => rank.groups.includes(g.key)) : order;
     const layout = all.map((record, i) => {
       let base = 0;
-      const segments = order.map((g) => {
-        const share = d3.sum(g.parts, (k) => record.shares[k]);
+      const total = within ? setShare(rank, record) : 100;
+      const segments = stack.map((g) => {
+        const share = total > 0 ? d3.sum(g.parts, (k) => record.shares[k]) * 100 / total : 0;
         const segment = { group: g, y0: base, y1: base + share };
         base += share;
         return segment;
@@ -390,9 +409,8 @@ export function createMarimekko(selector) {
     // The continent's share of the ranked sources, as a reference for the mix columns (not when
     // the compared countries come from other continents).
     const sameContinent = all.every((r) => r.continent === s.continent);
-    const share = rank.groups.length && continentRecord && sameContinent
-      ? d3.sum(SOURCE_GROUPS.filter((g) => rank.groups.includes(g.key)), (g) => d3.sum(g.parts, (k) => continentRecord.shares[k]))
-      : null;
+    const share = rank.groups.length && !within && continentRecord && sameContinent
+      ? setShare(rank, continentRecord) : null;
     const end = layout.length ? layout.at(-1).x0 + band - GAP : 0;
     rReference.attr("display", share === null || !layout.length ? "none" : null)
       .attr("x1", 0).attr("x2", end).attr("y1", yMix(share ?? 0)).attr("y2", yMix(share ?? 0));

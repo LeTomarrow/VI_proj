@@ -192,6 +192,9 @@ replaced them; the *Removed* table keeps what was dropped.
   - Scatter: plain title, quadrant names, legend, per-person tooltip, smaller bubbles (#3, #4, #19, P1, P2).
   - Every reading line puts the mark or action in bold (#5, P2).
   - Marimekko: *Rank by* grouped, other sources faded, legend fossil | low-carbon, segment names (#22, P1, P2).
+  - Ranked by Low-carbon or Fossil, the columns show only that set (100% = the set), so its
+    sources compare in detail; shares of all generation stay in the tooltip. Countries: no dashed
+    continent line. World Marimekko: width = the set's TWh (x fixed to its largest world year).
   - Radars: low-carbon share vs the reference on each card; *Dashed grey* names it (#7, P2, P3).
   - Sorted bars: coloured ▲▼, row hover band, no arrow at 0%, blue/red explained (#11, #17, P2).
   - Year | Change beside the slider; year picker under its handles (P2, one tester).
