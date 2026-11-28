@@ -142,7 +142,7 @@ async function init() {
     titleWith("#emissions-title", `CO₂e from electricity${compared.length ? `: ${compared.join(" vs ")}` : ""}`, "2000-2024");
     d3.select("#emissions-how-to-read").html(compared.length
       ? "<b>One line</b> per compared continent, each from zero. Remove them from the comparison to see the world stack."
-      : "<b>Stacked</b> by continent; the <b>top edge</b> is the world total.");
+      : "<b>Stacked</b> by continent; <b>top edge</b> = world total. Read totals here, not on the map.");
 
     controls.update(s);
     navigation.update(s);
@@ -159,7 +159,7 @@ async function init() {
     d3.select("#scatter-how-to-read").html("One bubble per country. <b>Hover</b> for values, <b>click</b> to compare, "
       + `<b>drag a box</b> to select a group in every chart.${s.mode === "year" ? "" : ` Hover a compared country to see its path since ${s.rangeStart}.`}`);
     d3.select("#bars-title").text(`Change since ${s.rangeStart}${comparedCountries.length ? (s.brushed ? ": selected and compared" : ": compared countries") : ""}`);
-    d3.select("#bars-how-to-read").html(`<b>Bars</b> = renewable gain, from the ${s.barsSort === "asc" ? "smallest" : "largest"}; <b>dashed</b> = World. `
+    d3.select("#bars-how-to-read").html("<b>Bars</b> = renewable gain: <b>blue</b> up, <b>red</b> down; <b>dashed</b> = World. "
       + `CO₂e: <span class="co2-rise-text">▲ rose</span>, <span class="co2-fall-text">▼ fell</span>.`);
 
     map.update(mapStats, s);

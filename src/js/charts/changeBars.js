@@ -173,7 +173,8 @@ export function createChangeBars(selector, { countries, world, countriesOf }) {
     // One arrow per row, even when the row is too thin for text: the column reads as a pattern.
     // Large enough to read as up or down at a glance (user test, T3).
     const size = Math.max(6, Math.min(14, y.bandwidth()));
-    arrows.selectAll("path").data(rows.filter((d) => d.emissions !== null), (d) => d.key).join("path")
+    // A change that rounds to 0% gets no arrow: "▲ 0%" read as a rise (heuristic #11).
+    arrows.selectAll("path").data(rows.filter((d) => d.emissions !== null && Math.abs(d.emissions) >= 0.5), (d) => d.key).join("path")
       .attr("class", (d) => `co2-arrow ${d.emissions < 0 ? "is-fall" : "is-rise"}${outside(d) ? " is-outside" : ""}`)
       .attr("d", (d) => `M${-size / 2},0L${size / 2},0L0,${d.emissions < 0 ? size : -size}Z`)
       .call((sel) => tween(sel, s)

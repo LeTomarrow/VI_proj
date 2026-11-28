@@ -186,3 +186,16 @@ replaced them; the *Removed* table keeps what was dropped.
   View C's mix column.
 - **Short docs (25/11)**: docs rewritten shorter, without em- or en-dashes; stub READMEs now
   describe what the folders hold.
+- **User tests and heuristic fixes (28/11)**: SUS 65.0 (n = 3); one line per change, with the
+  finding (#, heuristic evaluation) or participant (P) it answers:
+  - Compare in the breadcrumb as *Compare in detail →* (#21, P1).
+  - Scatter: plain title, quadrant names, legend, per-person tooltip, smaller bubbles (#3, #4, #19, P1, P2).
+  - Every reading line puts the mark or action in bold (#5, P2).
+  - Marimekko: *Rank by* grouped, other sources faded, legend fossil | low-carbon, segment names (#22, P1, P2).
+  - Radars: low-carbon share vs the reference on each card; *Dashed grey* names it (#7, P2, P3).
+  - Sorted bars: coloured ▲▼, row hover band, no arrow at 0%, blue/red explained (#11, #17, P2).
+  - Year | Change beside the slider; year picker under its handles (P2, one tester).
+  - Unit hovers (pp, TWh, gCO₂e/kWh) in every chart (P2).
+  - Titles: subject, then place and year in a lighter weight; no "·" separators (P2).
+  - Emissions line says the totals are read there, not on the map (#2).
+  - Not changed: a use-per-person axis and a scatter zoom would redo the chart (#3, #4 stay mitigated).
